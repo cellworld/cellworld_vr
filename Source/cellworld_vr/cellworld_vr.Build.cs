@@ -6,11 +6,11 @@ public class cellworld_vr : ModuleRules
 {
 	public cellworld_vr(ReadOnlyTargetRules Target) : base(Target)
 	{
+		
 		PCHUsage = PCHUsageMode.UseExplicitOrSharedPCHs;
 	
-		PublicDependencyModuleNames.AddRange(new string[] { "Core", "CoreUObject", "Engine", "InputCore" });
-
-		PrivateDependencyModuleNames.AddRange(new string[] {  });
+		PublicDependencyModuleNames.AddRange(new string[] { "Core", "CoreUObject", "HeadMountedDisplay", "Engine", "InputCore", "EyeTracker","InputCore","UMG","NavigationSystem","HPGlia" });
+        PrivateDependencyModuleNames.AddRange(new string[] { /*"HeadMountedDisplay",*/ "Slate", "SlateCore" });
 
 		// Uncomment if you are using Slate UI
 		// PrivateDependencyModuleNames.AddRange(new string[] { "Slate", "SlateCore" });
