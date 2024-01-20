@@ -201,7 +201,7 @@ void AGetCLMonitorComponentActor::Tick(float DeltaTime)
 	Super::Tick(DeltaTime);
 	AGetCLMonitorComponentActor::DrawEyeTraceOnPlayer(DeltaTime);
 }
-
+ 
 void AGetCLMonitorComponentActor::EndPlay(EEndPlayReason::Type EndPlayReason)
 {
 	Super::EndPlay(EndPlayReason);
