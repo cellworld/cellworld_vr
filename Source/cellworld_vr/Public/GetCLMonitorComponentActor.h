@@ -7,7 +7,6 @@
 #include "IXRTrackingSystem.h"
 #include "StereoRendering.h"
 #include "IHeadMountedDisplay.h"
-#include "GameInstanceMain.h"
 #include "ConfigManager.h"
 #include "GameFramework/PlayerController.h"
 #include "Camera/CameraComponent.h"
@@ -23,7 +22,6 @@ class CELLWORLD_VR_API AGetCLMonitorComponentActor : public AActor
 public:
 	// Sets default values for this actor's properties
 	AGetCLMonitorComponentActor();
-	bool InitializeHPKeys();
 	bool Calibrate();
 
 private:

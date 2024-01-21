@@ -5,7 +5,7 @@
 #include "MouseKeyboardPlayerController.h"
 #include "GetCLMonitorComponentActor.h"
 #include "EyeTrackerFunctionLibrary.h"
-#include "GameInstanceMain.h"
+//#include "GameInstanceMain.h"
 #include <iostream>
 #include <sstream>
 #include "TextFileManager.h"
@@ -14,7 +14,6 @@
 #include "Misc/FileHelper.h"
 #include "Kismet/GameplayStatics.h" 
 #include "Kismet/KismetStringLibrary.h" 
-
 
 bool FGetCLMonitorComponentThread::ConnectToDevice() {
 	const FString access_key = "F8OK38DWnRgqJgr5aaUhgcfBPHoEe5toBiDGGREkR2DWeZxgTKFpCF5YvAdnHd-S";

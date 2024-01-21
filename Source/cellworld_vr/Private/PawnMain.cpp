@@ -30,7 +30,7 @@ APawnMain::APawnMain() : Super()
 	UCapsuleComponent* CapsuleComponent = CreateDefaultSubobject<UCapsuleComponent>(TEXT("RootComponent"));
 	RootComponent = CapsuleComponent;
 	CapsuleComponent->SetMobility(EComponentMobility::Movable);
-	CapsuleComponent->InitCapsuleSize(0.5f, 1.50f);
+	CapsuleComponent->InitCapsuleSize(10.0f, 40.0f);
 	CapsuleComponent->SetCollisionProfileName(TEXT("Pawn"));
 	CapsuleComponent->OnComponentBeginOverlap.AddDynamic(this, &APawnMain::OnOverlapBegin); // overlap events
 	CapsuleComponent->OnComponentEndOverlap.AddDynamic(this, &APawnMain::OnOverlapEnd); // overlap events 
@@ -61,6 +61,7 @@ void APawnMain::SetupPlayerInputComponent(class UInputComponent* InInputComponen
 	Super::SetupPlayerInputComponent(InInputComponent);
 
 	/* map toggling stuff */
+	InInputComponent->BindAction("MenuToggleAny", IE_Pressed, this, &APawnMain::ResetOrigin);
 }
 
 UPawnMovementComponent* APawnMain::GetMovementComponent() const
@@ -93,7 +94,7 @@ void APawnMain::UpdateMovementComponent(FVector InputVector, bool bForce)
 
 UCameraComponent* APawnMain::GetCameraComponent()
 {
-	return this->Camera;
+	return APawnMain::Camera;
 }
 
 void APawnMain::MoveForward(float AxisValue)
@@ -133,6 +134,17 @@ void APawnMain::LookUp(float AxisValue)
 	SetActorRotation(NewRotation);
 }
 
+void APawnMain::ResetOrigin() 
+{
+	//FQuat Quat = FQuat();
+	GEngine->AddOnScreenDebugMessage(-1, 0.5f, FColor::Red, FString::Printf(TEXT("Reset origin.")));
+	
+	APawnMain::Camera->SetWorldLocationAndRotation(FVector::ZeroVector, FRotator::ZeroRotator);
+	//APawnMain::SetActorLocation(FVector(0.0f, 0.0f, 0.0f), false);
+	APawnMain::SetActorLocationAndRotation(FVector::ZeroVector, FRotator::ZeroRotator, false);
+	//APawnMain::SetWorldLocationAndRotation(FVector::ZeroVector, FRotator::ZeroRotator);
+}
+
 void APawnMain::QuitGame()
 {
 	// end match 
@@ -149,13 +161,18 @@ void APawnMain::QuitGame()
 void APawnMain::BeginPlay()
 {
 	Super::BeginPlay();
-
 }
 
 // Called every frame
 void APawnMain::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
+}
+
+void APawnMain::EndPlay(const EEndPlayReason::Type EndPlayReason)
+{
+	//UE_LOG(LogTemp, Warning, TEXT("[APawnMain::EndPlay] Destroying pawn."));
+	//APawnMain::Destroy(EEndPlayReason::Destroyed);
 }
 
 void APawnMain::OnOverlapBegin(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)

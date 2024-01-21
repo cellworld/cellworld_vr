@@ -1,7 +1,7 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
-
 #include "GameModeMain.h"
+#include "GameFramework/PlayerStart.h"
 #include "PawnMain.h" 
 #include "GameStateMain.h"
 #include "HPGlia.h"
@@ -21,7 +21,6 @@ AGameModeMain::AGameModeMain()
 	/* standard defaults */
 	PrimaryActorTick.bStartWithTickEnabled = true;
 	PrimaryActorTick.bCanEverTick = true;
-
 }
 
 void AGameModeMain::EndMatch()
@@ -35,26 +34,40 @@ void AGameModeMain::EndMatch()
 * to find, load, and process the HP keys. 
 */
 bool AGameModeMain::InitializeHPKeys() {
-	TArray<FString> hp_client_info; 
-	UWorld* World = nullptr;
-	UGameInstanceMain* GI = nullptr; 
 
-	if (GEngine) { World = GEngine->GetWorld(); }
-	else { return false;  }
-	if (World) { GI = Cast<UGameInstanceMain>(UGameplayStatics::GetGameInstance(World)); }
-	else { return false;  }
+	/* 
+		to do: fix this or delete. trying to clean up objects 
+	*/
 
-	return UConfigManager::LoadHPClientKeys(GI, hp_client_info);
+	//TArray<FString> hp_client_info; 
+	//UWorld* World = nullptr;
+	//if (GEngine) { World = GEngine->GetWorld(); }
+	//else { return false;  }
+	//if (World) { GI = Cast<UGameInstanceMain>(UGameplayStatics::GetGameInstance(World)); }
+	//else { return false;  }
+
+	//return UConfigManager::LoadHPClientKeys(GI, hp_client_info);
+	return false;
 }
 
 void AGameModeMain::SpawnAndPossessPlayer(FVector spawn_location, FRotator spawn_rotation)
 {
-	FActorSpawnParameters SpawnInfo;
-	SpawnInfo.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButAlwaysSpawn;
-	APawnMain* TempChar = Cast<APawnMain>(GetWorld()->SpawnActor(DefaultPawnClass, &spawn_location, &spawn_rotation, SpawnInfo));
+	/* to do: remove, no need for this if player start is present in map. if it isn''t, location will be taken care of by experiment service */
+
+	if(!GetWorld() || !GetWorld()->GetFirstPlayerController()) { UE_DEBUG_BREAK(); return; }
+	AGameModeMain::PawnMain = Cast<APawnMain>(GetWorld()->GetFirstPlayerController()->GetPawn());
+	if (AGameModeMain::PawnMain) {
+		AGameModeMain::PawnMain->ResetOrigin();
+	}
+
+	//APlayerStart* NewPlayerStart = GetWorld()->SpawnActor<APlayerStart>(APlayerStart::StaticClass(), FVector(-999.0, -999.0, -990.0), FRotator(0.0,0.0,0.0), SpawnInfo);
+	//AGameModeMain::PawnMain = Cast<APawnMain>(GetWorld()->SpawnActor(DefaultPawnClass, &spawn_location, &spawn_rotation, SpawnInfo));
+
+	//APawnMain* TempChar = Cast<APawnMain>(GetWorld()->SpawnActor(DefaultPawnClass, &spawn_location, &spawn_rotation, SpawnInfo));
 	EAutoReceiveInput::Type::Player0;
-	EAutoPossessAI::PlacedInWorldOrSpawned;
-	GetWorld()->GetFirstPlayerController()->Possess(TempChar);
+
+	//EAutoPossessAI::PlacedInWorldOrSpawned;
+	//GetWorld()->GetFirstPlayerController()->Possess(AGameModeMain::PawnMain);
 }
 
 void AGameModeMain::InitGame(const FString& MapName, const FString& Options, FString& ErrorMessage)
@@ -106,6 +119,12 @@ void AGameModeMain::StartPlay()
 	//const FString client_id = "25b17c6b-3386-45f8-9e1e-88d76259b5bf";
 	//UHPGliaClient::ConnectToGliaAsync(client_id, access_key, ELicensingModel::CORE);
 
+}
+
+void AGameModeMain::EndPlay(const EEndPlayReason::Type EndPlayReason)
+{
+	Super::EndPlay(EndPlayReason);
+	AGameModeMain::PawnMain = nullptr;
 }
 
 void AGameModeMain::Tick(float DeltaTime)

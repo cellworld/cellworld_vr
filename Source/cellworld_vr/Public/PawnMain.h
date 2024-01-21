@@ -38,6 +38,7 @@ public:
 	void MoveRight(float AxisValue);
 	void Turn(float AxisValue);
 	void LookUp(float AxisValue);
+	void ResetOrigin();
 	void QuitGame();
 
 
@@ -48,8 +49,8 @@ protected:
 	//AGameModeMain* GameMode = nullptr; 
 
 public:
-	// Called every frame
 	virtual void Tick(float DeltaTime) override;
+	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 	/* === properties === */
 	//UPROPERTY(VisibleDefaultsOnly, meta = (Category = "Default"))
 	class UCapsuleComponent* CollisionCylinder;

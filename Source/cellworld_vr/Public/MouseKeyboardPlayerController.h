@@ -20,6 +20,7 @@ public:
 	virtual void SetupInputComponent() override;
 	virtual void Tick(float DeltaTime) override;
 
+	void ResetOrigin();
 	void QuitGame();
 	void MoveForward(float AxisValue);
 	void MoveRight(float AxisValue);

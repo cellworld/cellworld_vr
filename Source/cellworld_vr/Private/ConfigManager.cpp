@@ -1,12 +1,10 @@
-
-
 #pragma once 
 
 #include "ConfigManager.h"
 #include "TextFileManager.h"
 #include "Engine/World.h"
 #include "Misc/Paths.h"
-#include "GameInstanceMain.h"
+//#include "GameInstanceMain.h"
 #include "Misc/FileHelper.h"
 #include "Kismet/GameplayStatics.h" 
 #include "Internationalization/Regex.h" 
@@ -54,85 +52,87 @@ bool UConfigManager::GetCSVFile(FString Path, TArray<FString> &Lines)
 /* 
 * Updates game instance with HP client and access keys.
 */
-bool UConfigManager::LoadHPClientKeys(UGameInstanceMain* GI, TArray<FString>& lines) {
-	/* set result to false */
-	bool res; 
-	TArray<FString> config_lines; // read config file to lines
+bool UConfigManager::LoadHPClientKeys(FString filename, TArray<FString>& lines) {
 
-	/* vars */
-	FString match_client_id = "";
-	FString match_access_key = "";
+	/* 
+		to do: attempt to clean up objects. will load keys in struct and will add instructions to readme.
+	*/
 
-	/* rgeexp targets */
-	FString exp_client_id = TEXT("client id:\\s*([^\\s,.]+)");
-	FString exp_access_key = TEXT("access key:\\s*([^\\s,.]+)");
-	
-	/* store in array */
-	TArray<FString> exp_arr;
-	exp_arr.Add(exp_client_id);
-	exp_arr.Add(exp_access_key);
+	///* set result to false */
+	//bool res; 
+	//TArray<FString> config_lines; // read config file to lines
 
-	/* get file */
-	FString filename; 
-	if (GI) { 
-		filename = GI->file_hp_client_keys;
-	}
-	else {
-		filename = FPaths::ProjectDir();
-		filename.Append(TEXT("Setup/HP_client_keys.txt"));
-		UE_DEBUG_BREAK();
-	}
+	///* vars */
+	//FString match_client_id = "";
+	//FString match_access_key = "";
+
+	///* rgeexp targets */
+	//FString exp_client_id = TEXT("client id:\\s*([^\\s,.]+)");
+	//FString exp_access_key = TEXT("access key:\\s*([^\\s,.]+)");
+	//
+	///* store in array */
+	//TArray<FString> exp_arr;
+	//exp_arr.Add(exp_client_id);
+	//exp_arr.Add(exp_access_key);
+
+	///* get file */
+	//if (filename.Len() < 5) { // at least x.txt/csv etc (to do: check if valid path)
+	//	filename = FPaths::ProjectDir();
+	//	filename.Append(TEXT("Setup/HP_client_keys.txt"));
+	//	UE_DEBUG_BREAK();
+	//}
 
 
-	/* load file */
-	res = UConfigManager::GetCSVFile(filename, config_lines);
 
-	/* check if file valid and not empty */
-	if (!res || (config_lines.Num() == 0)) { // failed to read || empty file 
-		UE_LOG(LogTemp, Error, TEXT("[UConfigManager::LoadConfigFile()] GetCSVFile() failed."));
-		return false;
-	}
+	///* load file */
+	//res = UConfigManager::GetCSVFile(filename, config_lines);
 
-	/* parse through file */
-	for (int j = 0; j < config_lines.Num(); j++) { // get first elemtn in config_lines
+	///* check if file valid and not empty */
+	//if (!res || (config_lines.Num() == 0)) { // failed to read || empty file 
+	//	UE_LOG(LogTemp, Error, TEXT("[UConfigManager::LoadConfigFile()] GetCSVFile() failed."));
+	//	return false;
+	//}
 
-		FString currentConfigLine = config_lines[j];
-		for (FString expression : exp_arr) {
+	///* parse through file */
+	//for (int j = 0; j < config_lines.Num(); j++) { // get first elemtn in config_lines
 
-			// get matches with regexp 
-			FString match = ReadLineRegexp(*expression, *currentConfigLine); 
+	//	FString currentConfigLine = config_lines[j];
+	//	for (FString expression : exp_arr) {
 
-			// if we found a match
-			if (match.Len() < 1) {
-				UE_LOG(LogTemp, Error, TEXT("[UConfigManager::LoadConfigFile] Found 0 matches."))
-				return false;
-			}
+	//		// get matches with regexp 
+	//		FString match = ReadLineRegexp(*expression, *currentConfigLine); 
 
-			if (expression == exp_client_id) { 
-				match_client_id = match;
-				exp_arr.RemoveSingle(expression);
-				break;
-			}
+	//		// if we found a match
+	//		if (match.Len() < 1) {
+	//			UE_LOG(LogTemp, Error, TEXT("[UConfigManager::LoadConfigFile] Found 0 matches."))
+	//			return false;
+	//		}
 
-			if (expression == exp_access_key) {
-				match_access_key = match;
-				exp_arr.RemoveSingle(expression);
-				break;
-			}
-		}
-	}
+	//		if (expression == exp_client_id) { 
+	//			match_client_id = match;
+	//			exp_arr.RemoveSingle(expression);
+	//			break;
+	//		}
 
-	if (GI == nullptr) {
-		UE_LOG(LogTemp, Error, TEXT("[UConfigManager::LoadConfigFile()] UGameInstanceMain is NULLPTR."));
-		UE_DEBUG_BREAK();
-		return false; 
-	}
+	//		if (expression == exp_access_key) {
+	//			match_access_key = match;
+	//			exp_arr.RemoveSingle(expression);
+	//			break;
+	//		}
+	//	}
+	//}
 
-	/* save to game instance */
-	GI->client_id  = match_client_id;
-	GI->access_key = match_access_key; 
+	//if (GI == nullptr) {
+	//	UE_LOG(LogTemp, Error, TEXT("[UConfigManager::LoadConfigFile()] UGameInstanceMain is NULLPTR."));
+	//	UE_DEBUG_BREAK();
+	//	return false; 
+	//}
 
-	return true; 
+	///* save to game instance */
+	//GI->client_id  = match_client_id;
+	//GI->access_key = match_access_key; 
+
+	return false; 
 }
 
 

@@ -7,6 +7,7 @@ Virtual Reality project for Unreal Engine 4.27 for testing the HP Reverb G2 VR H
 
 - save user head positions, rotations, etc for eye-tracking analysis (similar to FGetPlayerTraversePath)
 - figure out a new calibration method to find depth/actor player is looking at
+- occlusion spawning: check for black pixel in image and spawn actor there (can be an occlusion). 
 
 ## Omnicept SDK
 

@@ -8,23 +8,6 @@ AGetCLMonitorComponentActor::AGetCLMonitorComponentActor()
 	PrimaryActorTick.bCanEverTick = true;
 }
 
-bool AGetCLMonitorComponentActor::InitializeHPKeys() {
-	TArray<FString> hp_client_info;
-	UWorld* World = nullptr;
-	UGameInstanceMain* GI = nullptr;
-
-	if (GEngine) { World = GEngine->GetWorld(); }
-	else { return false; }
-
-	if (World) { GI = Cast<UGameInstanceMain>(UGameplayStatics::GetGameInstance(World)); }
-	else { return false; }
-
-	if (!GI) { return false; }
-	bool res = UConfigManager::LoadHPClientKeys(GI, hp_client_info);
-
-	return res; 
-} 
-
 bool AGetCLMonitorComponentActor::Calibrate()
 {
 	if (GEngine) {
@@ -39,7 +22,6 @@ bool AGetCLMonitorComponentActor::Calibrate()
 	if (handle.IsValid())
 	{
 		FPlatformProcess::WaitForProc(handle);
-
 
 		if (GEngine) {
 			GEngine->XRSystem->GetStereoRenderingDevice()->EnableStereo(true);
@@ -70,11 +52,6 @@ void AGetCLMonitorComponentActor::BeginPlay()
 {
 	Super::BeginPlay();
 	UE_LOG(LogTemp, Warning, TEXT("[AGetCLMonitorComponentActor::BeginPlay] Start."));
-
-	/* get keys */
-	//if (!AGetCLMonitorComponentActor::InitializeHPKeys()) {
-	//	UE_DEBUG_BREAK();
-	//}
 
 	/* run calibration */
 	//Calibrate();
@@ -149,7 +126,7 @@ bool AGetCLMonitorComponentActor::GetPlayerCameraComponent(UCameraComponent*& Ca
 	/* get pawn*/
 	Pawn = Cast<APawnMain>(MouseKeyboardPlayerController->GetPawn());
 	if (Pawn == nullptr) {
-		UE_LOG(LogTemp, Error, TEXT("[AGetCLMonitorComponentActor::GetPlayerCameraComponent] PawnMain == nullptr ."));
+		UE_LOG(LogTemp, Error, TEXT("[AGetCLMonitorComponentActor::GetPlayerCameraComponent] Pawn == nullptr ."));
 		return false;
 	}
 

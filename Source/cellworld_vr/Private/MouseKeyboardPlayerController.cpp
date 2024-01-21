@@ -1,5 +1,5 @@
 #include "MouseKeyboardPlayerController.h"
-#include "GameModeMain.h"
+//#include "GameModeMain.h"
 
 AMouseKeyboardPlayerController::AMouseKeyboardPlayerController()
 {
@@ -24,7 +24,8 @@ void AMouseKeyboardPlayerController::SetupInputComponent()
 	InputComponent->BindAxis("MoveRight", this, &AMouseKeyboardPlayerController::MoveRight);
 	InputComponent->BindAxis("Turn", this, &AMouseKeyboardPlayerController::Turn);
 	InputComponent->BindAxis("LookUp", this, &AMouseKeyboardPlayerController::LookUp);
-	
+
+	InputComponent->BindAction("ResetOrigin", EInputEvent::IE_Pressed, this, &AMouseKeyboardPlayerController::ResetOrigin);
 }
 
 void AMouseKeyboardPlayerController::Tick(float DeltaTime)
@@ -33,6 +34,13 @@ void AMouseKeyboardPlayerController::Tick(float DeltaTime)
 
 	if (!PossessedPawn) {
 		PossessedPawn = Cast<APawnMain>(GetPawn());
+	}
+}
+
+void AMouseKeyboardPlayerController::ResetOrigin()
+{
+	if (PossessedPawn) {
+		PossessedPawn->ResetOrigin();
 	}
 }
 
