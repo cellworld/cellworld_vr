@@ -154,10 +154,19 @@ bool AGetCLMonitorComponentActor::DrawEyeTraceOnPlayer(float DeltaTime)
 
 	/* trace params  */
 	const FVector trace_start = CameraComponent->GetComponentLocation();
-	const FVector trace_end = trace_start + UKismetMathLibrary::TransformDirection(CameraComponent->GetComponentTransform(), eye_combined_gaze)*250;
+	const FVector trace_end = trace_start + UKismetMathLibrary::TransformDirection(CameraComponent->GetComponentTransform(), eye_combined_gaze)*10*100; // 10 meters = 10*100 u.u. (1 cm = 100 u.u)
 	FHitResult hit_result;
+	
 	const FCollisionQueryParams collision_params;
+
 	GetWorld()->LineTraceSingleByChannel(hit_result, trace_start, trace_end, ECollisionChannel::ECC_Visibility, collision_params);
+	
+	/* if raycast hit an actor */
+	if (hit_result.Actor.Get()) {
+		FString name;
+		hit_result.Actor.Get()->GetName(name);
+		GEngine->AddOnScreenDebugMessage(-1, 1, FColor::Green, FString::Printf(TEXT("[AGetCLMonitorComponentActor::DrawEyeTraceOnPlayer] hit_result.Actor->UniqueID: %s"), *name));
+	}
 
 	/* debug circle params */
 	const float draw_duration = DeltaTime/2; // same as tick, update per frame

@@ -6,8 +6,9 @@ Virtual Reality project for Unreal Engine 4.27 for testing the HP Reverb G2 VR H
 ## To do: 
 
 - save user head positions, rotations, etc for eye-tracking analysis (similar to FGetPlayerTraversePath)
-- figure out a new calibration method to find depth/actor player is looking at
-- occlusion spawning: check for black pixel in image and spawn actor there (can be an occlusion). 
+- figure out a new calibration method to find depth/actor player is looking at (papers support just cast a ray and use temporal information to infer if the object was focused on or not)
+- occlusion spawning: check for black pixel in image and spawn actor there (can be an occlusion). Add unique Id with AActor->SetActorLabel("New_label")
+- HMD Tracking and world scaling: Need to get original HMD position in space. PlayerInitHMDPosAndOrientation = WorldOrigin (door of experiment). 
 
 ## Omnicept SDK
 
@@ -31,20 +32,15 @@ From Heart rate we can get the tandard deviation between two normal heartbeats (
 | Heart Rate Variability (HRV) | SDNN and RMSSD (milliseconds) | 0.016 Hz (1 samp/minute) |
 | PPG Sensor | Requires special permissions from HP to access | [PPG Information](http://https//developers.hp.com/system/files/attachments/HPO-CLD%20Technical%20Report%204.30.21.pdf) |
 
-<<<<<<< HEAD
-=======
-
->>>>>>> origin/master
 #### Caveats & Limitations
 Heart Rate Variability takes a minimum of 70 seconds to report a reading. 
 If HRV does not have enough data for a reading, the reported value will be 0.
 Not intended for use as a clinical device.
 
-
 ## Setup 
 Complete description and images of steps are provided in [Getting Started with Omnicept](https://developers.hp.com/omnicept/docs/fundamentals), I recommend you follow these if it is your first time using OmniceptSDK and HPGlia Plugin. 
 
-### tl;dr
+### tl;dr	
 1. Create HP Developer account and then download (and install) [Omnicept Developer SDK](https://developers.hp.com/omnicept/hp-omnicept-sdk).
 2. Follow [these steps](https://developers.hp.com/omnicept/docs/console/getting-started) to generate an HP developer license (composed of an client id and access key) in the [HP Console](https://omnicept-console.hpbp.io/).
 3. Follow [usage steps](https://developers.hp.com/omnicept/docs/ue4/getting-started#usage) to attach license (remember it's 2 items) values into ```HPGlia Settings ``` from within the Unreal Editor (```Edit > Project Settings > Plugins > HP Glia Settings```).

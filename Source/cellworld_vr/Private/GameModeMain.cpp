@@ -56,7 +56,7 @@ void AGameModeMain::SpawnAndPossessPlayer(FVector spawn_location, FRotator spawn
 
 	if(!GetWorld() || !GetWorld()->GetFirstPlayerController()) { UE_DEBUG_BREAK(); return; }
 	AGameModeMain::PawnMain = Cast<APawnMain>(GetWorld()->GetFirstPlayerController()->GetPawn());
-	if (AGameModeMain::PawnMain) {
+	if (!AGameModeMain::PawnMain) {
 		AGameModeMain::PawnMain->ResetOrigin();
 	}
 
