@@ -168,13 +168,16 @@ bool AGetCLMonitorComponentActor::DrawEyeTraceOnPlayer(float DeltaTime)
 		GEngine->AddOnScreenDebugMessage(-1, 1, FColor::Green, FString::Printf(TEXT("[AGetCLMonitorComponentActor::DrawEyeTraceOnPlayer] hit_result.Actor->UniqueID: %s"), *name));
 	}
 
+
+	GEngine->AddOnScreenDebugMessage(-1, 1, FColor::Green, FString::Printf(TEXT("[AGetCLMonitorComponentActor::DrawEyeTraceOnPlayer] hit_result.Actor->UniqueID: %s")));
+
 	/* debug circle params */
 	const float draw_duration = DeltaTime/2; // same as tick, update per frame
 	const uint8 depth = 10; // to do: make this vary with pupil dilation and openess
-	const float radius = 0.5f;
+	const float radius = 1.0f;
 	const int segments = 5;
 	const uint8 depth_priority = 0;
-	const float thickness = 0.5;
+	const float thickness = 1.0f;
 
 	//DrawDebugLine(GetWorld(), trace_start, trace_end, FColor::Red, false, draw_duration); // line following view direction
 	DrawDebugSphere(GetWorld(), trace_end, radius, segments, FColor::Red, false, 0.5f, draw_duration, thickness); // spehere showing view 

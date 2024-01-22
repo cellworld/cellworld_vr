@@ -42,7 +42,7 @@ APawnMain::APawnMain() : Super()
 	/* ** TEST ** create instance of our movement component */
 	OurMovementComponentChar = CreateDefaultSubobject<UCharacterMovementComponent>(TEXT("CharacterMovementComponent"));
 	OurMovementComponentChar->MaxStepHeight = 100.0f;
-	OurMovementComponentChar->MaxWalkSpeed = 1'200.0f;
+	OurMovementComponentChar->MaxWalkSpeed = 2'000.0f;
 	OurMovementComponentChar->MaxAcceleration = 4000.0f;
 	OurMovementComponentChar->BrakingDecelerationWalking = 4'000.0f;
 	OurMovementComponentChar->bDeferUpdateMoveComponent = true;
@@ -167,6 +167,14 @@ void APawnMain::BeginPlay()
 void APawnMain::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
+
+	const FVector Loc = this->Camera->GetComponentLocation();
+	const FRotator Rot = this->Camera->GetComponentRotation();
+	
+	UE_LOG(LogTemp, Warning, TEXT("Loc: %f, %f, %f."),Loc.X,Loc.Y,Loc.Z);
+	UE_LOG(LogTemp, Warning, TEXT("Rot: %f, %f, %f."),Rot.Yaw,Rot.Pitch,Rot.Roll);
+	
+
 }
 
 void APawnMain::EndPlay(const EEndPlayReason::Type EndPlayReason)
