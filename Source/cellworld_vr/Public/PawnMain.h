@@ -39,6 +39,7 @@ public:
 	void Turn(float AxisValue);
 	void LookUp(float AxisValue);
 	void ResetOrigin();
+	void RestartGame();
 	void QuitGame();
 
 
@@ -51,12 +52,15 @@ protected:
 public:
 	virtual void Tick(float DeltaTime) override;
 	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
+	virtual void Reset() override; 
+
 	/* === properties === */
 	//UPROPERTY(VisibleDefaultsOnly, meta = (Category = "Default"))
 	class UCapsuleComponent* CollisionCylinder;
 	class USkeletalMeshComponent* CharacterMeshComponent;
 	class UCharacterMovementComponent* CharacterMoveComponent;
 	class UCameraComponent* Camera;
+	UCapsuleComponent* CapsuleComponent;
 	class UArrowComponent* Arrow;
 	class USkeletalMeshComponent* CharacterMesh;
 	class UCharacterMovementComponent* CharMoveComp;
@@ -88,4 +92,9 @@ public:
 	/* helpers for camera stuff */
 	UCameraComponent* GetCameraComponent();
 
+private: 
+	const float capsule_radius      = 30.0f;
+	const float player_height       = 175.0f; // 1.75 m
+	const float capsule_half_height = player_height / 2;
+	const FVector camera_location = FVector(0.0f, 0.0f, capsule_half_height);
 };

@@ -17,6 +17,12 @@ Virtual Reality project for Unreal Engine 4.27 for testing the HP Reverb G2 VR H
 
     - get pupil location -> get camera height -> get introcular distance (IOD) -> for a single eye: eye_vec.origin (2D) = { pupil position (0.5,0.5 is middle) - IOD/2 (+ IOD/2 for right eye), camera_height) ->  -> get eye-openness (for depth magnitude, will add later) -> solve for interception point ->  
 
+- control pawn collision component location based on HMD (camera) position in an FThread
+
+## Notes: 
+
+- Habitat (mouse) to human scale -> 2.63 (length_pred (1.75 m for humans) * 1.4 (prey to predator scale) * 21 (#cells) = 2.63) 
+
 ## Omnicept SDK
 
 Very brief sensor description below. Make sure to carefully go over the [G2 system overview](https://developers.hp.com/omnicept/docs/fundamentals#system-overview).

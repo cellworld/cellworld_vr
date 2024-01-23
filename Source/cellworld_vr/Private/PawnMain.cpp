@@ -8,10 +8,8 @@
 #include "Components/SphereComponent.h"
 #include "Components/SceneComponent.h"
 #include "Components/SkeletalMeshComponent.h"
-
 #include "HeadMountedDisplayFunctionLibrary.h"
 #include "IXRTrackingSystem.h"
-
 #include "Engine/GameEngine.h"
 #include "GameFramework/PlayerController.h"
 #include "GameFramework/CharacterMovementComponent.h"
@@ -29,31 +27,31 @@ APawnMain::APawnMain() : Super()
 {
 	PrimaryActorTick.bStartWithTickEnabled = true;
 	PrimaryActorTick.bCanEverTick = true;
+	/* create camera component as root so pawn moves with camera */
+	Camera = CreateDefaultSubobject<UCameraComponent>(TEXT("ActualCamera"));
+	Camera->bUsePawnControlRotation = true;
+	//Camera->AddRelativeLocation(FVector(0.0f, 0.0f, capsule_half_height));
+	RootComponent = Camera; 
 
 	/* create collision component */
-	UCapsuleComponent* CapsuleComponent = CreateDefaultSubobject<UCapsuleComponent>(TEXT("RootComponent"));
-	RootComponent = CapsuleComponent;
+	CapsuleComponent = CreateDefaultSubobject<UCapsuleComponent>(TEXT("RootComponent"));
+	CapsuleComponent->AttachToComponent(RootComponent, FAttachmentTransformRules::KeepRelativeTransform);
 	CapsuleComponent->SetMobility(EComponentMobility::Movable);
-	CapsuleComponent->InitCapsuleSize(10.0f, 40.0f);
+	CapsuleComponent->InitCapsuleSize(capsule_radius, capsule_half_height);
 	CapsuleComponent->SetCollisionProfileName(TEXT("Pawn"));
 	CapsuleComponent->OnComponentBeginOverlap.AddDynamic(this, &APawnMain::OnOverlapBegin); // overlap events
 	CapsuleComponent->OnComponentEndOverlap.AddDynamic(this, &APawnMain::OnOverlapEnd); // overlap events 
 
-	/* camera component */
-	Camera = CreateDefaultSubobject<UCameraComponent>(TEXT("ActualCamera"));
-	Camera->AttachToComponent(RootComponent, FAttachmentTransformRules::KeepRelativeTransform);
 
-	/* ** TEST ** create instance of our movement component */
+	/* create instance of our movement component */
 	OurMovementComponentChar = CreateDefaultSubobject<UCharacterMovementComponent>(TEXT("CharacterMovementComponent"));
 	OurMovementComponentChar->MaxStepHeight = 100.0f;
-	OurMovementComponentChar->MaxWalkSpeed = 2'000.0f;
+	OurMovementComponentChar->MaxWalkSpeed = 4000.0f;
 	OurMovementComponentChar->MaxAcceleration = 4000.0f;
 	OurMovementComponentChar->BrakingDecelerationWalking = 4'000.0f;
 	OurMovementComponentChar->bDeferUpdateMoveComponent = true;
 	OurMovementComponentChar->SetActive(true);
 	OurMovementComponentChar->UpdatedComponent = RootComponent;
-
-	//this->SetActorRelativeScale3D(FVector(0.117, 0.117, 0.117));
 
 	///* auto-possess */
 	EAutoReceiveInput::Type::Player0;
@@ -109,6 +107,7 @@ void APawnMain::MoveForward(float AxisValue)
 		{
 			FVector ActorForwardVector = GetActorForwardVector();
 			ActorForwardVector.Z = 0.0;
+			//Camera->AddRelativeLocation(ActorForwardVector * AxisValue, true);
 			OurMovementComponentChar->AddInputVector(ActorForwardVector * AxisValue, true);
 			this->UpdateMovementComponent(ActorForwardVector * AxisValue, /*force*/ true);
 		}
@@ -142,11 +141,22 @@ void APawnMain::LookUp(float AxisValue)
 void APawnMain::ResetOrigin() 
 {
 	//FQuat Quat = FQuat();
-	GEngine->AddOnScreenDebugMessage(-1, 0.5f, FColor::Red, FString::Printf(TEXT("Reset origin.")));
 	UHeadMountedDisplayFunctionLibrary::SetTrackingOrigin(EHMDTrackingOrigin::Floor);
-	APawnMain::Camera->SetWorldLocationAndRotation(FVector::ZeroVector, FRotator::ZeroRotator);
-	APawnMain::SetActorLocationAndRotation(FVector::ZeroVector, FRotator::ZeroRotator, false);
+
+	APawnMain::SetActorLocationAndRotation(FVector(0.0f, 0.0f, capsule_half_height), FRotator::ZeroRotator, false);
+	//APawnMain::RootComponent->AddRelativeLocation(FVector(0.0f, 0.0f, capsule_half_height));
+
+	/* reset height of pawn to match height of HMD */
+	//float CameraHeight = Camera->GetComponentLocation().Z - GetActorLocation().Z; // 1.75 m (human) * 1.4 (scale of world to human)
+	//UCapsuleComponent* CapsuleComponent = Cast<UCapsuleComponent>(GetRootComponent());
+	//CapsuleComponent->SetCapsuleHalfHeight(CameraHeight / 2);
 	//APawnMain::SetWorldLocationAndRotation(FVector::ZeroVector, FRotator::ZeroRotator);
+}
+
+void APawnMain::RestartGame() {
+
+	FName level_loading = TEXT("L_Loading");
+	UGameplayStatics::OpenLevel(this, level_loading, true);
 }
 
 void APawnMain::QuitGame()
@@ -177,18 +187,22 @@ void APawnMain::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
-	const FVector Loc = this->Camera->GetComponentLocation();
-	const FRotator Rot = this->Camera->GetComponentRotation();
-
-	/*UE_LOG(LogTemp, Warning, TEXT("Loc: %f, %f, %f."), Loc.X, Loc.Y, Loc.Z);
-	UE_LOG(LogTemp, Warning, TEXT("Rot: %f, %f, %f."), Rot.Yaw, Rot.Pitch, Rot.Roll);*/
-
-	/*
-	test notes: 
-
-	1m = 100 units
+	FVector Loc = this->Camera->GetComponentLocation();
+	UE_LOG(LogTemp, Warning, TEXT("camera: %f, %f, %f."), Loc.X, Loc.Y, Loc.Z);
+	Loc.Z = 0;
 	
-	*/
+	//this->RootComponent->SetWorldLocation(Loc);
+
+	//this->SetActorLocation(Loc);
+
+	//const FRotator Rot = this->Camera->GetComponentRotation();
+	//UE_LOG(LogTemp, Warning, TEXT("Rot: %f, %f, %f."), Rot.Yaw, Rot.Pitch, Rot.Roll);
+
+	Loc = this->RootComponent->GetComponentLocation();
+	UE_LOG(LogTemp, Warning, TEXT("root: %f, %f, %f."), Loc.X, Loc.Y, Loc.Z);
+
+	Loc = this->GetActorLocation();
+	UE_LOG(LogTemp, Warning, TEXT("pawn: %f, %f, %f."), Loc.X, Loc.Y, Loc.Z);
 
 }
 
@@ -196,6 +210,12 @@ void APawnMain::EndPlay(const EEndPlayReason::Type EndPlayReason)
 {
 	//UE_LOG(LogTemp, Warning, TEXT("[APawnMain::EndPlay] Destroying pawn."));
 	//APawnMain::Destroy(EEndPlayReason::Destroyed);
+}
+
+void APawnMain::Reset()
+{
+	Super::Reset();
+
 }
 
 void APawnMain::OnOverlapBegin(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)

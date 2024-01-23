@@ -16,18 +16,24 @@ class CELLWORLD_VR_API AMouseKeyboardPlayerController : public APlayerController
 public:
 	AMouseKeyboardPlayerController();
 
+	/* overrides */
 	virtual void BeginPlay() override;
 	virtual void SetupInputComponent() override;
 	virtual void Tick(float DeltaTime) override;
 
+	/* game flow */
 	void ResetOrigin();
 	void QuitGame();
+	void RestartGame();
+
+	/* movement */
 	void MoveForward(float AxisValue);
 	void MoveRight(float AxisValue);
 	void Turn(float AxisValue);
 	void LookUp(float AxisValue);
 	void Jump();
 
+	/* pawn to control */
 	APawnMain* PossessedPawn;
 
 };

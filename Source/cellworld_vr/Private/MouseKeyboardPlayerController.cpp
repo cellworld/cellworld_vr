@@ -27,6 +27,14 @@ void AMouseKeyboardPlayerController::SetupInputComponent()
 
 	InputComponent->BindAction("ResetOrigin", EInputEvent::IE_Pressed, this, &AMouseKeyboardPlayerController::ResetOrigin);
 	InputComponent->BindAction("QuitGame", EInputEvent::IE_Pressed, this, &AMouseKeyboardPlayerController::QuitGame);
+	InputComponent->BindAction("RestartGame", EInputEvent::IE_Pressed, this, &AMouseKeyboardPlayerController::RestartGame);
+}
+
+void AMouseKeyboardPlayerController::RestartGame()
+{
+	if (PossessedPawn) {
+		PossessedPawn->RestartGame();
+	}
 }
 
 void AMouseKeyboardPlayerController::Tick(float DeltaTime)

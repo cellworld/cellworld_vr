@@ -29,26 +29,6 @@ bool FGetCLMonitorComponentThread::ConnectToDevice() {
 	return bIsConnected;
 }
 
-///* changes state of bIsConnected*/
-//bool FGetCLMonitorComponentThread::ConnectToDevice() {
-//
-//	World = CurrentThreadActor->GetWorldReferenceFromActor();
-//	if (!World) { return false; }
-//	
-//	UGameInstanceMain* GI = Cast<UGameInstanceMain>(UGameplayStatics::GetGameInstance(World));
-//	if (!GI) { return false; }
-//
-//	/*const FString access_key = "F8OK38DWnRgqJgr5aaUhgcfBPHoEe5toBiDGGREkR2DWeZxgTKFpCF5YvAdnHd-S";
-//	const FString client_id = "25b17c6b-3386-45f8-9e1e-88d76259b5bf";*/
-//	UHPGliaClient::ConnectToGliaAsync(GI->client_id, GI->access_key, ELicensingModel::CORE);
-//
-//	if (UHPGliaClient::IsConnected()) { UE_LOG(LogTemp, Error, TEXT("[FGetCLMonitorComponentThread::ConnectToDevice()] HPGlia Client connection: FAILED.")); return false; }
-//	else { UE_LOG(LogTemp, Warning, TEXT("[FGetCLMonitorComponentThread::ConnectToDevice()] HPGlia Client connection: SUCCESS.")); }
-//
-//	//UHPGliaClient::ConnectToGliaAsync(HPGliaKeys::CLIENT_ID, HPGliaKeys::ACCESS_KEY, ELicensingModel::REV_SHARE);
-//	return true;;
-//}
-
 bool FGetCLMonitorComponentThread::GetEyeTracking(FEyeTracking& OutEyeTracking) {
 	return UHPGliaClient::GetEyeTracking(EyeData);
 }
