@@ -107,7 +107,12 @@ uint32 FGetCLMonitorComponentThread::Run()
 		UHPGliaClient::GetEyeTracking(HPEye);
 
 		/* push sample GetCLMonitorActor*/
-		CurrentThreadActor->eye_combined_gaze = HPEye.CombinedGaze;
+		CurrentThreadActor->eye_left             = HPEye.LeftGaze;
+		CurrentThreadActor->eye_right            = HPEye.RightGaze;
+		CurrentThreadActor->pupil_position_left  = HPEye.LeftPupilPosition;
+		CurrentThreadActor->pupil_position_right = HPEye.RightPupilPosition;
+		CurrentThreadActor->eye_combined_gaze    = HPEye.CombinedGaze;
+
 
 		/* save the data */
 		save_line = HPEye.SystemTime.ToString() + "," + 

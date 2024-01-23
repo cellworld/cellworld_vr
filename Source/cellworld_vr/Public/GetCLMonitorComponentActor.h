@@ -53,6 +53,11 @@ public:
 	UCameraComponent* CameraComponent = nullptr;
 	AMouseKeyboardPlayerController* MouseKeyboardPlayerController = nullptr; 
 	FVector eye_combined_gaze;
+	FVector eye_left; 
+	FVector eye_right; 
+	FVector pupil_position_left; 
+	FVector pupil_position_right;
+
 	const int player_index = 0;
 	bool IsVectorAllZeros(const FVector Vec);
 	bool IsVectorAllNegativeOnes(const FVector Vec);

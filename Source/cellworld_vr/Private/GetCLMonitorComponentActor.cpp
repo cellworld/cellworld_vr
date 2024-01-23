@@ -104,6 +104,7 @@ bool AGetCLMonitorComponentActor::IsEyeDataValid(FVector Vec) {
 		return true;
 	}
 }
+
 bool AGetCLMonitorComponentActor::IsWorldValid(UWorld*& World) {
 	
 	if (GetWorld()) {
@@ -142,9 +143,17 @@ bool AGetCLMonitorComponentActor::GetPlayerCameraComponent(UCameraComponent*& Ca
 /* runs a couple steps before showing line trace */
 bool AGetCLMonitorComponentActor::IsTraceAvailable() {
 	/* make sure that the eye data array isn't empty */
-	if (!AGetCLMonitorComponentActor::IsEyeDataValid(eye_combined_gaze) || (!AGetCLMonitorComponentActor::IsWorldValid(WorldRef)) || (!AGetCLMonitorComponentActor::GetPlayerCameraComponent(CameraComponent))) {
+	/*if (!AGetCLMonitorComponentActor::IsEyeDataValid(eye_combined_gaze) || (!AGetCLMonitorComponentActor::IsWorldValid(WorldRef)) || (!AGetCLMonitorComponentActor::GetPlayerCameraComponent(CameraComponent))) {
+		return false;
+	}*/
+
+	if (!AGetCLMonitorComponentActor::IsEyeDataValid(eye_left) || (!AGetCLMonitorComponentActor::IsWorldValid(WorldRef)) || (!AGetCLMonitorComponentActor::GetPlayerCameraComponent(CameraComponent))) {
 		return false;
 	}
+	if (!AGetCLMonitorComponentActor::IsEyeDataValid(eye_right) || (!AGetCLMonitorComponentActor::IsWorldValid(WorldRef)) || (!AGetCLMonitorComponentActor::GetPlayerCameraComponent(CameraComponent))) {
+		return false;
+	}
+
 	return true;
 }
 
@@ -153,8 +162,9 @@ bool AGetCLMonitorComponentActor::DrawEyeTraceOnPlayer(float DeltaTime)
 	if (!AGetCLMonitorComponentActor::IsTraceAvailable()) { return false; }
 
 	/* trace params  */
-	const FVector trace_start = CameraComponent->GetComponentLocation();
-	const FVector trace_end = trace_start + UKismetMathLibrary::TransformDirection(CameraComponent->GetComponentTransform(), eye_combined_gaze)*10*100; // 10 meters = 10*100 u.u. (1 cm = 100 u.u)
+	const FVector trace_start = CameraComponent->GetComponentLocation(); // from camera component location
+	const FTransform trace_transform = CameraComponent->GetComponentTransform();
+	const FVector trace_end = trace_start + UKismetMathLibrary::TransformDirection(trace_transform, eye_combined_gaze)*10000*100; // 10 meters = 10*100 u.u. (1 cm = 100 u.u)
 	FHitResult hit_result;
 	
 	const FCollisionQueryParams collision_params;
@@ -165,22 +175,50 @@ bool AGetCLMonitorComponentActor::DrawEyeTraceOnPlayer(float DeltaTime)
 	if (hit_result.Actor.Get()) {
 		FString name;
 		hit_result.Actor.Get()->GetName(name);
-		GEngine->AddOnScreenDebugMessage(-1, 1, FColor::Green, FString::Printf(TEXT("[AGetCLMonitorComponentActor::DrawEyeTraceOnPlayer] hit_result.Actor->UniqueID: %s"), *name));
+		//GEngine->AddOnScreenDebugMessage(-1, 1, FColor::Green, FString::Printf(TEXT("[AGetCLMonitorComponentActor::DrawEyeTraceOnPlayer] hit_result.Actor->UniqueID: %s"), *name));
 	}
 
+	/* ======== dual eye line trace ============ */
+	FVector viewpoint;
+	FRotator rot;
+	Pawn->GetActorEyesViewPoint(viewpoint, rot);
 
-	GEngine->AddOnScreenDebugMessage(-1, 1, FColor::Green, FString::Printf(TEXT("[AGetCLMonitorComponentActor::DrawEyeTraceOnPlayer] hit_result.Actor->UniqueID: %s")));
+	const float IPD = 6.5f; // 65mm -> cm = u.u
+	const float eye_position_horizontal_offset = IPD / 2; // left/right from center of HMD 
 
-	/* debug circle params */
+	//FVector trace_start_left = trace_start;
+	FVector trace_start_left = viewpoint;
+	trace_start_left.X = trace_start_left.X - eye_position_horizontal_offset;
+
+	//FVector trace_start_right = trace_start;
+	FVector trace_start_right = viewpoint;
+	trace_start_right.X = trace_start_right.X + eye_position_horizontal_offset;
+
+	/* trace params  */
+
+	const FVector trace_end_left = trace_start_left + UKismetMathLibrary::TransformDirection(CameraComponent->GetComponentTransform(), eye_left) * 1000 * 100; // 10 meters = 10*100 u.u. (1 cm = 100 u.u)
+	FHitResult hit_result_left;
+	const FCollisionQueryParams collision_params_left;
+
+	const FVector trace_end_right = trace_start_right + UKismetMathLibrary::TransformDirection(CameraComponent->GetComponentTransform(), eye_right) * 1000 * 100; // 10 meters = 10*100 u.u. (1 cm = 100 u.u)
+	FHitResult hit_result_right;
+	const FCollisionQueryParams collision_params_right;
+
+	/*GetWorld()->LineTraceSingleByChannel(hit_result_left, trace_start_left, trace_end_left, ECollisionChannel::ECC_Visibility, collision_params_left);
+	GetWorld()->LineTraceSingleByChannel(hit_result_right, trace_start_right, trace_end_right, ECollisionChannel::ECC_Visibility, collision_params_right);*/
+
+	/* ====== debug circle params ====== */
 	const float draw_duration = DeltaTime/2; // same as tick, update per frame
 	const uint8 depth = 10; // to do: make this vary with pupil dilation and openess
 	const float radius = 1.0f;
 	const int segments = 5;
-	const uint8 depth_priority = 0;
-	const float thickness = 1.0f;
+	const uint8 depth_priority = 1;
+	const float thickness = 0.25f;
 
-	//DrawDebugLine(GetWorld(), trace_start, trace_end, FColor::Red, false, draw_duration); // line following view direction
-	DrawDebugSphere(GetWorld(), trace_end, radius, segments, FColor::Red, false, 0.5f, draw_duration, thickness); // spehere showing view 
+	DrawDebugLine(GetWorld(), trace_start_left, trace_end_left, FColor::Red, true, draw_duration, depth_priority, thickness); // line following view direction
+	//DrawDebugLine(GetWorld(), trace_start, trace_end, FColor::Orange, true, draw_duration, depth_priority, thickness); // line following view direction
+	DrawDebugLine(GetWorld(), trace_start_right, trace_end_right, FColor::Green, true, draw_duration, depth_priority, thickness); // line following view direction
+	//DrawDebugSphere(GetWorld(), trace_end, radius, segments, FColor::Blue, false, 0.5f, draw_duration, thickness); // spehere showing view 
 
 	return true;
 }

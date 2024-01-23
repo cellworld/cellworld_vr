@@ -26,6 +26,7 @@ void AMouseKeyboardPlayerController::SetupInputComponent()
 	InputComponent->BindAxis("LookUp", this, &AMouseKeyboardPlayerController::LookUp);
 
 	InputComponent->BindAction("ResetOrigin", EInputEvent::IE_Pressed, this, &AMouseKeyboardPlayerController::ResetOrigin);
+	InputComponent->BindAction("QuitGame", EInputEvent::IE_Pressed, this, &AMouseKeyboardPlayerController::QuitGame);
 }
 
 void AMouseKeyboardPlayerController::Tick(float DeltaTime)

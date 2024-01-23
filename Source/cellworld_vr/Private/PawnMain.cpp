@@ -8,6 +8,10 @@
 #include "Components/SphereComponent.h"
 #include "Components/SceneComponent.h"
 #include "Components/SkeletalMeshComponent.h"
+
+#include "HeadMountedDisplayFunctionLibrary.h"
+#include "IXRTrackingSystem.h"
+
 #include "Engine/GameEngine.h"
 #include "GameFramework/PlayerController.h"
 #include "GameFramework/CharacterMovementComponent.h"
@@ -49,6 +53,7 @@ APawnMain::APawnMain() : Super()
 	OurMovementComponentChar->SetActive(true);
 	OurMovementComponentChar->UpdatedComponent = RootComponent;
 
+	//this->SetActorRelativeScale3D(FVector(0.117, 0.117, 0.117));
 
 	///* auto-possess */
 	EAutoReceiveInput::Type::Player0;
@@ -138,9 +143,8 @@ void APawnMain::ResetOrigin()
 {
 	//FQuat Quat = FQuat();
 	GEngine->AddOnScreenDebugMessage(-1, 0.5f, FColor::Red, FString::Printf(TEXT("Reset origin.")));
-	
+	UHeadMountedDisplayFunctionLibrary::SetTrackingOrigin(EHMDTrackingOrigin::Floor);
 	APawnMain::Camera->SetWorldLocationAndRotation(FVector::ZeroVector, FRotator::ZeroRotator);
-	//APawnMain::SetActorLocation(FVector(0.0f, 0.0f, 0.0f), false);
 	APawnMain::SetActorLocationAndRotation(FVector::ZeroVector, FRotator::ZeroRotator, false);
 	//APawnMain::SetWorldLocationAndRotation(FVector::ZeroVector, FRotator::ZeroRotator);
 }
@@ -163,6 +167,11 @@ void APawnMain::BeginPlay()
 	Super::BeginPlay();
 }
 
+float IPDtoUU() {
+	const float IPD_cm = 6.50f; // interpupillary distance 
+	return IPD_cm * 100;
+}
+
 // Called every frame
 void APawnMain::Tick(float DeltaTime)
 {
@@ -170,10 +179,16 @@ void APawnMain::Tick(float DeltaTime)
 
 	const FVector Loc = this->Camera->GetComponentLocation();
 	const FRotator Rot = this->Camera->GetComponentRotation();
+
+	/*UE_LOG(LogTemp, Warning, TEXT("Loc: %f, %f, %f."), Loc.X, Loc.Y, Loc.Z);
+	UE_LOG(LogTemp, Warning, TEXT("Rot: %f, %f, %f."), Rot.Yaw, Rot.Pitch, Rot.Roll);*/
+
+	/*
+	test notes: 
+
+	1m = 100 units
 	
-	UE_LOG(LogTemp, Warning, TEXT("Loc: %f, %f, %f."),Loc.X,Loc.Y,Loc.Z);
-	UE_LOG(LogTemp, Warning, TEXT("Rot: %f, %f, %f."),Rot.Yaw,Rot.Pitch,Rot.Roll);
-	
+	*/
 
 }
 
