@@ -144,7 +144,7 @@ void APawnMain::ResetOrigin()
 	//FQuat Quat = FQuat();
 	UHeadMountedDisplayFunctionLibrary::SetTrackingOrigin(EHMDTrackingOrigin::Floor);
 
-	APawnMain::SetActorLocationAndRotation(FVector(0.0f, 0.0f, capsule_half_height), FRotator::ZeroRotator, false);
+	//APawnMain::SetActorLocationAndRotation(FVector(120.0f, 30.0f, capsule_half_height), FRotator(-180.0f,0.0f,0.0f), false);
 	//APawnMain::RootComponent->AddRelativeLocation(FVector(0.0f, 0.0f, capsule_half_height));
 
 	/* reset height of pawn to match height of HMD */

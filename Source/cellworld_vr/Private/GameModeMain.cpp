@@ -11,7 +11,7 @@
 AGameModeMain::AGameModeMain()
 {
 	/* Get PawnMain_BP to spawn */
-	if (true){ 
+	if (false){ 
 		DefaultPawnClass = APawnDebug::StaticClass(); 
 	}
 	else { 
@@ -97,36 +97,21 @@ void AGameModeMain::SpawnAllLoggingActor()
 	/* player path */
 }
 
-
 void AGameModeMain::StartPlay()
 {
 	Super::StartPlay();
-	UE_LOG(LogTemp, Warning, TEXT("[AGameModeMain::StartPlay()] Starting game!\n"));
+	UE_LOG(LogTemp, Warning, TEXT("[AGameModeMain::StartPlay()] Starting game!"));
 
 	/* spawn player */
 	AGameModeMain::SpawnAndPossessPlayer(spawn_location_player, spawn_rotation_player);
-
-	/* spawn eyetracker monitor */
-	//AGameModeMain::SpawnGetCLMonitorComponentActor();
-
-	//if (AGameModeMain::InitializeHPKeys()) {
-	//	UE_DEBUG_BREAK();
-	//}
-
-	//const FString access_key = "F8OK38DWnRgqJgr5aaUhgcfBPHoEe5toBiDGGREkR2DWeZxgTKFpCF5YvAdnHd-S";
-	//const FString client_id = "25b17c6b-3386-45f8-9e1e-88d76259b5bf";
-	//UHPGliaClient::ConnectToGliaAsync(client_id, access_key, ELicensingModel::CORE);
-
 }
 
 void AGameModeMain::EndPlay(const EEndPlayReason::Type EndPlayReason)
 {
 	Super::EndPlay(EndPlayReason);
-	//AGameModeMain::PawnMain = nullptr;
 }
 
 void AGameModeMain::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
-
 }
