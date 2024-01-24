@@ -55,7 +55,7 @@ void AGetCLMonitorComponentActor::BeginPlay()
 
 	/* run calibration */
 	//Calibrate();
-	InitThread();
+	//InitThread();
 }
 
 void AGetCLMonitorComponentActor::InitThread()
@@ -226,7 +226,7 @@ bool AGetCLMonitorComponentActor::DrawEyeTraceOnPlayer(float DeltaTime)
 void AGetCLMonitorComponentActor::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
-	AGetCLMonitorComponentActor::DrawEyeTraceOnPlayer(DeltaTime);
+	//AGetCLMonitorComponentActor::DrawEyeTraceOnPlayer(DeltaTime);
 }
  
 void AGetCLMonitorComponentActor::EndPlay(EEndPlayReason::Type EndPlayReason)

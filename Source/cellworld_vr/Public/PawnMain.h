@@ -43,6 +43,9 @@ public:
 	void QuitGame();
 
 
+	/* temp */
+	FVector RelLoc;
+
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;

@@ -1,4 +1,6 @@
+#pragma once
 #include "MouseKeyboardPlayerController.h"
+#include "GameModeMain.h"
 //#include "GameModeMain.h"
 
 AMouseKeyboardPlayerController::AMouseKeyboardPlayerController()
@@ -11,8 +13,12 @@ void AMouseKeyboardPlayerController::BeginPlay()
 {
 	Super::BeginPlay();
 	UE_LOG(LogTemp, Warning, TEXT("AMouseKeyboardPlayerController::BeginPlay()"));
-
-	PossessedPawn = Cast<APawnMain>(GetPawn());
+	AGameModeMain* GameMode;
+	if (GetWorld()) {
+		GameMode = (AGameModeMain*)GetWorld()->GetAuthGameMode();
+		PossessedPawn = Cast<APawnDebug>(GetPawn());
+	}
+	return;
 }
 
 // Called to bind functionality to input
@@ -32,9 +38,9 @@ void AMouseKeyboardPlayerController::SetupInputComponent()
 
 void AMouseKeyboardPlayerController::RestartGame()
 {
-	if (PossessedPawn) {
+	/*if (PossessedPawn) {
 		PossessedPawn->RestartGame();
-	}
+	}*/
 }
 
 void AMouseKeyboardPlayerController::Tick(float DeltaTime)
@@ -42,7 +48,7 @@ void AMouseKeyboardPlayerController::Tick(float DeltaTime)
 	Super::Tick(DeltaTime);
 
 	if (!PossessedPawn) {
-		PossessedPawn = Cast<APawnMain>(GetPawn());
+		PossessedPawn = Cast<APawnDebug>(GetPawn());
 	}
 }
 
@@ -62,9 +68,9 @@ void AMouseKeyboardPlayerController::Jump()
 
 void AMouseKeyboardPlayerController::QuitGame()
 {
-	if (PossessedPawn) {
-		PossessedPawn->QuitGame();
-	}
+	//if (PossessedPawn) {
+	//	PossessedPawn->QuitGame();
+	//}
 }
 
 void AMouseKeyboardPlayerController::MoveForward(float AxisValue)

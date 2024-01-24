@@ -4,13 +4,19 @@
 #include "GameFramework/PlayerStart.h"
 #include "PawnMain.h" 
 #include "GameStateMain.h"
+#include "PawnDebug.h"
 #include "HPGlia.h"
 #include "MouseKeyboardPlayerController.h"
 
 AGameModeMain::AGameModeMain()
 {
 	/* Get PawnMain_BP to spawn */
-	DefaultPawnClass = APawnMain::StaticClass();
+	if (true){ 
+		DefaultPawnClass = APawnDebug::StaticClass(); 
+	}
+	else { 
+		DefaultPawnClass = APawnMain::StaticClass(); 
+	}
 
 	/* Assign default game state */
 	GameStateClass = AGameStateMain::StaticClass();
@@ -23,9 +29,9 @@ AGameModeMain::AGameModeMain()
 	PrimaryActorTick.bCanEverTick = true;
 }
 
-void AGameModeMain::EndMatch()
+void AGameModeMain::EndGame()
 {
-	UE_LOG(LogTemp, Warning, TEXT("[ AGameModeMain::EndMatch()] Force quit."));
+	UE_LOG(LogTemp, Warning, TEXT("[ AGameModeMain::EndGame()] Force quit."));
 	FGenericPlatformMisc::RequestExit(false);
 }
 
@@ -56,18 +62,10 @@ void AGameModeMain::SpawnAndPossessPlayer(FVector spawn_location, FRotator spawn
 
 	if(!GetWorld() || !GetWorld()->GetFirstPlayerController()) { UE_DEBUG_BREAK(); return; }
 	AGameModeMain::PawnMain = Cast<APawnMain>(GetWorld()->GetFirstPlayerController()->GetPawn());
-	if (!AGameModeMain::PawnMain) {
+	if (AGameModeMain::PawnMain) {
 		AGameModeMain::PawnMain->ResetOrigin();
 	}
-
-	//APlayerStart* NewPlayerStart = GetWorld()->SpawnActor<APlayerStart>(APlayerStart::StaticClass(), FVector(-999.0, -999.0, -990.0), FRotator(0.0,0.0,0.0), SpawnInfo);
-	//AGameModeMain::PawnMain = Cast<APawnMain>(GetWorld()->SpawnActor(DefaultPawnClass, &spawn_location, &spawn_rotation, SpawnInfo));
-
-	//APawnMain* TempChar = Cast<APawnMain>(GetWorld()->SpawnActor(DefaultPawnClass, &spawn_location, &spawn_rotation, SpawnInfo));
 	EAutoReceiveInput::Type::Player0;
-
-	//EAutoPossessAI::PlacedInWorldOrSpawned;
-	//GetWorld()->GetFirstPlayerController()->Possess(AGameModeMain::PawnMain);
 }
 
 void AGameModeMain::InitGame(const FString& MapName, const FString& Options, FString& ErrorMessage)
@@ -109,7 +107,7 @@ void AGameModeMain::StartPlay()
 	AGameModeMain::SpawnAndPossessPlayer(spawn_location_player, spawn_rotation_player);
 
 	/* spawn eyetracker monitor */
-	AGameModeMain::SpawnGetCLMonitorComponentActor();
+	//AGameModeMain::SpawnGetCLMonitorComponentActor();
 
 	//if (AGameModeMain::InitializeHPKeys()) {
 	//	UE_DEBUG_BREAK();
@@ -124,7 +122,7 @@ void AGameModeMain::StartPlay()
 void AGameModeMain::EndPlay(const EEndPlayReason::Type EndPlayReason)
 {
 	Super::EndPlay(EndPlayReason);
-	AGameModeMain::PawnMain = nullptr;
+	//AGameModeMain::PawnMain = nullptr;
 }
 
 void AGameModeMain::Tick(float DeltaTime)

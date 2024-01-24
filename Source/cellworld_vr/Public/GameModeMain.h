@@ -20,8 +20,10 @@ class CELLWORLD_VR_API AGameModeMain : public AGameModeBase
 {
 public:
 	GENERATED_BODY()
-	virtual void EndMatch();
+	virtual void EndGame();
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Custom Category")
+	bool bInDebugMode = false;
 	
 protected:
 	AGameModeMain();

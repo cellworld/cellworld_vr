@@ -18,7 +18,7 @@
 #include "Kismet/KismetStringLibrary.h" 
 #include "Kismet/KismetMathLibrary.h"
 #include "NavAreas/NavArea_Obstacle.h"
-#include "PawnMainMovementComponent.h"
+//#include "PawnMainMovementComponent.h"
 
 // Sets default values
 AGameModeMain* GameMode; // forward declare to avoid circular dependency
@@ -29,8 +29,9 @@ APawnMain::APawnMain() : Super()
 	PrimaryActorTick.bCanEverTick = true;
 	/* create camera component as root so pawn moves with camera */
 	Camera = CreateDefaultSubobject<UCameraComponent>(TEXT("ActualCamera"));
+	Camera->SetMobility(EComponentMobility::Movable);
 	Camera->bUsePawnControlRotation = true;
-	//Camera->AddRelativeLocation(FVector(0.0f, 0.0f, capsule_half_height));
+	Camera->AddRelativeLocation(FVector(0.0f, 0.0f, capsule_half_height));
 	RootComponent = Camera; 
 
 	/* create collision component */
@@ -85,7 +86,7 @@ void APawnMain::UpdateMovementComponent(FVector InputVector, bool bForce)
 	OurMovementComponentChar->ConsumeInputVector() also returns 0.
 	For now, we have this working.
 	*/
-
+	//this->RootComponent->AddWorldOffset(InputVector);
 	OurMovementComponentChar->SafeMoveUpdatedComponent(
 		InputVector,
 		OurMovementComponentChar->UpdatedComponent->GetComponentQuat(),
@@ -168,7 +169,7 @@ void APawnMain::QuitGame()
 	}
 
 	GameMode = (AGameModeMain*)GetWorld()->GetAuthGameMode();
-	GameMode->EndMatch();
+	GameMode->EndGame();
 }
 
 // Called when the game starts or when spawned
@@ -189,20 +190,18 @@ void APawnMain::Tick(float DeltaTime)
 
 	FVector Loc = this->Camera->GetComponentLocation();
 	UE_LOG(LogTemp, Warning, TEXT("camera: %f, %f, %f."), Loc.X, Loc.Y, Loc.Z);
-	Loc.Z = 0;
-	
-	//this->RootComponent->SetWorldLocation(Loc);
-
-	//this->SetActorLocation(Loc);
-
-	//const FRotator Rot = this->Camera->GetComponentRotation();
-	//UE_LOG(LogTemp, Warning, TEXT("Rot: %f, %f, %f."), Rot.Yaw, Rot.Pitch, Rot.Roll);
-
-	Loc = this->RootComponent->GetComponentLocation();
+	//Loc.Z = 0;
+	Loc = this->CapsuleComponent->GetComponentLocation();
 	UE_LOG(LogTemp, Warning, TEXT("root: %f, %f, %f."), Loc.X, Loc.Y, Loc.Z);
-
 	Loc = this->GetActorLocation();
 	UE_LOG(LogTemp, Warning, TEXT("pawn: %f, %f, %f."), Loc.X, Loc.Y, Loc.Z);
+
+	FRotator Rot = this->Camera->GetComponentRotation();
+	UE_LOG(LogTemp, Warning, TEXT("Rot root: %f, %f, %f."), Rot.Yaw, Rot.Pitch, Rot.Roll);
+
+	Rot = this->GetActorRotation();
+	UE_LOG(LogTemp, Warning, TEXT("Rot pawn: %f, %f, %f."), Rot.Yaw, Rot.Pitch, Rot.Roll);
+
 
 }
 

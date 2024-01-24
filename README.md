@@ -17,7 +17,8 @@ Virtual Reality project for Unreal Engine 4.27 for testing the HP Reverb G2 VR H
 
     - get pupil location -> get camera height -> get introcular distance (IOD) -> for a single eye: eye_vec.origin (2D) = { pupil position (0.5,0.5 is middle) - IOD/2 (+ IOD/2 for right eye), camera_height) ->  -> get eye-openness (for depth magnitude, will add later) -> solve for interception point ->  
 
-- control pawn collision component location based on HMD (camera) position in an FThread
+- add spacebar to start trial and open door.
+
 
 ## Notes: 
 

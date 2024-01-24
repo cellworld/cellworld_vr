@@ -1,6 +1,7 @@
 #pragma once
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
+#include "PawnMain.h"
 #include "Core/Public/HAL/Runnable.h"
 #include "Core/Public/HAL/RunnableThread.h"
 #include "HeadMountedDisplayTypes.h" 

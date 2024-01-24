@@ -21,7 +21,6 @@ bool FGetCLMonitorComponentThread::ConnectToDevice() {
 	UHPGliaClient::ConnectToGliaAsync(client_id, access_key, ELicensingModel::CORE);
 
 	bIsConnected = UHPGliaClient::IsConnected();
-
 	/* to do: check connection, returns false but I get data that matches the demo...? confusing...*/
 	if (!bIsConnected) { UE_LOG(LogTemp, Error, TEXT("[FGetCLMonitorComponentThread::ConnectToDevice()] HPGlia Client connection: FAILED.")); }
 	else { UE_LOG(LogTemp, Log, TEXT("[FGetCLMonitorComponentThread::ConnectToDevice()] HPGlia Client connection: SUCCESS.")); }
@@ -61,10 +60,42 @@ FString FGetCLMonitorComponentThread::GetVariableHeader()
 	return H1 + H2 + H3;
 }
 
+void FGetCLMonitorComponentThread::Disconnect() {
+	UHPGliaClient::DisconnectFromGlia();
+}
+
+bool FGetCLMonitorComponentThread::SaveToString(FEyeTracking HPEye) {
+	FString line = HPEye.SystemTime.ToString() + "," +
+		FString::SanitizeFloat(HPEye.CombinedGaze.X) + "," + FString::SanitizeFloat(HPEye.CombinedGaze.Y) + "," + FString::SanitizeFloat(HPEye.CombinedGaze.Z) + "," +
+		FString::SanitizeFloat(HPEye.LeftGaze.X) + "," + FString::SanitizeFloat(HPEye.LeftGaze.Y) + "," + FString::SanitizeFloat(HPEye.LeftGaze.Z) + "," + FString::SanitizeFloat(HPEye.LeftGazeConfidence) + "," +
+		FString::SanitizeFloat(HPEye.RightGaze.X) + "," + FString::SanitizeFloat(HPEye.RightGaze.Y) + "," + FString::SanitizeFloat(HPEye.RightGaze.Z) + "," + FString::SanitizeFloat(HPEye.RightGazeConfidence) + "," +
+		FString::SanitizeFloat(HPEye.LeftPupilPosition.X) + "," + FString::SanitizeFloat(HPEye.LeftPupilPosition.Y) + "," + FString::SanitizeFloat(HPEye.LeftPupilPosition.Z) + "," + FString::SanitizeFloat(HPEye.LeftPupilPositionConfidence) + "," +
+		FString::SanitizeFloat(HPEye.RightPupilPosition.X) + "," + FString::SanitizeFloat(HPEye.RightPupilPosition.Y) + "," + FString::SanitizeFloat(HPEye.RightPupilPosition.Z) + "," + FString::SanitizeFloat(HPEye.RightPupilPositionConfidence) + "," +
+		FString::SanitizeFloat(HPEye.LeftPupilDilation) + "," + FString::SanitizeFloat(HPEye.LeftPupilDilationConfidence) + "," + FString::SanitizeFloat(HPEye.RightPupilDilation) + "," + FString::SanitizeFloat(HPEye.RightPupilDilationConfidence) + "," +
+		FString::SanitizeFloat(HPEye.LeftEyeOpenness) + "," + FString::SanitizeFloat(HPEye.LeftEyeOpennessConfidence) + "," + FString::SanitizeFloat(HPEye.RightEyeOpenness) + "," + FString::SanitizeFloat(HPEye.RightEyeOpennessConfidence) + "\n";
+
+	/* print eye data */
+	//UE_LOG(LogTemp, Log, TEXT("[FGetCLMonitorComponentThread::Run()] HPGlia::GetEyeTracking() saving line -> %s"), *save_line);
+	IFileManager* FileManager = nullptr;
+	if (!FileManager) { return false; }
+	return UTextFileManager::SaveTxt(*line, *filename);
+}
+
+bool FGetCLMonitorComponentThread::PushDataToParentActor(FEyeTracking HPEye) {
+	if (!CurrentThreadActor) { return false; }
+	CurrentThreadActor->eye_left = HPEye.LeftGaze;
+	CurrentThreadActor->eye_right = HPEye.RightGaze;
+	CurrentThreadActor->pupil_position_left = HPEye.LeftPupilPosition;
+	CurrentThreadActor->pupil_position_right = HPEye.RightPupilPosition;
+	CurrentThreadActor->eye_combined_gaze = HPEye.CombinedGaze;
+
+	return true;
+}
+
 uint32 FGetCLMonitorComponentThread::Run()
 {
-	const FString ProjectDirectory = FPaths::ConvertRelativePathToFull(FPaths::ProjectDir());
-	FString filename = ProjectDirectory + "Data/data.csv";
+	ProjectDirectory = FPaths::ConvertRelativePathToFull(FPaths::ProjectDir());
+	filename = ProjectDirectory + "Data/data.csv";
 	FString save_line = FGetCLMonitorComponentThread::GetVariableHeader();
 		
 	UE_LOG(LogTemp, Warning, TEXT("[FGetCLMonitorComponentThread::Run()] HPGlia::GetEyeTracking() saving line -> %s"), *save_line);
@@ -87,32 +118,15 @@ uint32 FGetCLMonitorComponentThread::Run()
 		UHPGliaClient::GetEyeTracking(HPEye);
 
 		/* push sample GetCLMonitorActor*/
-		CurrentThreadActor->eye_left             = HPEye.LeftGaze;
-		CurrentThreadActor->eye_right            = HPEye.RightGaze;
-		CurrentThreadActor->pupil_position_left  = HPEye.LeftPupilPosition;
-		CurrentThreadActor->pupil_position_right = HPEye.RightPupilPosition;
-		CurrentThreadActor->eye_combined_gaze    = HPEye.CombinedGaze;
-
+		if (!FGetCLMonitorComponentThread::PushDataToParentActor(HPEye)) { UE_DEBUG_BREAK(); }
 
 		/* save the data */
-		save_line = HPEye.SystemTime.ToString() + "," + 
-			FString::SanitizeFloat(HPEye.CombinedGaze.X) + "," + FString::SanitizeFloat(HPEye.CombinedGaze.Y) + "," + FString::SanitizeFloat(HPEye.CombinedGaze.Z) + "," +
-			FString::SanitizeFloat(HPEye.LeftGaze.X) + "," + FString::SanitizeFloat(HPEye.LeftGaze.Y) + "," + FString::SanitizeFloat(HPEye.LeftGaze.Z) + "," + FString::SanitizeFloat(HPEye.LeftGazeConfidence) + "," +
-			FString::SanitizeFloat(HPEye.RightGaze.X) + "," + FString::SanitizeFloat(HPEye.RightGaze.Y) + "," + FString::SanitizeFloat(HPEye.RightGaze.Z) + "," + FString::SanitizeFloat(HPEye.RightGazeConfidence) + "," +
-			FString::SanitizeFloat(HPEye.LeftPupilPosition.X) + "," + FString::SanitizeFloat(HPEye.LeftPupilPosition.Y) + "," + FString::SanitizeFloat(HPEye.LeftPupilPosition.Z) + "," + FString::SanitizeFloat(HPEye.LeftPupilPositionConfidence) + "," +
-			FString::SanitizeFloat(HPEye.RightPupilPosition.X) + "," + FString::SanitizeFloat(HPEye.RightPupilPosition.Y) + "," + FString::SanitizeFloat(HPEye.RightPupilPosition.Z) + "," + FString::SanitizeFloat(HPEye.RightPupilPositionConfidence) + "," +
-			FString::SanitizeFloat(HPEye.LeftPupilDilation) + "," + FString::SanitizeFloat(HPEye.LeftPupilDilationConfidence) + "," + FString::SanitizeFloat(HPEye.RightPupilDilation) + "," + FString::SanitizeFloat(HPEye.RightPupilDilationConfidence) + "," +
-			FString::SanitizeFloat(HPEye.LeftEyeOpenness) + "," + FString::SanitizeFloat(HPEye.LeftEyeOpennessConfidence) + "," + FString::SanitizeFloat(HPEye.RightEyeOpenness) + "," + FString::SanitizeFloat(HPEye.RightEyeOpennessConfidence) + "\n";
-		
-		/* print eye data */
-		//UE_LOG(LogTemp, Log, TEXT("[FGetCLMonitorComponentThread::Run()] HPGlia::GetEyeTracking() saving line -> %s"), *save_line);
-		IFileManager *FileManager = nullptr;
-		if (!UTextFileManager::SaveTxt(*save_line, *filename)) { UE_DEBUG_BREAK(); }
+		if (!FGetCLMonitorComponentThread::SaveToString(HPEye)) { UE_DEBUG_BREAK(); }
 
-		//i += 1; 
-		//FPlatformProcess::Sleep(0.1f); // sleep 
+		FPlatformProcess::Sleep(0.1f); // sleep 
 	}
 
+	Disconnect();
 	UE_LOG(LogTemp, Warning, TEXT("[FGetCLMonitorComponentThread::Run()] Ending thread."));
 	return 0;
 }
