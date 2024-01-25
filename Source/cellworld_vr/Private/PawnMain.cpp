@@ -31,7 +31,6 @@ APawnMain::APawnMain() : Super()
 	Camera = CreateDefaultSubobject<UCameraComponent>(TEXT("ActualCamera"));
 	Camera->SetMobility(EComponentMobility::Movable);
 	Camera->bUsePawnControlRotation = true;
-	//Camera->AddRelativeLocation(FVector(0.0f, 0.0f, capsule_half_height));
 	RootComponent = Camera; 
 
 	/* create collision component */
@@ -45,7 +44,7 @@ APawnMain::APawnMain() : Super()
 
 	///* auto-possess */
 	EAutoReceiveInput::Type::Player0;
-	EAutoPossessAI::PlacedInWorldOrSpawned;
+	//EAutoPossessAI::PlacedInWorldOrSpawned;
 }
 
 // Called to bind functionality to input
@@ -54,7 +53,7 @@ void APawnMain::SetupPlayerInputComponent(class UInputComponent* InInputComponen
 	Super::SetupPlayerInputComponent(InInputComponent);
 
 	/* map toggling stuff */
-	InInputComponent->BindAction("MenuToggleAny", IE_Pressed, this, &APawnMain::ResetOrigin);
+	InInputComponent->BindAction("ResetOrigin", IE_Pressed, this, &APawnMain::ResetOrigin);
 }
 
 UCameraComponent* APawnMain::GetCameraComponent()
@@ -62,11 +61,10 @@ UCameraComponent* APawnMain::GetCameraComponent()
 	return APawnMain::Camera;
 }
 
-
 void APawnMain::ResetOrigin() 
 {
-	//FQuat Quat = FQuat();
 	UHeadMountedDisplayFunctionLibrary::SetTrackingOrigin(EHMDTrackingOrigin::Floor);
+	this->SetActorLocation(FVector(500.0f, -300.0f, 0.0f), false);
 }
 
 void APawnMain::RestartGame() {
@@ -91,6 +89,17 @@ void APawnMain::QuitGame()
 void APawnMain::BeginPlay()
 {
 	Super::BeginPlay();
+	FRotator orientation;
+	GEngine->XRSystem->GetHMDDevice()->EnableHMD();
+	if (GEngine->XRSystem->GetHMDDevice()->IsHMDConnected()) {
+		GEngine->XRSystem->GetHMDData(this, HMDData);
+		HMDPosition = HMDData.Position;
+	}
+	else {
+		UE_DEBUG_BREAK();
+	}
+	this->RootComponent->AddLocalOffset(HMDPosition);
+	//this->SetActorLocation(FVector(500.0f, -300.0f, 0.0f) + HMDPosition, false);
 }
 
 float IPDtoUU() {
@@ -102,7 +111,18 @@ float IPDtoUU() {
 void APawnMain::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
+	current_location = this->GetActorLocation();
+	UE_LOG(LogTemp, Warning, TEXT("[APawnMain::Tick] actor location: %f %f %f."), current_location.X, current_location.Y, current_location.Y);
 
+	FQuat DeviceRotation;
+	FVector DevicePosition;
+	FVector FinalPosition;
+
+	GEngine->XRSystem->GetCurrentPose(IXRTrackingSystem::HMDDeviceId, DeviceRotation, DevicePosition);
+	UE_LOG(LogTemp, Warning, TEXT("[APawnMain::Tick] device location: %f %f %f.\n"), DevicePosition.X, DevicePosition.Y, current_location.Y);
+
+	APlayerController* PlayerController = UGameplayStatics::GetPlayerController(GetWorld(), 0);
+	FinalPosition = this->GetActorRotation().RotateVector(DevicePosition) + PlayerController->PlayerCameraManager->GetCameraLocation();
 }
 
 void APawnMain::EndPlay(const EEndPlayReason::Type EndPlayReason)
@@ -114,7 +134,6 @@ void APawnMain::EndPlay(const EEndPlayReason::Type EndPlayReason)
 void APawnMain::Reset()
 {
 	Super::Reset();
-
 }
 
 void APawnMain::OnOverlapBegin(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)

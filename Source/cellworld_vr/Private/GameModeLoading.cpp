@@ -56,8 +56,6 @@ void AGameModeLoading::StartPlay()
 {
 	Super::StartPlay();
 	UE_LOG(LogTemp, Warning, TEXT("[AGameModeMain::StartPlay()] Starting game!\n"));
-
-
 }
 
 void AGameModeLoading::EndPlay(const EEndPlayReason::Type EndPlayReason)

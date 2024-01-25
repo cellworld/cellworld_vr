@@ -7,22 +7,23 @@
 #include "PawnDebug.h"
 #include "HPGlia.h"
 #include "MouseKeyboardPlayerController.h"
+#include "PlayerControllerVR.h"
 
 AGameModeMain::AGameModeMain()
 {
 	/* Get PawnMain_BP to spawn */
-	if (false){ 
+	bool DEBUG = true; 
+	if (DEBUG){
 		DefaultPawnClass = APawnDebug::StaticClass(); 
+		PlayerControllerClass = AMouseKeyboardPlayerController::StaticClass();
 	}
 	else { 
 		DefaultPawnClass = APawnMain::StaticClass(); 
+		PlayerControllerClass = APlayerControllerVR::StaticClass();
 	}
 
 	/* Assign default game state */
 	GameStateClass = AGameStateMain::StaticClass();
-
-	/* assing default (for now) player controller */
-	PlayerControllerClass = AMouseKeyboardPlayerController::StaticClass();
 
 	/* standard defaults */
 	PrimaryActorTick.bStartWithTickEnabled = true;
@@ -63,7 +64,7 @@ void AGameModeMain::SpawnAndPossessPlayer(FVector spawn_location, FRotator spawn
 	if(!GetWorld() || !GetWorld()->GetFirstPlayerController()) { UE_DEBUG_BREAK(); return; }
 	AGameModeMain::PawnMain = Cast<APawnMain>(GetWorld()->GetFirstPlayerController()->GetPawn());
 	if (AGameModeMain::PawnMain) {
-		AGameModeMain::PawnMain->ResetOrigin();
+		//AGameModeMain::PawnMain->ResetOrigin();
 	}
 	EAutoReceiveInput::Type::Player0;
 }
