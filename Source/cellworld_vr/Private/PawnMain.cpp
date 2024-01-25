@@ -31,6 +31,8 @@ APawnMain::APawnMain() : Super()
 	Camera = CreateDefaultSubobject<UCameraComponent>(TEXT("ActualCamera"));
 	Camera->SetMobility(EComponentMobility::Movable);
 	Camera->bUsePawnControlRotation = true;
+	Camera->AddRelativeLocation(FVector(0.0f, 0.0f, capsule_half_height), false);
+	Camera->AddRelativeRotation(FRotator(-180.0, 0.0f, 0.0f), false);
 	RootComponent = Camera; 
 
 	/* create collision component */
@@ -64,7 +66,8 @@ UCameraComponent* APawnMain::GetCameraComponent()
 void APawnMain::ResetOrigin() 
 {
 	UHeadMountedDisplayFunctionLibrary::SetTrackingOrigin(EHMDTrackingOrigin::Floor);
-	this->SetActorLocation(FVector(500.0f, -300.0f, 0.0f), false);
+	UHeadMountedDisplayFunctionLibrary::ResetOrientationAndPosition(0.0f, EOrientPositionSelector::OrientationAndPosition);
+	//this->SetActorLocation(FVector(500.0f, -300.0f, 0.0f), false);
 }
 
 void APawnMain::RestartGame() {
@@ -75,8 +78,6 @@ void APawnMain::RestartGame() {
 
 void APawnMain::QuitGame()
 {
-	// end match 
-	// get game mode ->EndMatch(); 
 	if (GEngine) {
 		GEngine->AddOnScreenDebugMessage(-1, 0.5f, FColor::Red, FString::Printf(TEXT("Quit game.")));
 	}
@@ -89,17 +90,7 @@ void APawnMain::QuitGame()
 void APawnMain::BeginPlay()
 {
 	Super::BeginPlay();
-	FRotator orientation;
-	GEngine->XRSystem->GetHMDDevice()->EnableHMD();
-	if (GEngine->XRSystem->GetHMDDevice()->IsHMDConnected()) {
-		GEngine->XRSystem->GetHMDData(this, HMDData);
-		HMDPosition = HMDData.Position;
-	}
-	else {
-		UE_DEBUG_BREAK();
-	}
-	this->RootComponent->AddLocalOffset(HMDPosition);
-	//this->SetActorLocation(FVector(500.0f, -300.0f, 0.0f) + HMDPosition, false);
+	//UHeadMountedDisplayFunctionLibrary::ResetOrientationAndPosition(0.0f, EOrientPositionSelector::OrientationAndPosition);
 }
 
 float IPDtoUU() {
@@ -111,7 +102,7 @@ float IPDtoUU() {
 void APawnMain::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
-	current_location = this->GetActorLocation();
+	current_location = this->RootComponent->GetComponentLocation();
 	UE_LOG(LogTemp, Warning, TEXT("[APawnMain::Tick] actor location: %f %f %f."), current_location.X, current_location.Y, current_location.Y);
 
 	FQuat DeviceRotation;

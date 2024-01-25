@@ -103,8 +103,6 @@ void APawnDebug::ResetOrigin()
 void APawnDebug::BeginPlay()
 {
 	Super::BeginPlay();
-
-	//this->SetActorRotation(this->Camera->GetComponentRotation());
 }
 
 // Called every frame
@@ -144,7 +142,6 @@ void APawnDebug::UpdateMovementComponent(FVector InputVector, bool bForce)
 		bForce,
 		OutHit,
 		TeleportType);
-
 }
 
 void APawnDebug::MoveForward(float AxisValue)

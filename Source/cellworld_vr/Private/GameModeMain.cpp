@@ -12,7 +12,7 @@
 AGameModeMain::AGameModeMain()
 {
 	/* Get PawnMain_BP to spawn */
-	bool DEBUG = true; 
+	bool DEBUG = false; 
 	if (DEBUG){
 		DefaultPawnClass = APawnDebug::StaticClass(); 
 		PlayerControllerClass = AMouseKeyboardPlayerController::StaticClass();
