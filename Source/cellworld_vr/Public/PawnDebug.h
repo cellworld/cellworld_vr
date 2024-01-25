@@ -11,6 +11,7 @@
 #include "Components/CapsuleComponent.h"
 #include "Components/SphereComponent.h"
 #include "Components/SceneComponent.h"
+#include "HeadMountedDisplay.h"
 #include "PawnDebug.generated.h"
 
 UCLASS()
@@ -68,4 +69,8 @@ public:
 	void MoveRight(float AxisValue);
 	void Turn(float AxisValue);
 	void LookUp(float AxisValue);
+
+	FVector current_location;
+	FVector HMDPosition;
+	FXRHMDData HMDData;
 };

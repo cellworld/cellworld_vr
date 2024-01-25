@@ -4,6 +4,7 @@
 #include "PawnDebug.h"
 #include "GameModeMain.h"
 #include "HeadMountedDisplayFunctionLibrary.h"
+#include "HeadMountedDisplayTypes.h"
 #include "IXRTrackingSystem.h"
 
 // Sets default values
@@ -13,25 +14,46 @@
 APawnDebug::APawnDebug()
 {
  	// Set this pawn to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
+	//PrimaryActorTick.bStartWithTickEnabled = true;
+	//PrimaryActorTick.bCanEverTick = true;
+
+	///* create collision component */
+	//CapsuleComponent = CreateDefaultSubobject<UCapsuleComponent>(TEXT("RootComponent"));
+	//RootComponent = CapsuleComponent;
+
+	//CapsuleComponent->SetMobility(EComponentMobility::Movable);
+	//CapsuleComponent->InitCapsuleSize(125.0f, 100.0f);
+	//CapsuleComponent->SetCollisionProfileName(TEXT("Pawn"));
+	//CapsuleComponent->OnComponentBeginOverlap.AddDynamic(this, &APawnDebug::OnOverlapBegin); // overlap events
+	//CapsuleComponent->OnComponentEndOverlap.AddDynamic(this, &APawnDebug::OnOverlapEnd); // overlap events 
+
+	///* create camera component as root so pawn moves with camera */
+	//Camera = CreateDefaultSubobject<UCameraComponent>(TEXT("ActualCamera"));
+	//Camera->SetMobility(EComponentMobility::Movable);
+	//Camera->bUsePawnControlRotation = true;
+	//Camera->AttachToComponent(RootComponent, FAttachmentTransformRules::KeepRelativeTransform);
+
 	PrimaryActorTick.bStartWithTickEnabled = true;
 	PrimaryActorTick.bCanEverTick = true;
-
-	/* create collision component */
-
-	CapsuleComponent = CreateDefaultSubobject<UCapsuleComponent>(TEXT("RootComponent"));
-	RootComponent = CapsuleComponent;
-
-	CapsuleComponent->SetMobility(EComponentMobility::Movable);
-	CapsuleComponent->InitCapsuleSize(80.0f, capsule_height);
-	CapsuleComponent->SetCollisionProfileName(TEXT("Pawn"));
-	CapsuleComponent->OnComponentBeginOverlap.AddDynamic(this, &APawnDebug::OnOverlapBegin); // overlap events
-	CapsuleComponent->OnComponentEndOverlap.AddDynamic(this, &APawnDebug::OnOverlapEnd); // overlap events 
 
 	/* create camera component as root so pawn moves with camera */
 	Camera = CreateDefaultSubobject<UCameraComponent>(TEXT("ActualCamera"));
 	Camera->SetMobility(EComponentMobility::Movable);
 	Camera->bUsePawnControlRotation = true;
-	Camera->AttachToComponent(RootComponent, FAttachmentTransformRules::KeepRelativeTransform);
+	RootComponent = Camera;
+
+	/* create collision component */
+	CapsuleComponent = CreateDefaultSubobject<UCapsuleComponent>(TEXT("RootComponent"));
+	CapsuleComponent->AttachToComponent(RootComponent, FAttachmentTransformRules::KeepRelativeTransform);
+	CapsuleComponent->SetMobility(EComponentMobility::Movable);
+	//CapsuleComponent->InitCapsuleSize(125.0f, 100.0f);
+	CapsuleComponent->SetCollisionProfileName(TEXT("Pawn"));
+	CapsuleComponent->OnComponentBeginOverlap.AddDynamic(this, &APawnDebug::OnOverlapBegin); // overlap events
+	CapsuleComponent->OnComponentEndOverlap.AddDynamic(this, &APawnDebug::OnOverlapEnd); // overlap events 
+
+	///* auto-possess */
+	EAutoReceiveInput::Type::Player0;
+	EAutoPossessAI::PlacedInWorldOrSpawned;
 
 	/* create instance of our movement component */
 	OurMovementComponentChar = CreateDefaultSubobject<UCharacterMovementComponent>(TEXT("CharacterMovementComponent"));
@@ -63,14 +85,26 @@ APawnDebug::APawnDebug()
 void APawnDebug::ResetOrigin()
 {
 	UHeadMountedDisplayFunctionLibrary::SetTrackingOrigin(EHMDTrackingOrigin::Floor);
-	APawnDebug::SetActorLocationAndRotation(FVector(0.0f, 0.0f, 10), FRotator::ZeroRotator, false);
+
+	FRotator orientation;
+	GEngine->XRSystem->GetHMDDevice()->EnableHMD();
+	if (GEngine->XRSystem->GetHMDDevice()->IsHMDConnected()) {
+		GEngine->XRSystem->GetHMDData(this, HMDData);
+		HMDPosition = HMDData.Position;
+	}
+	else {
+		UE_DEBUG_BREAK();
+	}
+	this->Camera->SetRelativeRotation(HMDData.Rotation);
+	//APawnDebug::SetActorLocationAndRotation(FVector(0.0f, 0.0f, 10), FRotator::ZeroRotator, false);
 }
 
 // Called when the game starts or when spawned
 void APawnDebug::BeginPlay()
 {
 	Super::BeginPlay();
-	this->SetActorRotation(this->Camera->GetComponentRotation());
+
+	//this->SetActorRotation(this->Camera->GetComponentRotation());
 }
 
 // Called every frame
@@ -78,8 +112,6 @@ void APawnDebug::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 }
-
-
 
 // Called to bind functionality to input
 void APawnDebug::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)

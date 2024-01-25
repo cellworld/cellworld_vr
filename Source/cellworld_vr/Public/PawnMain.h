@@ -76,4 +76,8 @@ private:
 	const float player_height       = 175.0f; // 1.75 m
 	const float capsule_half_height = player_height / 2;
 	const FVector camera_location = FVector(0.0f, 0.0f, capsule_half_height);
+
+	FVector current_location; 
+	FVector HMDPosition;
+	FXRHMDData HMDData;
 };
