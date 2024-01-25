@@ -1,5 +1,4 @@
 #pragma once
-
 #include "CoreMinimal.h"
 #include "Components/StaticMeshComponent.h" 
 #include "Components/WidgetInteractionComponent.h" 
@@ -18,8 +17,6 @@
 #include "MotionControllerComponent.h"
 #include "PawnMain.generated.h"
 
-
-
 UCLASS()
 class CELLWORLD_VR_API APawnMain : public APawn
 {
@@ -29,15 +26,8 @@ public:
 
 	// Sets default values for this pawn's properties
 	APawnMain();
-	//virtual void SetupPlayerInputComponent(class UInputComponent* InInputComponent) override;
 
-	UPROPERTY() UCharacterMovementComponent* OurMovementComponentChar;
 
-	virtual UPawnMovementComponent* GetMovementComponent() const override;
-	void MoveForward(float AxisValue);
-	void MoveRight(float AxisValue);
-	void Turn(float AxisValue);
-	void LookUp(float AxisValue);
 	void ResetOrigin();
 	void RestartGame();
 	void QuitGame();
@@ -59,21 +49,8 @@ public:
 
 	/* === properties === */
 	//UPROPERTY(VisibleDefaultsOnly, meta = (Category = "Default"))
-	class UCapsuleComponent* CollisionCylinder;
-	class USkeletalMeshComponent* CharacterMeshComponent;
-	class UCharacterMovementComponent* CharacterMoveComponent;
 	class UCameraComponent* Camera;
 	UCapsuleComponent* CapsuleComponent;
-	class UArrowComponent* Arrow;
-	class USkeletalMeshComponent* CharacterMesh;
-	class UCharacterMovementComponent* CharMoveComp;
-	class UMotionControllerComponent* MotionControllerLeft;
-	class UMotionControllerComponent* MotionControllerLeftAim;
-	class UMotionControllerComponent* MotionControllerRight;
-	class UMotionControllerComponent* MotionControllerRightAim;
-	class UWidgetInteractionComponent* WidgetInteractionLeft;
-	class UWidgetInteractionComponent* WidgetInteractionRight;
-	class UWidgetInteractionComponent* WidgetInteraction;
 	
 	void SetupPlayerInputComponent(class UInputComponent* InInputComponent);
 
@@ -90,7 +67,6 @@ public:
 	/* Movement Component */
 	FHitResult OutHit;
 	ETeleportType TeleportType = ETeleportType::None;
-	void UpdateMovementComponent(FVector InputVector, bool bForce);
 
 	/* helpers for camera stuff */
 	UCameraComponent* GetCameraComponent();

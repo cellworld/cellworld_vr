@@ -12,7 +12,6 @@
 #include "IXRTrackingSystem.h"
 #include "Engine/GameEngine.h"
 #include "GameFramework/PlayerController.h"
-#include "GameFramework/CharacterMovementComponent.h"
 #include "GameFramework/CharacterMovementComponent.h" // test 
 #include "Kismet/GameplayStatics.h"
 #include "Kismet/KismetStringLibrary.h" 
@@ -27,11 +26,12 @@ APawnMain::APawnMain() : Super()
 {
 	PrimaryActorTick.bStartWithTickEnabled = true;
 	PrimaryActorTick.bCanEverTick = true;
+
 	/* create camera component as root so pawn moves with camera */
 	Camera = CreateDefaultSubobject<UCameraComponent>(TEXT("ActualCamera"));
 	Camera->SetMobility(EComponentMobility::Movable);
 	Camera->bUsePawnControlRotation = true;
-	Camera->AddRelativeLocation(FVector(0.0f, 0.0f, capsule_half_height));
+	//Camera->AddRelativeLocation(FVector(0.0f, 0.0f, capsule_half_height));
 	RootComponent = Camera; 
 
 	/* create collision component */
@@ -42,17 +42,6 @@ APawnMain::APawnMain() : Super()
 	CapsuleComponent->SetCollisionProfileName(TEXT("Pawn"));
 	CapsuleComponent->OnComponentBeginOverlap.AddDynamic(this, &APawnMain::OnOverlapBegin); // overlap events
 	CapsuleComponent->OnComponentEndOverlap.AddDynamic(this, &APawnMain::OnOverlapEnd); // overlap events 
-
-
-	/* create instance of our movement component */
-	OurMovementComponentChar = CreateDefaultSubobject<UCharacterMovementComponent>(TEXT("CharacterMovementComponent"));
-	OurMovementComponentChar->MaxStepHeight = 100.0f;
-	OurMovementComponentChar->MaxWalkSpeed = 4000.0f;
-	OurMovementComponentChar->MaxAcceleration = 4000.0f;
-	OurMovementComponentChar->BrakingDecelerationWalking = 4'000.0f;
-	OurMovementComponentChar->bDeferUpdateMoveComponent = true;
-	OurMovementComponentChar->SetActive(true);
-	OurMovementComponentChar->UpdatedComponent = RootComponent;
 
 	///* auto-possess */
 	EAutoReceiveInput::Type::Player0;
@@ -68,90 +57,16 @@ void APawnMain::SetupPlayerInputComponent(class UInputComponent* InInputComponen
 	InInputComponent->BindAction("MenuToggleAny", IE_Pressed, this, &APawnMain::ResetOrigin);
 }
 
-UPawnMovementComponent* APawnMain::GetMovementComponent() const
-{
-	return OurMovementComponentChar;
-}
-
-void APawnMain::UpdateMovementComponent(FVector InputVector, bool bForce)
-{
-	/* Apply movement, called by MoveForward() or MoveRight().
-	FVector InputVector (scaled 0-1) */
-
-	/*
-	Note: Felix, 8/30/2023
-	Could be more elegant,OurMovementComponentChar->AddInputVector() and then
-	OurMovementComponentChar->GetLastInputVector() is the ideal way to use it.
-	This would prevent having to pass FVector InputVector into UpdateMovementComponent().
-	OurMovementComponentChar->ConsumeInputVector() also returns 0.
-	For now, we have this working.
-	*/
-	//this->RootComponent->AddWorldOffset(InputVector);
-	OurMovementComponentChar->SafeMoveUpdatedComponent(
-		InputVector,
-		OurMovementComponentChar->UpdatedComponent->GetComponentQuat(),
-		bForce,
-		OutHit,
-		TeleportType);
-
-}
-
 UCameraComponent* APawnMain::GetCameraComponent()
 {
 	return APawnMain::Camera;
 }
 
-void APawnMain::MoveForward(float AxisValue)
-{
-	if (AxisValue != 0.0f) {
-		if (OurMovementComponentChar && (OurMovementComponentChar->UpdatedComponent == RootComponent))
-		{
-			FVector ActorForwardVector = GetActorForwardVector();
-			ActorForwardVector.Z = 0.0;
-			//Camera->AddRelativeLocation(ActorForwardVector * AxisValue, true);
-			OurMovementComponentChar->AddInputVector(ActorForwardVector * AxisValue, true);
-			this->UpdateMovementComponent(ActorForwardVector * AxisValue, /*force*/ true);
-		}
-	}
-}
-
-void APawnMain::MoveRight(float AxisValue)
-{
-	if (AxisValue != 0.0f) {
-		if (OurMovementComponentChar && (OurMovementComponentChar->UpdatedComponent == RootComponent))
-		{
-			this->UpdateMovementComponent(GetActorRightVector() * AxisValue, /* force */true);
-		}
-	}
-}
-
-void APawnMain::Turn(float AxisValue)
-{
-	FRotator NewRotation = GetActorRotation();
-	NewRotation.Yaw += AxisValue;
-	SetActorRotation(NewRotation);
-}
-
-void APawnMain::LookUp(float AxisValue)
-{
-	FRotator NewRotation = GetActorRotation();
-	NewRotation.Pitch += AxisValue;
-	SetActorRotation(NewRotation);
-}
 
 void APawnMain::ResetOrigin() 
 {
 	//FQuat Quat = FQuat();
 	UHeadMountedDisplayFunctionLibrary::SetTrackingOrigin(EHMDTrackingOrigin::Floor);
-
-	//APawnMain::SetActorLocationAndRotation(FVector(120.0f, 30.0f, capsule_half_height), FRotator(-180.0f,0.0f,0.0f), false);
-	//APawnMain::RootComponent->AddRelativeLocation(FVector(0.0f, 0.0f, capsule_half_height));
-
-	/* reset height of pawn to match height of HMD */
-	//float CameraHeight = Camera->GetComponentLocation().Z - GetActorLocation().Z; // 1.75 m (human) * 1.4 (scale of world to human)
-	//UCapsuleComponent* CapsuleComponent = Cast<UCapsuleComponent>(GetRootComponent());
-	//CapsuleComponent->SetCapsuleHalfHeight(CameraHeight / 2);
-	//APawnMain::SetWorldLocationAndRotation(FVector::ZeroVector, FRotator::ZeroRotator);
 }
 
 void APawnMain::RestartGame() {
@@ -187,21 +102,6 @@ float IPDtoUU() {
 void APawnMain::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
-
-	FVector Loc = this->Camera->GetComponentLocation();
-	UE_LOG(LogTemp, Warning, TEXT("camera: %f, %f, %f."), Loc.X, Loc.Y, Loc.Z);
-	//Loc.Z = 0;
-	Loc = this->CapsuleComponent->GetComponentLocation();
-	UE_LOG(LogTemp, Warning, TEXT("root: %f, %f, %f."), Loc.X, Loc.Y, Loc.Z);
-	Loc = this->GetActorLocation();
-	UE_LOG(LogTemp, Warning, TEXT("pawn: %f, %f, %f."), Loc.X, Loc.Y, Loc.Z);
-
-	FRotator Rot = this->Camera->GetComponentRotation();
-	UE_LOG(LogTemp, Warning, TEXT("Rot root: %f, %f, %f."), Rot.Yaw, Rot.Pitch, Rot.Roll);
-
-	Rot = this->GetActorRotation();
-	UE_LOG(LogTemp, Warning, TEXT("Rot pawn: %f, %f, %f."), Rot.Yaw, Rot.Pitch, Rot.Roll);
-
 
 }
 
