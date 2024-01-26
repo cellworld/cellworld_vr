@@ -12,7 +12,7 @@
 AGameModeMain::AGameModeMain()
 {
 	/* Get PawnMain_BP to spawn */
-	bool DEBUG = false; 
+	bool DEBUG = true; 
 	if (DEBUG){
 		DefaultPawnClass = APawnDebug::StaticClass(); 
 		PlayerControllerClass = AMouseKeyboardPlayerController::StaticClass();
@@ -42,18 +42,6 @@ void AGameModeMain::EndGame()
 */
 bool AGameModeMain::InitializeHPKeys() {
 
-	/* 
-		to do: fix this or delete. trying to clean up objects 
-	*/
-
-	//TArray<FString> hp_client_info; 
-	//UWorld* World = nullptr;
-	//if (GEngine) { World = GEngine->GetWorld(); }
-	//else { return false;  }
-	//if (World) { GI = Cast<UGameInstanceMain>(UGameplayStatics::GetGameInstance(World)); }
-	//else { return false;  }
-
-	//return UConfigManager::LoadHPClientKeys(GI, hp_client_info);
 	return false;
 }
 

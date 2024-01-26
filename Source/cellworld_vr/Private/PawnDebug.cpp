@@ -14,46 +14,24 @@
 APawnDebug::APawnDebug()
 {
  	// Set this pawn to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
-	//PrimaryActorTick.bStartWithTickEnabled = true;
-	//PrimaryActorTick.bCanEverTick = true;
-
-	///* create collision component */
-	//CapsuleComponent = CreateDefaultSubobject<UCapsuleComponent>(TEXT("RootComponent"));
-	//RootComponent = CapsuleComponent;
-
-	//CapsuleComponent->SetMobility(EComponentMobility::Movable);
-	//CapsuleComponent->InitCapsuleSize(125.0f, 100.0f);
-	//CapsuleComponent->SetCollisionProfileName(TEXT("Pawn"));
-	//CapsuleComponent->OnComponentBeginOverlap.AddDynamic(this, &APawnDebug::OnOverlapBegin); // overlap events
-	//CapsuleComponent->OnComponentEndOverlap.AddDynamic(this, &APawnDebug::OnOverlapEnd); // overlap events 
-
-	///* create camera component as root so pawn moves with camera */
-	//Camera = CreateDefaultSubobject<UCameraComponent>(TEXT("ActualCamera"));
-	//Camera->SetMobility(EComponentMobility::Movable);
-	//Camera->bUsePawnControlRotation = true;
-	//Camera->AttachToComponent(RootComponent, FAttachmentTransformRules::KeepRelativeTransform);
-
 	PrimaryActorTick.bStartWithTickEnabled = true;
 	PrimaryActorTick.bCanEverTick = true;
+
+	/* create collision component */
+	CapsuleComponent = CreateDefaultSubobject<UCapsuleComponent>(TEXT("RootComponent"));
+	RootComponent = CapsuleComponent;
+
+	CapsuleComponent->SetMobility(EComponentMobility::Movable);
+	CapsuleComponent->InitCapsuleSize(125.0f, 100.0f);
+	CapsuleComponent->SetCollisionProfileName(TEXT("Pawn"));
+	CapsuleComponent->OnComponentBeginOverlap.AddDynamic(this, &APawnDebug::OnOverlapBegin); // overlap events
+	CapsuleComponent->OnComponentEndOverlap.AddDynamic(this, &APawnDebug::OnOverlapEnd); // overlap events 
 
 	/* create camera component as root so pawn moves with camera */
 	Camera = CreateDefaultSubobject<UCameraComponent>(TEXT("ActualCamera"));
 	Camera->SetMobility(EComponentMobility::Movable);
 	Camera->bUsePawnControlRotation = true;
-	RootComponent = Camera;
-
-	/* create collision component */
-	CapsuleComponent = CreateDefaultSubobject<UCapsuleComponent>(TEXT("RootComponent"));
-	CapsuleComponent->AttachToComponent(RootComponent, FAttachmentTransformRules::KeepRelativeTransform);
-	CapsuleComponent->SetMobility(EComponentMobility::Movable);
-	//CapsuleComponent->InitCapsuleSize(125.0f, 100.0f);
-	CapsuleComponent->SetCollisionProfileName(TEXT("Pawn"));
-	CapsuleComponent->OnComponentBeginOverlap.AddDynamic(this, &APawnDebug::OnOverlapBegin); // overlap events
-	CapsuleComponent->OnComponentEndOverlap.AddDynamic(this, &APawnDebug::OnOverlapEnd); // overlap events 
-
-	///* auto-possess */
-	EAutoReceiveInput::Type::Player0;
-	EAutoPossessAI::PlacedInWorldOrSpawned;
+	Camera->AttachToComponent(RootComponent, FAttachmentTransformRules::KeepRelativeTransform);
 
 	/* create instance of our movement component */
 	OurMovementComponentChar = CreateDefaultSubobject<UCharacterMovementComponent>(TEXT("CharacterMovementComponent"));
@@ -86,16 +64,16 @@ void APawnDebug::ResetOrigin()
 {
 	UHeadMountedDisplayFunctionLibrary::SetTrackingOrigin(EHMDTrackingOrigin::Floor);
 
-	FRotator orientation;
-	GEngine->XRSystem->GetHMDDevice()->EnableHMD();
-	if (GEngine->XRSystem->GetHMDDevice()->IsHMDConnected()) {
-		GEngine->XRSystem->GetHMDData(this, HMDData);
-		HMDPosition = HMDData.Position;
-	}
-	else {
-		UE_DEBUG_BREAK();
-	}
-	this->Camera->SetRelativeRotation(HMDData.Rotation);
+	//FRotator orientation;
+	//GEngine->XRSystem->GetHMDDevice()->EnableHMD();
+	//if (GEngine->XRSystem->GetHMDDevice()->IsHMDConnected()) {
+	//	GEngine->XRSystem->GetHMDData(this, HMDData);
+	//	HMDPosition = HMDData.Position;
+	//}
+	//else {
+	//	UE_DEBUG_BREAK();
+	//}
+	//this->Camera->SetRelativeRotation(HMDData.Rotation);
 	//APawnDebug::SetActorLocationAndRotation(FVector(0.0f, 0.0f, 10), FRotator::ZeroRotator, false);
 }
 
@@ -149,10 +127,10 @@ void APawnDebug::MoveForward(float AxisValue)
 	if (AxisValue != 0.0f) {
 		if (OurMovementComponentChar && (OurMovementComponentChar->UpdatedComponent == RootComponent))
 		{
-			FVector ActorForwardVector = this->Camera->GetForwardVector();
-			ActorForwardVector.Z = 0.0;
-			OurMovementComponentChar->AddInputVector(ActorForwardVector * AxisValue, true);
-			this->UpdateMovementComponent(ActorForwardVector * AxisValue * 5.0, /*force*/ true);
+			FVector CameraForwardVector = this->Camera->GetForwardVector();
+			CameraForwardVector.Z = 0.0;
+			//OurMovementComponentChar->AddInputVector(ActorForwardVector * AxisValue, true);
+			this->UpdateMovementComponent(CameraForwardVector * AxisValue * 7.5, /*force*/ true);
 		}
 	}
 }
@@ -162,7 +140,9 @@ void APawnDebug::MoveRight(float AxisValue)
 	if (AxisValue != 0.0f) {
 		if (OurMovementComponentChar && (OurMovementComponentChar->UpdatedComponent == RootComponent))
 		{
-			this->UpdateMovementComponent(this->Camera->GetRightVector() * AxisValue * 5.0, /* force */true);
+			FVector CameraRightVector = this->Camera->GetRightVector();
+			CameraRightVector.Z = 0.0;
+			this->UpdateMovementComponent(CameraRightVector * AxisValue * 7.5, /* force */true);
 		}
 	}
 }
@@ -173,7 +153,8 @@ void APawnDebug::Turn(float AxisValue)
 	FRotator NewRotation = GetActorRotation();
 	//FRotator NewRotation = this->Camera->GetComponentRotation();
 	NewRotation.Yaw += AxisValue;
-	SetActorRotation(NewRotation);
+	//SetActorRotation(NewRotation);
+	this->Camera->AddRelativeRotation(NewRotation);
 }
 
 /* doesn't work with VR */

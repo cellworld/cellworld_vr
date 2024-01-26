@@ -65,7 +65,7 @@ UCameraComponent* APawnMain::GetCameraComponent()
 
 void APawnMain::ResetOrigin() 
 {
-	UHeadMountedDisplayFunctionLibrary::SetTrackingOrigin(EHMDTrackingOrigin::Floor);
+	//UHeadMountedDisplayFunctionLibrary::SetTrackingOrigin(EHMDTrackingOrigin::Floor);
 
 	FRotator HMDRotation;
 	FVector HMDLocation;
