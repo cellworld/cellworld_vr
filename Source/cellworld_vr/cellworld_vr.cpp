@@ -3,4 +3,4 @@
 #include "cellworld_vr.h"
 #include "Modules/ModuleManager.h"
 
-IMPLEMENT_PRIMARY_GAME_MODULE( FDefaultGameModuleImpl, EyeTrackingVR, "EyeTrackingVR" );
+IMPLEMENT_PRIMARY_GAME_MODULE( FDefaultGameModuleImpl, cellworld_vr, "cellworld_vr" );
