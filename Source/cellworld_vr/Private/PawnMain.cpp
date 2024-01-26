@@ -31,8 +31,8 @@ APawnMain::APawnMain() : Super()
 	Camera = CreateDefaultSubobject<UCameraComponent>(TEXT("ActualCamera"));
 	Camera->SetMobility(EComponentMobility::Movable);
 	Camera->bUsePawnControlRotation = true;
-	Camera->AddRelativeLocation(FVector(0.0f, 0.0f, capsule_half_height), false);
-	Camera->AddRelativeRotation(FRotator(-180.0, 0.0f, 0.0f), false);
+	//Camera->AddRelativeLocation(FVector(0.0f, 0.0f, capsule_half_height), false);
+	//Camera->AddRelativeRotation(FRotator(-180.0, 0.0f, 0.0f), false);
 	RootComponent = Camera; 
 
 	/* create collision component */
@@ -66,7 +66,12 @@ UCameraComponent* APawnMain::GetCameraComponent()
 void APawnMain::ResetOrigin() 
 {
 	UHeadMountedDisplayFunctionLibrary::SetTrackingOrigin(EHMDTrackingOrigin::Floor);
-	UHeadMountedDisplayFunctionLibrary::ResetOrientationAndPosition(0.0f, EOrientPositionSelector::OrientationAndPosition);
+
+	FRotator HMDRotation;
+	FVector HMDLocation;
+	UHeadMountedDisplayFunctionLibrary::GetOrientationAndPosition(HMDRotation, HMDLocation);
+	Camera->AddRelativeRotation(HMDRotation, false);
+	//UHeadMountedDisplayFunctionLibrary::ResetOrientationAndPosition(0.0f, EOrientPositionSelector::OrientationAndPosition);
 	//this->SetActorLocation(FVector(500.0f, -300.0f, 0.0f), false);
 }
 
@@ -103,14 +108,14 @@ void APawnMain::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 	current_location = this->RootComponent->GetComponentLocation();
-	UE_LOG(LogTemp, Warning, TEXT("[APawnMain::Tick] actor location: %f %f %f."), current_location.X, current_location.Y, current_location.Y);
+	UE_LOG(LogTemp, Warning, TEXT("[APawnMain::Tick] actor location: %f %f %f."), current_location.X, current_location.Y, current_location.Z);
 
 	FQuat DeviceRotation;
 	FVector DevicePosition;
 	FVector FinalPosition;
 
 	GEngine->XRSystem->GetCurrentPose(IXRTrackingSystem::HMDDeviceId, DeviceRotation, DevicePosition);
-	UE_LOG(LogTemp, Warning, TEXT("[APawnMain::Tick] device location: %f %f %f.\n"), DevicePosition.X, DevicePosition.Y, current_location.Y);
+	UE_LOG(LogTemp, Warning, TEXT("[APawnMain::Tick] device location: %f %f %f.\n"), DevicePosition.X, DevicePosition.Y, current_location.Z);
 
 	APlayerController* PlayerController = UGameplayStatics::GetPlayerController(GetWorld(), 0);
 	FinalPosition = this->GetActorRotation().RotateVector(DevicePosition) + PlayerController->PlayerCameraManager->GetCameraLocation();
