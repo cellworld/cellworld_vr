@@ -1,5 +1,4 @@
 #pragma once
-
 #include "CoreMinimal.h"
 #include "Components/StaticMeshComponent.h" 
 #include "Components/WidgetInteractionComponent.h" 
@@ -18,8 +17,6 @@
 #include "MotionControllerComponent.h"
 #include "PawnMain.generated.h"
 
-
-
 UCLASS()
 class CELLWORLD_VR_API APawnMain : public APawn
 {
@@ -29,17 +26,15 @@ public:
 
 	// Sets default values for this pawn's properties
 	APawnMain();
-	//virtual void SetupPlayerInputComponent(class UInputComponent* InInputComponent) override;
 
-	UPROPERTY() UCharacterMovementComponent* OurMovementComponentChar;
 
-	virtual UPawnMovementComponent* GetMovementComponent() const override;
-	void MoveForward(float AxisValue);
-	void MoveRight(float AxisValue);
-	void Turn(float AxisValue);
-	void LookUp(float AxisValue);
+	void ResetOrigin();
+	void RestartGame();
 	void QuitGame();
 
+
+	/* temp */
+	FVector RelLoc;
 
 protected:
 	// Called when the game starts or when spawned
@@ -48,24 +43,14 @@ protected:
 	//AGameModeMain* GameMode = nullptr; 
 
 public:
-	// Called every frame
 	virtual void Tick(float DeltaTime) override;
+	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
+	virtual void Reset() override; 
+
 	/* === properties === */
 	//UPROPERTY(VisibleDefaultsOnly, meta = (Category = "Default"))
-	class UCapsuleComponent* CollisionCylinder;
-	class USkeletalMeshComponent* CharacterMeshComponent;
-	class UCharacterMovementComponent* CharacterMoveComponent;
 	class UCameraComponent* Camera;
-	class UArrowComponent* Arrow;
-	class USkeletalMeshComponent* CharacterMesh;
-	class UCharacterMovementComponent* CharMoveComp;
-	class UMotionControllerComponent* MotionControllerLeft;
-	class UMotionControllerComponent* MotionControllerLeftAim;
-	class UMotionControllerComponent* MotionControllerRight;
-	class UMotionControllerComponent* MotionControllerRightAim;
-	class UWidgetInteractionComponent* WidgetInteractionLeft;
-	class UWidgetInteractionComponent* WidgetInteractionRight;
-	class UWidgetInteractionComponent* WidgetInteraction;
+	UCapsuleComponent* CapsuleComponent;
 	
 	void SetupPlayerInputComponent(class UInputComponent* InInputComponent);
 
@@ -82,9 +67,17 @@ public:
 	/* Movement Component */
 	FHitResult OutHit;
 	ETeleportType TeleportType = ETeleportType::None;
-	void UpdateMovementComponent(FVector InputVector, bool bForce);
 
 	/* helpers for camera stuff */
 	UCameraComponent* GetCameraComponent();
 
+private: 
+	const float capsule_radius      = 30.0f;
+	const float player_height       = 175.0f; // 1.75 m
+	const float capsule_half_height = player_height / 2;
+	const FVector camera_location = FVector(0.0f, 0.0f, capsule_half_height);
+
+	FVector current_location; 
+	FVector HMDPosition;
+	FXRHMDData HMDData;
 };

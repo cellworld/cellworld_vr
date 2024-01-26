@@ -5,6 +5,7 @@
 #include "GetCLMonitorComponentActor.h"
 #include "CLMonitorComponent.h"
 #include "ConfigManager.h"
+#include "PawnMain.h"
 //#include "PawnMain.h"
 //#include "Templates/SharedPointer.h" 
 #include "GameModeMain.generated.h"
@@ -19,12 +20,19 @@ class CELLWORLD_VR_API AGameModeMain : public AGameModeBase
 {
 public:
 	GENERATED_BODY()
-	virtual void EndMatch();
+	virtual void EndGame();
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Custom Category")
+	bool bInDebugMode = false;
 	
 protected:
 	AGameModeMain();
+
+	/* debug */
 	FVector debug_vect;
+
+	//UGameInstanceMain* GI = nullptr;
+	APawnMain* PawnMain   = nullptr;
 
 	APlayerController* PlayerControllerClassCast = nullptr;
 	FVector InitialPlayerLocation;
@@ -38,9 +46,7 @@ protected:
 	FVector spawn_location_player  = { 180.000000,-30.000000,30.000000 };
 	FRotator spawn_rotation_player = { 0.0,0.0, 0.0 };
 	void SpawnAndPossessPlayer(FVector spawn_location, FRotator spawn_rotation);
-	//APawnMain* PlayerActor; 
-
-
+	
 	/* Spawns Sensors */
 	void SpawnGetCLMonitorComponentActor();
 	AGetCLMonitorComponentActor* GetCLMonitorComponentActor = nullptr;
@@ -51,6 +57,7 @@ protected:
 	/* to store waypoint info  */
 	virtual void InitGameState();
 	virtual void StartPlay() override;
+	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 	virtual void Tick(float DeltaTime) override;
-
+	
 };

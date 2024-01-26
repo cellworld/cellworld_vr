@@ -25,12 +25,15 @@ public:
 
 	FString GetVariableHeader();
 
+	bool ConnectToDevice();
+	void Disconnect();
+
+
 	// FRunnable functions 
 	virtual uint32 Run() override;
 	virtual void Stop() override;
 	virtual void Exit() override;
 
-	bool ConnectToDevice();
 	bool bIsConnected;
 	const FString clientID;
 	const FString accessKey;
@@ -51,6 +54,10 @@ protected:
 	FRunnableThread* Thread = nullptr;
 
 	void ConvertCombinedGazeToLocation();
+	bool SaveToString(FEyeTracking HPEye);
+	bool PushDataToParentActor(FEyeTracking HPEye);
+	FString ProjectDirectory;
+	FString filename;;
 
 
 	// to save data 

@@ -2,6 +2,7 @@
 #include "CoreMinimal.h"
 #include "Engine/GameInstance.h"
 #include "Containers/Array.h" 
+#include "GameModeMain.h"
 #include "GameInstanceMain.generated.h"
 
 /**
@@ -17,6 +18,10 @@ class CELLWORLD_VR_API UGameInstanceMain : public UGameInstance
 public:
 
 	UGameInstanceMain();
+
+	AGameModeMain* GameMode = nullptr;
+
+	/* store main pawn for long term acces basically */
 
 	/* override functions frmo UGameInstance */
 	virtual void Init() override;

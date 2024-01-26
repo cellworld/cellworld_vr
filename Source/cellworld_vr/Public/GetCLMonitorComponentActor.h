@@ -1,13 +1,13 @@
 #pragma once
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
+#include "PawnMain.h"
 #include "Core/Public/HAL/Runnable.h"
 #include "Core/Public/HAL/RunnableThread.h"
 #include "HeadMountedDisplayTypes.h" 
 #include "IXRTrackingSystem.h"
 #include "StereoRendering.h"
 #include "IHeadMountedDisplay.h"
-#include "GameInstanceMain.h"
 #include "ConfigManager.h"
 #include "GameFramework/PlayerController.h"
 #include "Camera/CameraComponent.h"
@@ -23,7 +23,6 @@ class CELLWORLD_VR_API AGetCLMonitorComponentActor : public AActor
 public:
 	// Sets default values for this actor's properties
 	AGetCLMonitorComponentActor();
-	bool InitializeHPKeys();
 	bool Calibrate();
 
 private:
@@ -55,6 +54,11 @@ public:
 	UCameraComponent* CameraComponent = nullptr;
 	AMouseKeyboardPlayerController* MouseKeyboardPlayerController = nullptr; 
 	FVector eye_combined_gaze;
+	FVector eye_left; 
+	FVector eye_right; 
+	FVector pupil_position_left; 
+	FVector pupil_position_right;
+
 	const int player_index = 0;
 	bool IsVectorAllZeros(const FVector Vec);
 	bool IsVectorAllNegativeOnes(const FVector Vec);
