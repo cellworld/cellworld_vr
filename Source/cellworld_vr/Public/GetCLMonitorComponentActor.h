@@ -12,6 +12,7 @@
 #include "GameFramework/PlayerController.h"
 #include "Camera/CameraComponent.h"
 #include "MouseKeyboardPlayerController.h"
+#include "PlayerControllerVR.h"
 #include "GetCLMonitorComponentThread.h"
 #include "GetCLMonitorComponentActor.generated.h"
 
@@ -53,6 +54,7 @@ public:
 	APawnMain* Pawn = nullptr;
 	UCameraComponent* CameraComponent = nullptr;
 	AMouseKeyboardPlayerController* MouseKeyboardPlayerController = nullptr; 
+	APlayerControllerVR* PlayerControllerVR = nullptr;
 	FVector eye_combined_gaze;
 	FVector eye_left; 
 	FVector eye_right; 

@@ -107,18 +107,18 @@ float IPDtoUU() {
 void APawnMain::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
-	current_location = this->RootComponent->GetComponentLocation();
-	UE_LOG(LogTemp, Warning, TEXT("[APawnMain::Tick] actor location: %f %f %f."), current_location.X, current_location.Y, current_location.Z);
+	//current_location = this->RootComponent->GetComponentLocation();
+	//UE_LOG(LogTemp, Warning, TEXT("[APawnMain::Tick] actor location: %f %f %f."), current_location.X, current_location.Y, current_location.Z);
 
-	FQuat DeviceRotation;
-	FVector DevicePosition;
-	FVector FinalPosition;
+	//FQuat DeviceRotation;
+	//FVector DevicePosition;
+	//FVector FinalPosition;
 
-	GEngine->XRSystem->GetCurrentPose(IXRTrackingSystem::HMDDeviceId, DeviceRotation, DevicePosition);
-	UE_LOG(LogTemp, Warning, TEXT("[APawnMain::Tick] device location: %f %f %f.\n"), DevicePosition.X, DevicePosition.Y, current_location.Z);
+	//GEngine->XRSystem->GetCurrentPose(IXRTrackingSystem::HMDDeviceId, DeviceRotation, DevicePosition);
+	//UE_LOG(LogTemp, Warning, TEXT("[APawnMain::Tick] device location: %f %f %f.\n"), DevicePosition.X, DevicePosition.Y, current_location.Z);
 
-	APlayerController* PlayerController = UGameplayStatics::GetPlayerController(GetWorld(), 0);
-	FinalPosition = this->GetActorRotation().RotateVector(DevicePosition) + PlayerController->PlayerCameraManager->GetCameraLocation();
+	//APlayerController* PlayerController = UGameplayStatics::GetPlayerController(GetWorld(), 0);
+	//FinalPosition = this->GetActorRotation().RotateVector(DevicePosition) + PlayerController->PlayerCameraManager->GetCameraLocation();
 }
 
 void APawnMain::EndPlay(const EEndPlayReason::Type EndPlayReason)

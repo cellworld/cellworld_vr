@@ -55,7 +55,7 @@ void AGetCLMonitorComponentActor::BeginPlay()
 
 	/* run calibration */
 	//Calibrate();
-	//InitThread();
+	InitThread();
 }
 
 void AGetCLMonitorComponentActor::InitThread()
@@ -118,14 +118,14 @@ bool AGetCLMonitorComponentActor::IsWorldValid(UWorld*& World) {
 
 bool AGetCLMonitorComponentActor::GetPlayerCameraComponent(UCameraComponent*& Camera) {
 	/* get player controller */
-	MouseKeyboardPlayerController = Cast<AMouseKeyboardPlayerController>(UGameplayStatics::GetPlayerController(WorldRef, player_index));
-	if (!MouseKeyboardPlayerController) {
+	PlayerControllerVR = Cast<APlayerControllerVR>(UGameplayStatics::GetPlayerController(WorldRef, player_index));
+	if (!PlayerControllerVR) {
 		UE_LOG(LogTemp, Error, TEXT("[AGetCLMonitorComponentActor::GetPlayerCameraComponent] PlayerController == nullptr ."));
 		return false;
 	}
 
 	/* get pawn*/
-	Pawn = Cast<APawnMain>(MouseKeyboardPlayerController->GetPawn());
+	Pawn = Cast<APawnMain>(PlayerControllerVR->GetPawn());
 	if (Pawn == nullptr) {
 		UE_LOG(LogTemp, Error, TEXT("[AGetCLMonitorComponentActor::GetPlayerCameraComponent] Pawn == nullptr ."));
 		return false;
@@ -142,15 +142,9 @@ bool AGetCLMonitorComponentActor::GetPlayerCameraComponent(UCameraComponent*& Ca
 
 /* runs a couple steps before showing line trace */
 bool AGetCLMonitorComponentActor::IsTraceAvailable() {
-	/* make sure that the eye data array isn't empty */
-	/*if (!AGetCLMonitorComponentActor::IsEyeDataValid(eye_combined_gaze) || (!AGetCLMonitorComponentActor::IsWorldValid(WorldRef)) || (!AGetCLMonitorComponentActor::GetPlayerCameraComponent(CameraComponent))) {
-		return false;
-	}*/
 
-	if (!AGetCLMonitorComponentActor::IsEyeDataValid(eye_left) || (!AGetCLMonitorComponentActor::IsWorldValid(WorldRef)) || (!AGetCLMonitorComponentActor::GetPlayerCameraComponent(CameraComponent))) {
-		return false;
-	}
-	if (!AGetCLMonitorComponentActor::IsEyeDataValid(eye_right) || (!AGetCLMonitorComponentActor::IsWorldValid(WorldRef)) || (!AGetCLMonitorComponentActor::GetPlayerCameraComponent(CameraComponent))) {
+	/* make sure that the eye data array isn't empty */
+	if (!AGetCLMonitorComponentActor::IsEyeDataValid(eye_left) || (!AGetCLMonitorComponentActor::IsWorldValid(WorldRef)) || (!AGetCLMonitorComponentActor::GetPlayerCameraComponent(CameraComponent)) || (!AGetCLMonitorComponentActor::IsEyeDataValid(eye_right))) {
 		return false;
 	}
 
@@ -159,34 +153,33 @@ bool AGetCLMonitorComponentActor::IsTraceAvailable() {
 
 bool AGetCLMonitorComponentActor::DrawEyeTraceOnPlayer(float DeltaTime)
 {
-	if (!AGetCLMonitorComponentActor::IsTraceAvailable()) { return false; }
-
-	/* trace params  */
-	const FVector trace_start = CameraComponent->GetComponentLocation(); // from camera component location
-	const FTransform trace_transform = CameraComponent->GetComponentTransform();
-	const FVector trace_end = trace_start + UKismetMathLibrary::TransformDirection(trace_transform, eye_combined_gaze)*10000*100; // 10 meters = 10*100 u.u. (1 cm = 100 u.u)
-	FHitResult hit_result;
-	
-	const FCollisionQueryParams collision_params;
-
-	GetWorld()->LineTraceSingleByChannel(hit_result, trace_start, trace_end, ECollisionChannel::ECC_Visibility, collision_params);
-	
-	/* if raycast hit an actor */
-	if (hit_result.Actor.Get()) {
-		FString name;
-		hit_result.Actor.Get()->GetName(name);
-		//GEngine->AddOnScreenDebugMessage(-1, 1, FColor::Green, FString::Printf(TEXT("[AGetCLMonitorComponentActor::DrawEyeTraceOnPlayer] hit_result.Actor->UniqueID: %s"), *name));
+	if (!AGetCLMonitorComponentActor::IsTraceAvailable()) { 
+		return false; 
 	}
 
+	/* trace params  */
+	//const FVector trace_start = CameraComponent->GetRelativeLocation(); // from camera component location
+	//const FTransform trace_transform = CameraComponent->GetComponentTransform();
+	//const FVector trace_end = trace_start + UKismetMathLibrary::TransformDirection(trace_transform, eye_combined_gaze)*10000*100; // 10 meters = 10*100 u.u. (1 cm = 100 u.u)
+	//FHitResult hit_result;
+	
+	//const FCollisionQueryParams collision_params;
+
+	//GetWorld()->LineTraceSingleByChannel(hit_result, trace_start, trace_end, ECollisionChannel::ECC_Visibility, collision_params);
+	//
+	///* if raycast hit an actor */
+	//if (hit_result.Actor.Get()) {
+	//	FString name;
+	//	hit_result.Actor.Get()->GetName(name);
+	//	//GEngine->AddOnScreenDebugMessage(-1, 1, FColor::Green, FString::Printf(TEXT("[AGetCLMonitorComponentActor::DrawEyeTraceOnPlayer] hit_result.Actor->UniqueID: %s"), *name));
+	//}
+
 	/* ======== dual eye line trace ============ */
-	FVector viewpoint;
-	FRotator rot;
-	Pawn->GetActorEyesViewPoint(viewpoint, rot);
+	FVector viewpoint = Pawn->Camera->GetComponentLocation();
 
 	const float IPD = 6.5f; // 65mm -> cm = u.u
 	const float eye_position_horizontal_offset = IPD / 2; // left/right from center of HMD 
 
-	//FVector trace_start_left = trace_start;
 	FVector trace_start_left = viewpoint;
 	trace_start_left.X = trace_start_left.X - eye_position_horizontal_offset;
 
@@ -196,7 +189,7 @@ bool AGetCLMonitorComponentActor::DrawEyeTraceOnPlayer(float DeltaTime)
 
 	/* trace params  */
 
-	const FVector trace_end_left = trace_start_left + UKismetMathLibrary::TransformDirection(CameraComponent->GetComponentTransform(), eye_left) * 1000 * 100; // 10 meters = 10*100 u.u. (1 cm = 100 u.u)
+	const FVector trace_end_left = trace_start_left + UKismetMathLibrary::TransformDirection(CameraComponent->GetComponentTransform(), eye_left) * 1000 * 100; // 10 meters = 10*100 u.u. (1 cm = 100 u.u) // 1000 for line
 	FHitResult hit_result_left;
 	const FCollisionQueryParams collision_params_left;
 
@@ -204,9 +197,8 @@ bool AGetCLMonitorComponentActor::DrawEyeTraceOnPlayer(float DeltaTime)
 	FHitResult hit_result_right;
 	const FCollisionQueryParams collision_params_right;
 
-	/*GetWorld()->LineTraceSingleByChannel(hit_result_left, trace_start_left, trace_end_left, ECollisionChannel::ECC_Visibility, collision_params_left);
-	GetWorld()->LineTraceSingleByChannel(hit_result_right, trace_start_right, trace_end_right, ECollisionChannel::ECC_Visibility, collision_params_right);*/
-
+	GetWorld()->LineTraceSingleByChannel(hit_result_left, trace_start_left, trace_end_left, ECollisionChannel::ECC_Visibility, collision_params_left);
+	GetWorld()->LineTraceSingleByChannel(hit_result_right, trace_start_right, trace_end_right, ECollisionChannel::ECC_Visibility, collision_params_right);
 	/* ====== debug circle params ====== */
 	const float draw_duration = DeltaTime/2; // same as tick, update per frame
 	const uint8 depth = 10; // to do: make this vary with pupil dilation and openess
@@ -215,9 +207,37 @@ bool AGetCLMonitorComponentActor::DrawEyeTraceOnPlayer(float DeltaTime)
 	const uint8 depth_priority = 1;
 	const float thickness = 0.25f;
 
-	DrawDebugLine(GetWorld(), trace_start_left, trace_end_left, FColor::Red, true, draw_duration, depth_priority, thickness); // line following view direction
+	DrawDebugSphere
+	(
+		GetWorld(),
+		hit_result_left.Location,
+		2.0f,
+		5,
+		FColor::Red,
+		false,
+		0.1f,
+		depth_priority,
+		thickness
+	);
+
+	DrawDebugSphere
+	(
+		GetWorld(),
+		hit_result_right.Location,
+		2.0f,
+		5,
+		FColor::Red,
+		false,
+		0.1f,
+		depth_priority,
+		thickness
+	);
+	FVector offset = hit_result_left.Location - hit_result_right.Location;
+	UE_LOG(LogTemp, Warning, TEXT("[AGetCLMonitorComponentActor::DrawEyeTraceOnPlayer] offset: %f, %f, %f"), offset.X, offset.Y, offset.Z);
+
+	//DrawDebugLine(GetWorld(), trace_start_left, trace_end_left, FColor::Red, true, draw_duration, depth_priority, thickness); // line following view direction
 	//DrawDebugLine(GetWorld(), trace_start, trace_end, FColor::Orange, true, draw_duration, depth_priority, thickness); // line following view direction
-	DrawDebugLine(GetWorld(), trace_start_right, trace_end_right, FColor::Green, true, draw_duration, depth_priority, thickness); // line following view direction
+	//DrawDebugLine(GetWorld(), trace_start_right, trace_end_right, FColor::Green, true, draw_duration, depth_priority, thickness); // line following view direction
 	//DrawDebugSphere(GetWorld(), trace_end, radius, segments, FColor::Blue, false, 0.5f, draw_duration, thickness); // spehere showing view 
 
 	return true;
@@ -226,7 +246,7 @@ bool AGetCLMonitorComponentActor::DrawEyeTraceOnPlayer(float DeltaTime)
 void AGetCLMonitorComponentActor::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
-	//AGetCLMonitorComponentActor::DrawEyeTraceOnPlayer(DeltaTime);
+	AGetCLMonitorComponentActor::DrawEyeTraceOnPlayer(DeltaTime);
 }
  
 void AGetCLMonitorComponentActor::EndPlay(EEndPlayReason::Type EndPlayReason)

@@ -13,7 +13,13 @@
 #include "Misc/Paths.h"
 #include "Misc/FileHelper.h"
 #include "Kismet/GameplayStatics.h" 
-#include "Kismet/KismetStringLibrary.h" 
+#include "Kismet/KismetStringLibrary.h"
+
+FGetCLMonitorComponentThread::FGetCLMonitorComponentThread(AGetCLMonitorComponentActor* funActor, FString SaveDataDirectory)
+{
+	CurrentThreadActor = funActor;
+	/* init eye-tracker */
+}
 
 bool FGetCLMonitorComponentThread::ConnectToDevice() {
 	const FString access_key = "F8OK38DWnRgqJgr5aaUhgcfBPHoEe5toBiDGGREkR2DWeZxgTKFpCF5YvAdnHd-S";
@@ -36,11 +42,7 @@ void FGetCLMonitorComponentThread::ConvertCombinedGazeToLocation()
 {
 }
 
-FGetCLMonitorComponentThread::FGetCLMonitorComponentThread(AGetCLMonitorComponentActor* funActor, FString SaveDataDirectory)
-{
-	CurrentThreadActor = funActor; 
-	/* init eye-tracker */
-}
+
 
 FGetCLMonitorComponentThread::~FGetCLMonitorComponentThread()
 {
@@ -76,8 +78,10 @@ bool FGetCLMonitorComponentThread::SaveToString(FEyeTracking HPEye) {
 
 	/* print eye data */
 	//UE_LOG(LogTemp, Log, TEXT("[FGetCLMonitorComponentThread::Run()] HPGlia::GetEyeTracking() saving line -> %s"), *save_line);
-	IFileManager* FileManager = nullptr;
-	if (!FileManager) { return false; }
+	//IFileManager* FileManager;
+	//if (!FileManager) { 
+	//	return false; 
+	//}
 	return UTextFileManager::SaveTxt(*line, *filename);
 }
 
@@ -117,17 +121,20 @@ uint32 FGetCLMonitorComponentThread::Run()
 		FEyeTracking HPEye;
 		UHPGliaClient::GetEyeTracking(HPEye);
 
+
 		/* push sample GetCLMonitorActor*/
 		if (!FGetCLMonitorComponentThread::PushDataToParentActor(HPEye)) { UE_DEBUG_BREAK(); }
 
 		/* save the data */
 		if (!FGetCLMonitorComponentThread::SaveToString(HPEye)) { UE_DEBUG_BREAK(); }
 
+		/* debug*/
+		//UE_LOG(LogTemp, Warning, TEXT("[FGetCLMonitorComponentThread::Run()] left: %f, %f, %f."), HPEye.LeftGaze.X, HPEye.LeftGaze.Y, HPEye.LeftGaze.Z);
+
 		FPlatformProcess::Sleep(0.1f); // sleep 
 	}
 
 	Disconnect();
-	UE_LOG(LogTemp, Warning, TEXT("[FGetCLMonitorComponentThread::Run()] Ending thread."));
 	return 0;
 }
 

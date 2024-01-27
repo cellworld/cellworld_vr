@@ -12,7 +12,7 @@
 AGameModeMain::AGameModeMain()
 {
 	/* Get PawnMain_BP to spawn */
-	bool DEBUG = true; 
+	bool DEBUG = false; 
 	if (DEBUG){
 		DefaultPawnClass = APawnDebug::StaticClass(); 
 		PlayerControllerClass = AMouseKeyboardPlayerController::StaticClass();
@@ -78,6 +78,9 @@ void AGameModeMain::SpawnGetCLMonitorComponentActor()
 	GetCLMonitorComponentActor = Cast<AGetCLMonitorComponentActor>(GetWorld()->SpawnActor(AGetCLMonitorComponentActor::StaticClass(), &TempLoc, &TempRot, SpawnInfo));
 }
 
+/* spawn all logging actors, some may contain threads but they handle themselves. 
+* right now, theres only one, but im gonna call this function to maintain consitency.
+*/
 void AGameModeMain::SpawnAllLoggingActor()
 {
 	/* eye-tracker */
@@ -93,6 +96,8 @@ void AGameModeMain::StartPlay()
 
 	/* spawn player */
 	AGameModeMain::SpawnAndPossessPlayer(spawn_location_player, spawn_rotation_player);
+
+	AGameModeMain::SpawnAllLoggingActor();
 }
 
 void AGameModeMain::EndPlay(const EEndPlayReason::Type EndPlayReason)
