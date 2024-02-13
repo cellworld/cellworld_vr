@@ -101,17 +101,31 @@ uint32 FGetCLMonitorComponentThread::Run()
 	ProjectDirectory = FPaths::ConvertRelativePathToFull(FPaths::ProjectDir());
 	filename = ProjectDirectory + "Data/data.csv";
 	FString save_line = FGetCLMonitorComponentThread::GetVariableHeader();
-		
+
 	UE_LOG(LogTemp, Warning, TEXT("[FGetCLMonitorComponentThread::Run()] HPGlia::GetEyeTracking() saving line -> %s"), *save_line);
+
+
+
+	/* check HMD */
+	if (!GEngine->XRSystem || !GEngine->XRSystem->GetHMDDevice() || !GEngine->XRSystem->GetHMDDevice()->IsHMDConnected())
+	{
+		bStopThread = true;
+		UE_LOG(LogTemp, Warning, TEXT("[FGetCLMonitorComponentThread::Run()] HMD NOT connected."))
+			//UE_DEBUG_BREAK();
+	}
+
+	//if (!World || World->IsPlayInEditor()){
+	//	bStopThread = true;
+	//	return -1; 
+	//	UE_LOG(LogTemp, Warning, TEXT("[FGetCLMonitorComponentThread::Run()] In PIE. Not running eye-tracking."))
+	//}
 
 	/* check omnicept runtime connection */
 	FGetCLMonitorComponentThread::ConnectToDevice();
-
-	/* check HMD */
-	if (!GEngine->XRSystem->GetHMDDevice()->IsHMDConnected()) {
-		UE_LOG(LogTemp, Warning, TEXT("[FGetCLMonitorComponentThread::Run()] HMD NOT connected."));
-		UE_DEBUG_BREAK();
-	}
+	//if (!GEngine->XRSystem->GetHMDDevice()->IsHMDConnected()) {
+	//	UE_LOG(LogTemp, Warning, TEXT("[FGetCLMonitorComponentThread::Run()] HMD NOT connected."));
+	//	UE_DEBUG_BREAK();
+	//}
 
 	/* to do: change bStopThread to GS */
 	//int i = 0; 

@@ -9,7 +9,8 @@
 			"Type": "Runtime",
 			"LoadingPhase": "Default",
 			"AdditionalDependencies": [
-				"Engine"
+				"Engine",
+				"AIModule"
 			]
 		}
 	],
@@ -26,14 +27,6 @@
 				"Win64",
 				"Linux"
 			]
-		},
-		{
-			"Name": "ExperimentPlugin",
-			"Enabled": false
-		},
-		{
-			"Name": "TCPMessages",
-			"Enabled": false
 		},
 		{
 			"Name": "ActorSequence",
