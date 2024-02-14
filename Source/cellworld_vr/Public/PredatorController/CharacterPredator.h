@@ -7,6 +7,7 @@
 //#include "TCPMessages.h"
 //#include "ExperimentPlugin.h"
 #include "BehaviorTree/BehaviorTree.h"
+#include "PredatorController/SmartObject.h"
 #include "CharacterPredator.generated.h"
 
 UCLASS()
@@ -31,9 +32,12 @@ public:
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "AI")
 	class UBehaviorTree* BehaviorTreeComponentChar; 
+	//UBehaviorTree* BehaviorTreeComponentChar;
+
 
 	UPROPERTY(EditAnyWhere, BlueprintReadOnly, Category = "AI")
 	class ASmartObject* SmartObject;
+	//ASmartObject* SmartObject;
 
 	bool Attack = false; 
 };

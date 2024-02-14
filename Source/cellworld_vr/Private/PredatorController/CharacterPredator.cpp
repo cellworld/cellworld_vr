@@ -14,7 +14,26 @@ ACharacterPredator::ACharacterPredator()
 	GetCharacterMovement()->bOrientRotationToMovement = true;
 	GetCharacterMovement()->MaxWalkSpeed = 200;
 
-	//Weapon = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("Weapon"));
+    // Initialize the skeletal mesh component with a specific mesh
+    static ConstructorHelpers::FObjectFinder<USkeletalMesh> MeshAsset(TEXT("SkeletalMesh'/Game/AIPredator/Spooky_Ghost/Ghost_face_Killa3_Skeletal_Mesh.Ghost_face_Killa3_Skeletal_Mesh'"));
+    if (MeshAsset.Succeeded())
+    {
+        GetMesh()->SetSkeletalMesh(MeshAsset.Object);
+
+        // Apply a material to the skeletal mesh
+        static ConstructorHelpers::FObjectFinder<UMaterialInterface> MaterialAsset(TEXT("Material'/Game/AIPredator/Spooky_Ghost/Ghost_face_Killa3_Material.Ghost_face_Killa3_Material'"));
+        if (MaterialAsset.Succeeded())
+        {
+            GetMesh()->SetMaterial(0, MaterialAsset.Object); // Assuming you're applying the material to the first material slot
+        }
+
+        // Optionally set the physics asset, if needed
+        static ConstructorHelpers::FObjectFinder<UPhysicsAsset> PhysicsAsset(TEXT("PhysicsAsset'/Game/AIPredator/Spooky_Ghost/Ghost_face_Killa3_PhysicsAsset.Ghost_face_Killa3_PhysicsAsset'"));
+        if (PhysicsAsset.Succeeded())
+        {
+            GetMesh()->SetPhysicsAsset(PhysicsAsset.Object);
+        }
+    }
 }
 
 // Called when the game starts or when spawned

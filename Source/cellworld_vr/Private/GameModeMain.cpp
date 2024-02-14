@@ -5,6 +5,8 @@
 #include "PawnMain.h" 
 #include "GameStateMain.h"
 #include "PawnDebug.h"
+#include "PredatorController/AIControllerPredator.h"
+#include "PredatorController/CharacterPredator.h"
 #include "HPGlia.h"
 #include "MouseKeyboardPlayerController.h"
 #include "PlayerControllerVR.h"
@@ -28,6 +30,41 @@ AGameModeMain::AGameModeMain()
 	/* standard defaults */
 	PrimaryActorTick.bStartWithTickEnabled = true;
 	PrimaryActorTick.bCanEverTick = true;
+}
+
+void AGameModeMain::SpawnAndPossessPredator()
+{
+	if (GetWorld())
+	{
+		// Define spawn parameters
+		FActorSpawnParameters SpawnParams;
+		SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButAlwaysSpawn;
+
+		// Specify the location and rotation for the new actor
+		FVector Location(-2426.0f, 1264.0f, 90.0f); // Change to desired spawn location
+		FRotator Rotation(0.0f, 0.0f, 0.0f); // Change to desired spawn rotation
+
+		// Spawn the character
+		ACharacterPredator* PredatorCharacter = GetWorld()->SpawnActor<ACharacterPredator>(ACharacterPredator::StaticClass(), Location, Rotation, SpawnParams);
+
+		// Ensure the character was spawned
+		if (PredatorCharacter)
+		{
+			// Spawn the AI controller
+			AAIControllerPredator* PredatorAIController = GetWorld()->SpawnActor<AAIControllerPredator>(AAIControllerPredator::StaticClass(), Location, Rotation, SpawnParams);
+
+			// Ensure the AI controller was spawned
+			if (PredatorAIController)
+			{
+				// Possess the character with the AI controller
+				PredatorAIController->Possess(PredatorCharacter);
+			}
+
+			if (PredatorCharacter == nullptr) {
+				UE_DEBUG_BREAK();
+			}
+		}
+	}
 }
 
 void AGameModeMain::EndGame()
@@ -86,7 +123,8 @@ void AGameModeMain::SpawnAllLoggingActor()
 	/* eye-tracker */
 	AGameModeMain::SpawnGetCLMonitorComponentActor();
 
-	/* player path */
+	/* spawn predator into middle of world */
+	AGameModeMain::SpawnAndPossessPredator();
 }
 
 void AGameModeMain::StartPlay()

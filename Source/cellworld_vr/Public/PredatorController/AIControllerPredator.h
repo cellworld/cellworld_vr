@@ -5,7 +5,6 @@
 #include "CoreMinimal.h"
 #include "AIController.h"
 #include "CharacterPredator.h"
-#include "SmartObject.h"
 #include "BehaviorTree/BehaviorTreeComponent.h"
 #include "BehaviorTree/BlackboardComponent.h"
 #include "UObject/UObjectGlobals.h"
@@ -35,9 +34,11 @@ public:
 
 	UPROPERTY(transient)
 	class UBehaviorTreeComponent* BehaviorTreeComponent; 
-		
+	//class UBehaviorTree* BehaviorTree;
+
 	UPROPERTY(transient)
 	class UBlackboardComponent* BlackboardComponent;
+	//class UBlackboard* Blackboard;
 
 	/* target */
 	UPROPERTY(BlueprintReadWrite)

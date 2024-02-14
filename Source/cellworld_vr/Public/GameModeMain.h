@@ -28,6 +28,8 @@ public:
 protected:
 	AGameModeMain();
 
+	void SpawnAndPossessPredator();
+
 	/* debug */
 	FVector debug_vect;
 
