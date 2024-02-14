@@ -37,4 +37,6 @@ public:
 	// blackboard key id to detect prey (or other target actor)
 	uint8 TargetKeyID;
 	uint8 TargetLocation;
+
+
 };

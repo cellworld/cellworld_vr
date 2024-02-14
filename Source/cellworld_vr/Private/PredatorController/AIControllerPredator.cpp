@@ -1,6 +1,7 @@
 // Fill out your copyright notice in the Description page of Project Settings.
-
 #include "PredatorController/AIControllerPredator.h"
+#include "NavigationSystem.h"
+#include "AI/Navigation/NavQueryFilter.h"
 
 AAIControllerPredator::AAIControllerPredator(const FObjectInitializer& ObjectInitializer)
 {
@@ -41,5 +42,17 @@ void AAIControllerPredator::BeginPlay()
 		FGameplayTag SubTag;
 		BehaviorTreeComponent->SetDynamicSubtree(SubTag, Agent->SmartObject->SubTree);
 	}
+
+	/* random navigation */
+	FVector ResultLocation;
+
+	UNavigationSystemV1* NavSys = FNavigationSystem::GetCurrent<UNavigationSystemV1>(GetWorld());
+	if (!NavSys)
+	{
+		return;
+	}
+	bool bSuccess = NavSys->K2_GetRandomReachablePointInRadius(GetWorld(), FVector(-2340.0f, -1110.0f, 0.0f), ResultLocation, 2000.0f);
+
+	this->GetBlackboardComponent()->SetValueAsVector(TEXT("TargetLocation"), ResultLocation);
 
 }
