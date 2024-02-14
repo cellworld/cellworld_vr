@@ -124,7 +124,7 @@ void AGameModeMain::SpawnAllLoggingActor()
 	AGameModeMain::SpawnGetCLMonitorComponentActor();
 
 	/* spawn predator into middle of world */
-	AGameModeMain::SpawnAndPossessPredator();
+	//AGameModeMain::SpawnAndPossessPredator(); // not ready yet, need to finish passing correct trees to ai. workes well in BP
 }
 
 void AGameModeMain::StartPlay()

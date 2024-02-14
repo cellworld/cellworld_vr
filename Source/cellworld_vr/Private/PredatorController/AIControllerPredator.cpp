@@ -11,28 +11,14 @@ AAIControllerPredator::AAIControllerPredator(const FObjectInitializer& ObjectIni
 	BehaviorTreeComponent = CreateDefaultSubobject<UBehaviorTreeComponent>(TEXT("BehaviorTreeComponentPredatorController"));
 	BlackboardComponent = CreateDefaultSubobject<UBlackboardComponent>(TEXT("BlackboardComponentPredatorController"));
 
-	//// Find and store the behavior tree asset
-	//static ConstructorHelpers::FObjectFinder<UBehaviorTree> BehaviorTreeObj(TEXT("BehaviorTree'/Game/AIPredator/BehaviorTree_Predator_BP.BehaviorTree_Predator_BP'"));
-	//if (BehaviorTreeObj.Succeeded())
-	//{
-	//	//BehaviorTreeComponent = BehaviorTreeObj.Class; // Store the found behavior tree in a UBehaviorTree* member variable
-	//}
-	//	
-	//// Find and store the blackboard data asset
-	//static ConstructorHelpers::FObjectFinder<UBlackboardData> BlackboardDataObj(TEXT("BlackboardData'/Game/AIPredator/Blackboard_Predator_BP.Blackboard_Predator_BP'"));
-	//if (BlackboardDataObj.Succeeded())
-	//{
-	//	//BlackboardComponent = BlackboardDataObj.Class; // Store the found blackboard data in a UBlackboardData* member variable
-	//}
-
 	AIPerceptionComponent = CreateDefaultSubobject<UAIPerceptionComponent>(TEXT("PerceptionComp"));
 
 	//Create a Sight And Hearing Sense
 	Sight = CreateDefaultSubobject<UAISenseConfig_Sight>(TEXT("Sight Config"));
 
-	Sight->SightRadius = 1000.f;
+	Sight->SightRadius = 1500.f;
 	Sight->LoseSightRadius = Sight->SightRadius + 800.f;
-	Sight->PeripheralVisionAngleDegrees = 85.0f;
+	Sight->PeripheralVisionAngleDegrees = 100.0f;
 
 	//Tell the senses to detect everything
 	Sight->DetectionByAffiliation.bDetectEnemies = true;
@@ -63,44 +49,44 @@ void AAIControllerPredator::OnPossess(APawn* InPawn)
 	}
 	AIPerceptionComponent->OnTargetPerceptionUpdated.AddDynamic(this, &AAIControllerPredator::OnPerception);
 
-	///* bind Onperception, gets called automatically when other actor detected */
+}
 
-	//UBehaviorTree* BehaviorTree; 
-	//if (BehaviorTreeObj.Succeeded())
-	//{
-	//	BehaviorTree = BehaviorTreeObj.Object;
-	//}
-	//UBlackboardData* BlackBoardData;
+/* begins a random walk */
+void AAIControllerPredator::StartPatrol() {
+	GEngine->AddOnScreenDebugMessage(-1, 3.0f, FColor::Green, FString::Printf(TEXT("Starting Patrol.")));
+	new_location = this->GenerateRandomPredatorPath();
+	this->GetBlackboardComponent()->SetValueAsVector(TEXT("TargetLocation"), new_location);
+}
 
-	//if (BlackBoardData)
-	//{
-	//	BlackboardComponent->InitializeBlackboard(BlackBoardData);
-	//}
+/* begins following target */
+void AAIControllerPredator::StartFollowingTarget()
+{
+	/* update target location */
+	FVector actor_location_vector_last = ActorLastPerceived->GetActorLocation();
+	FNavLocation new_location_nav;
 
-	//if (BehaviorTree)
-	//{
-	//	RunBehaviorTree(BehaviorTree); // This automatically uses the BehaviorTreeComponent
-	//}
+	//Set you NavAgentProps properties here (radius, height, etc)
+	UNavigationSystemV1* NavSys = FNavigationSystem::GetCurrent<UNavigationSystemV1>(GetWorld());
+	if (!NavSys) {
+		UE_DEBUG_BREAK();
+		return;
+	}
+
+	bool bProjectedLocationValid = NavSys->ProjectPointToNavigation(actor_location_vector_last, new_location_nav, FVector::ZeroVector);
+	if (!bProjectedLocationValid) {
+		UE_DEBUG_BREAK();
+	}
+
+	this->GetBlackboardComponent()->SetValueAsVector(TEXT("TargetLocation"), new_location_nav.Location);
+	//GEngine->AddOnScreenDebugMessage(-1, 0.5, FColor::Red, FString::Printf(TEXT("new location: %f %f %f"), new_location_nav.Location.X, new_location_nav.Location.Y, new_location_nav.Location.Z));
+	
 }
 
 void AAIControllerPredator::BeginPlay()
 {
 	Super::BeginPlay(); 
 
-	if (!Agent) {
-		ACharacterPredator* Chr = Cast<ACharacterPredator>(GetPawn());
-		if (!Chr) { return; }
-		Agent = Chr;
-	}
-	/* check is SO is assigned to pawn */
-	if (Agent->SmartObject) {
-		FGameplayTag SubTag;
-		BehaviorTreeComponent->SetDynamicSubtree(SubTag, Agent->SmartObject->SubTree);
-	}
-
-	//NewLocation = GenerateRandomPredatorPath();
-	//this->GetBlackboardComponent()->SetValueAsVector(TEXT("TargetLocation"), NewLocation);
-
+	this->StartPatrol();
 }
 
 FVector AAIControllerPredator::GenerateRandomPredatorPath() {
@@ -116,7 +102,6 @@ FVector AAIControllerPredator::GenerateRandomPredatorPath() {
 
 bool AAIControllerPredator::CheckIfLocationIsValid(FVector Location)
 {
-
 	UNavigationSystemV1* NavSys = FNavigationSystem::GetCurrent<UNavigationSystemV1>(GetWorld());
 	if (!NavSys)
 	{
@@ -141,18 +126,53 @@ bool AAIControllerPredator::CheckIfLocationIsValid(FVector Location)
 	return true;
 }
 
+bool AAIControllerPredator::IsTargetInSight(AActor* TargetActor)
+{
+	if (!TargetActor) return false;
+
+	PerceptionComponent = GetPerceptionComponent();
+	if (!PerceptionComponent) return false;
+
+	TArray<AActor*> PerceivedActors;
+	PerceptionComponent->GetCurrentlyPerceivedActors(UAISense_Sight::StaticClass(), PerceivedActors);
+
+	// Check if the TargetActor is in the list of perceived actors
+	return PerceivedActors.Contains(TargetActor);
+}
+
 /* check status of chase */
 void AAIControllerPredator::Tick(float DeltaTime)
 {
 	/* if currently following target, let the predator continue its thing */
-	if (StimulusLog.GetAge() >= Sight->GetMaxAge() || StimulusLog.GetAge() == 0.0f) {
-		bFollowingTarget = false; 
+
+	if (!ActorLastPerceived) { return; }
+	bool bInSight = this->IsTargetInSight(ActorLastPerceived);
+
+
+
+	/* keep following if you still see target */
+	if (bInSight) {
+		GEngine->AddOnScreenDebugMessage(-1, DeltaTime, FColor::Red, TEXT("Target is in sight. Following."));
+		this->StartFollowingTarget();
+		return;
+	}
+	GEngine->AddOnScreenDebugMessage(-1, DeltaTime, FColor::Red, TEXT("Target is NOT sight. Continuing to final path."));
+
+	/* check if standing still */
+	if (!this->GetCharacter()) {
+		UE_DEBUG_BREAK();
+		return;
 	}
 
-	if (!bFollowingTarget) {
-		NewLocation = GenerateRandomPredatorPath();
+	float Velocity;
+	FVector VelocityVector;
+	this->GetCharacter()->GetVelocity().ToDirectionAndLength(VelocityVector, Velocity);
+	GEngine->AddOnScreenDebugMessage(-1, DeltaTime, FColor::Red, FString::Printf(TEXT("Velocity: %f"), Velocity));
+	if (Velocity == 0) {
+		GEngine->AddOnScreenDebugMessage(-1, DeltaTime, FColor::Red, TEXT("Reached last known location."));
+		this->StartPatrol();
+		return;
 	}
-
 }
 
 /* detects another character. Body of this function handles it (for now).
@@ -160,7 +180,8 @@ void AAIControllerPredator::Tick(float DeltaTime)
 */
 void AAIControllerPredator::OnPerception(AActor* Actor, FAIStimulus Stimulus)
 {
-	bFollowingTarget = true; 
+	//bFollowingTarget = true; 
+	ActorLastPerceived = Actor; 
 	StimulusLog = Stimulus; 
 
 	APawn* Chr = Cast<APawn>(Actor);
@@ -170,23 +191,7 @@ void AAIControllerPredator::OnPerception(AActor* Actor, FAIStimulus Stimulus)
 
 	SetFocus(Stimulus.WasSuccessfullySensed() ? Chr : nullptr);
 
-	/* update target location */
-	FVector actor_location_vector_last = Actor->GetActorLocation();
-	FNavLocation new_location;
 
-	//Set you NavAgentProps properties here (radius, height, etc)
-	UNavigationSystemV1* NavSys = FNavigationSystem::GetCurrent<UNavigationSystemV1>(GetWorld());
-	if (!NavSys) {
-		UE_DEBUG_BREAK();
-		return;
-	}
-
-	bool bProjectedLocationValid = NavSys->ProjectPointToNavigation(actor_location_vector_last, new_location, FVector::ZeroVector);
-	if (!bProjectedLocationValid) {
-		UE_DEBUG_BREAK(); 
-	}
-	this->GetBlackboardComponent()->SetValueAsVector(TEXT("TargetLocation"), new_location.Location);
-	GEngine->AddOnScreenDebugMessage(-1, 1.0f, FColor::Red, FString::Printf(TEXT("projected location: %i "), bProjectedLocationValid));
-
+	this->StartFollowingTarget();
 
 }

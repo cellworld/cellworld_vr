@@ -5,6 +5,7 @@
 #include "CoreMinimal.h"
 #include "AIController.h"
 #include "CharacterPredator.h"
+#include "GameFramework/Actor.h"
 #include "BehaviorTree/BehaviorTreeComponent.h"
 #include "BehaviorTree/BlackboardComponent.h"
 #include "UObject/UObjectGlobals.h"
@@ -26,10 +27,13 @@ public:
 	virtual void BeginPlay() override; 
 	virtual void Tick(float DeltaTime) override; 
 
-
+	void StartFollowingTarget();
+	void StartPatrol();
 	FVector GenerateRandomPredatorPath();
-	FVector NewLocation;
-
+	FNavLocation NewLocation; 
+	FVector new_location;
+	AActor* ActorLastPerceived; 
+	bool IsTargetInSight(AActor* TargetActor);
 	bool CheckIfLocationIsValid(FVector Location);
 
 	UPROPERTY(transient)
