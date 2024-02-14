@@ -34,4 +34,6 @@ public:
 
 	UPROPERTY(EditAnyWhere, BlueprintReadOnly, Category = "AI")
 	class ASmartObject* SmartObject;
+
+	bool Attack = false; 
 };
