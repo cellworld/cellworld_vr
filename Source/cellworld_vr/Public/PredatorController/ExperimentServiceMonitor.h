@@ -26,14 +26,14 @@ public:
 	FString ServerIP = "127.0.0.1";
 	int ServerPort = 6001;
 	bool bConnectedToServer = false; 
-	float map_length = 5000;
+	float map_length = 5100;
 	int n_samples = 0; 
 
 	const FString predator_step_header = "predator_step";
 	bool SubscribeToServer(FString header);
 	bool ServerConnect();
 	void ServerConnectAttempts(int attempts);
-	ACharacterPredator* PredatorCharacter;
+	ACharacterPredator* CharacterPredator;
 	bool SpawnAndPossessPredator();
 
 	UFUNCTION()

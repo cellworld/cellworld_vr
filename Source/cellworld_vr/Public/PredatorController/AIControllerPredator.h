@@ -37,7 +37,6 @@ public:
 	AActor* ActorLastPerceived; 
 	AExperimentServiceMonitor* ExperimentServiceMonitor; 
 	bool IsTargetInSight(AActor* TargetActor);
-	bool SpawnExperimentServiceMonitor();
 	bool CheckIfLocationIsValid(FVector Location);
 
 	UPROPERTY(transient)

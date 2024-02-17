@@ -97,13 +97,7 @@ void AAIControllerPredator::StartFollowingTarget()
 void AAIControllerPredator::BeginPlay()
 {
 	Super::BeginPlay(); 
-
-	this->StartPatrol();
-
-	if (!this->SpawnExperimentServiceMonitor()) {
-		GEngine->AddOnScreenDebugMessage(-1, 0.5, FColor::Red,TEXT("Failed to spawn ExperimentServiceMonitor"));
-	}
-
+	//this->StartPatrol();
 }
 
 FVector AAIControllerPredator::GenerateRandomPredatorPath() {
@@ -157,48 +151,38 @@ bool AAIControllerPredator::IsTargetInSight(AActor* TargetActor)
 	return PerceivedActors.Contains(TargetActor);
 }
 
-bool AAIControllerPredator::SpawnExperimentServiceMonitor() {
-
-	FVector Location(0.0f, 0.0f, 0.0f);
-	FRotator Rotation(0.0f, 0.0f, 0.0f);
-	FActorSpawnParameters SpawnInfo;
-	ExperimentServiceMonitor = GetWorld()->SpawnActor<AExperimentServiceMonitor>(Location, Rotation, SpawnInfo);
-	if (!Cast<AExperimentServiceMonitor>(ExperimentServiceMonitor)) { return false; }
-	return true;
-}
-
 /* check status of chase */
 void AAIControllerPredator::Tick(float DeltaTime)
 {
 	/* if currently following target, let the predator continue its thing */
 
-	if (!ActorLastPerceived) { return; }
-	bool bInSight = this->IsTargetInSight(ActorLastPerceived);
+	//if (!ActorLastPerceived) { return; }
+	//bool bInSight = this->IsTargetInSight(ActorLastPerceived);
 
-	/* keep following if you still see target */
-	if (bInSight) {
-		GEngine->AddOnScreenDebugMessage(-1, DeltaTime, FColor::Red, TEXT("Target is in sight. Following."));
-		this->StartFollowingTarget();
-		return;
-	}
+	///* keep following if you still see target */
+	//if (bInSight) {
+	//	GEngine->AddOnScreenDebugMessage(-1, DeltaTime, FColor::Red, TEXT("Target is in sight. Following."));
+	//	this->StartFollowingTarget();
+	//	return;
+	//}
 
-	GEngine->AddOnScreenDebugMessage(-1, DeltaTime, FColor::Red, TEXT("Target is NOT sight. Continuing to final path."));
+	//GEngine->AddOnScreenDebugMessage(-1, DeltaTime, FColor::Red, TEXT("Target is NOT sight. Continuing to final path."));
 
-	if (!this->GetCharacter()) {
-		UE_DEBUG_BREAK();
-		return;
-	}
+	//if (!this->GetCharacter()) {
+	//	UE_DEBUG_BREAK();
+	//	return;
+	//}
 
-	/* check if standing still (reached final point or got stuck) */
-	float Velocity;
-	FVector VelocityVector;
-	this->GetCharacter()->GetVelocity().ToDirectionAndLength(VelocityVector, Velocity);
-	GEngine->AddOnScreenDebugMessage(-1, DeltaTime, FColor::Red, FString::Printf(TEXT("Velocity: %f"), Velocity));
-	if (Velocity == 0) {
-		GEngine->AddOnScreenDebugMessage(-1, DeltaTime, FColor::Red, TEXT("Reached last known location."));
-		this->StartPatrol();
-		return;
-	}
+	///* check if standing still (reached final point or got stuck) */
+	//float Velocity;
+	//FVector VelocityVector;
+	//this->GetCharacter()->GetVelocity().ToDirectionAndLength(VelocityVector, Velocity);
+	//GEngine->AddOnScreenDebugMessage(-1, DeltaTime, FColor::Red, FString::Printf(TEXT("Velocity: %f"), Velocity));
+	//if (Velocity == 0) {
+	//	GEngine->AddOnScreenDebugMessage(-1, DeltaTime, FColor::Red, TEXT("Reached last known location."));
+	//	this->StartPatrol();
+	//	return;
+	//}
 }
 /* detects another character. Body of this function handles it (for now).
 * eventually, another function will do the processing 
@@ -216,7 +200,6 @@ void AAIControllerPredator::OnPerception(AActor* Actor, FAIStimulus Stimulus)
 
 	SetFocus(Stimulus.WasSuccessfullySensed() ? Chr : nullptr);
 
-
-	this->StartFollowingTarget();
+	//this->StartFollowingTarget();
 
 }

@@ -41,7 +41,7 @@ void AGameModeMain::SpawnExperimentServiceMonitor()
 		SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButAlwaysSpawn;
 
 		// Specify the location and rotation for the new actor
-		FVector Location(-2426.0f, 1264.0f, 90.0f); // Change to desired spawn location
+		FVector Location(0.0f, 0.0f, 0.0f); // Change to desired spawn location
 		FRotator Rotation(0.0f, 0.0f, 0.0f); // Change to desired spawn rotation
 
 		// Spawn the character
