@@ -6,7 +6,6 @@
 
 AAIControllerPredator::AAIControllerPredator(const FObjectInitializer& ObjectInitializer)
 {
-
 	// Initialize the behavior tree and blackboard references
 	BehaviorTreeComponent = CreateDefaultSubobject<UBehaviorTreeComponent>(TEXT("BehaviorTreeComponentPredatorController"));
 	BlackboardComponent = CreateDefaultSubobject<UBlackboardComponent>(TEXT("BlackboardComponentPredatorController"));
@@ -16,8 +15,8 @@ AAIControllerPredator::AAIControllerPredator(const FObjectInitializer& ObjectIni
 	//Create a Sight And Hearing Sense
 	Sight = CreateDefaultSubobject<UAISenseConfig_Sight>(TEXT("Sight Config"));
 
-	Sight->SightRadius = 1500.f;
-	Sight->LoseSightRadius = Sight->SightRadius + 800.f;
+	Sight->SightRadius = 1200.f;
+	Sight->LoseSightRadius = Sight->SightRadius + 400.f;
 	Sight->PeripheralVisionAngleDegrees = 100.0f;
 
 	//Tell the senses to detect everything
@@ -52,8 +51,8 @@ void AAIControllerPredator::OnPossess(APawn* InPawn)
 }
 
 /* begins a random walk */
-void AAIControllerPredator::StartPatrol() {
-	GEngine->AddOnScreenDebugMessage(-1, 3.0f, FColor::Green, FString::Printf(TEXT("Starting Patrol.")));
+void AAIControllerPredator::StartPatrol() 
+{
 	new_location = this->GenerateRandomPredatorPath();
 	this->GetBlackboardComponent()->SetValueAsVector(TEXT("TargetLocation"), new_location);
 }
@@ -77,6 +76,7 @@ void AAIControllerPredator::StartFollowingTarget()
 		UE_DEBUG_BREAK();
 	}
 
+	/* actual movement */
 	this->GetBlackboardComponent()->SetValueAsVector(TEXT("TargetLocation"), new_location_nav.Location);
 	//GEngine->AddOnScreenDebugMessage(-1, 0.5, FColor::Red, FString::Printf(TEXT("new location: %f %f %f"), new_location_nav.Location.X, new_location_nav.Location.Y, new_location_nav.Location.Z));
 	
@@ -87,6 +87,11 @@ void AAIControllerPredator::BeginPlay()
 	Super::BeginPlay(); 
 
 	this->StartPatrol();
+
+	if (!this->SpawnExperimentServiceMonitor()) {
+		GEngine->AddOnScreenDebugMessage(-1, 0.5, FColor::Red,TEXT("Failed to spawn ExperimentServiceMonitor"));
+	}
+
 }
 
 FVector AAIControllerPredator::GenerateRandomPredatorPath() {
@@ -140,6 +145,16 @@ bool AAIControllerPredator::IsTargetInSight(AActor* TargetActor)
 	return PerceivedActors.Contains(TargetActor);
 }
 
+bool AAIControllerPredator::SpawnExperimentServiceMonitor() {
+
+	FVector Location(0.0f, 0.0f, 0.0f);
+	FRotator Rotation(0.0f, 0.0f, 0.0f);
+	FActorSpawnParameters SpawnInfo;
+	ExperimentServiceMonitor = GetWorld()->SpawnActor<AExperimentServiceMonitor>(Location, Rotation, SpawnInfo);
+	if (!Cast<AExperimentServiceMonitor>(ExperimentServiceMonitor)) { return false; }
+	return true;
+}
+
 /* check status of chase */
 void AAIControllerPredator::Tick(float DeltaTime)
 {
@@ -148,22 +163,21 @@ void AAIControllerPredator::Tick(float DeltaTime)
 	if (!ActorLastPerceived) { return; }
 	bool bInSight = this->IsTargetInSight(ActorLastPerceived);
 
-
-
 	/* keep following if you still see target */
 	if (bInSight) {
 		GEngine->AddOnScreenDebugMessage(-1, DeltaTime, FColor::Red, TEXT("Target is in sight. Following."));
 		this->StartFollowingTarget();
 		return;
 	}
+
 	GEngine->AddOnScreenDebugMessage(-1, DeltaTime, FColor::Red, TEXT("Target is NOT sight. Continuing to final path."));
 
-	/* check if standing still */
 	if (!this->GetCharacter()) {
 		UE_DEBUG_BREAK();
 		return;
 	}
 
+	/* check if standing still (reached final point or got stuck) */
 	float Velocity;
 	FVector VelocityVector;
 	this->GetCharacter()->GetVelocity().ToDirectionAndLength(VelocityVector, Velocity);
@@ -174,6 +188,7 @@ void AAIControllerPredator::Tick(float DeltaTime)
 		return;
 	}
 }
+
 
 /* detects another character. Body of this function handles it (for now).
 * eventually, another function will do the processing 

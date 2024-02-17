@@ -8,6 +8,7 @@
 #include "GameFramework/Actor.h"
 #include "BehaviorTree/BehaviorTreeComponent.h"
 #include "BehaviorTree/BlackboardComponent.h"
+#include "PredatorController/ExperimentServiceMonitor.h"
 #include "UObject/UObjectGlobals.h"
 #include "Perception/AIPerceptionComponent.h"
 #include "AIControllerPredator.generated.h"
@@ -33,7 +34,9 @@ public:
 	FNavLocation NewLocation; 
 	FVector new_location;
 	AActor* ActorLastPerceived; 
+	AExperimentServiceMonitor* ExperimentServiceMonitor; 
 	bool IsTargetInSight(AActor* TargetActor);
+	bool SpawnExperimentServiceMonitor();
 	bool CheckIfLocationIsValid(FVector Location);
 
 	UPROPERTY(transient)

@@ -12,7 +12,8 @@ public class cellworld_vr : ModuleRules
 		PublicDependencyModuleNames.AddRange(new string[] { 
             "Core", "CoreUObject", "HeadMountedDisplay", "Engine", "InputCore", 
             "EyeTracker","InputCore","UMG","NavigationSystem","HPGlia",
-            "TCPMessages", "ExperimentPlugin", "AIModule", "GameplayTasks"
+            "TCPMessages", "ExperimentPlugin", "AIModule", "GameplayTasks",
+            "Json", "JsonUtilities"
         });
         PrivateDependencyModuleNames.AddRange(new string[] { /*"HeadMountedDisplay",*/ "Slate", "SlateCore" });
 
