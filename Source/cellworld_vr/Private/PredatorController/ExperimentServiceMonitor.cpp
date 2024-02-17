@@ -12,7 +12,29 @@ AExperimentServiceMonitor::AExperimentServiceMonitor()
  	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = false;
 }
+bool AExperimentServiceMonitor::SpawnAndPossessPredator() {
 
+	if (GEngine->GetWorld())
+	{
+		// Define spawn parameters
+		FActorSpawnParameters SpawnParams;
+		SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButAlwaysSpawn;
+
+		// Specify the location and rotation for the new actor
+		FVector Location(-2426.0f, 1264.0f, 90.0f); // Change to desired spawn location
+		FRotator Rotation(0.0f, 0.0f, 0.0f); // Change to desired spawn rotation
+
+		// Spawn the character
+		PredatorCharacter = GEngine->GetWorld()->SpawnActor<ACharacterPredator>(ACharacterPredator::StaticClass(), Location, Rotation, SpawnParams);
+
+		// Ensure the character was spawned
+		if (!PredatorCharacter)
+		{
+			return false;
+		}
+	}
+	return true;
+}
 /* subscribes to server and calls UpdatePredator() when messages[header] matches input header. */
 bool AExperimentServiceMonitor::SubscribeToServer(FString header)
 {
@@ -60,6 +82,8 @@ void AExperimentServiceMonitor::UpdatePredator(FMessage message)
 	n_samples++;
 	FStep step = UExperimentUtils::JsonStringToStep(message.body); 
 	FVector new_location_ue = UExperimentUtils::canonicalToVr(step.location,map_length); // ue --> unreal engine units 
+
+	GEngine->AddOnScreenDebugMessage(1, 5.0f, FColor::Green, FString::Printf(TEXT("New location: %f %f %f"), new_location_ue.X, new_location_ue.Y, new_location_ue.Z));
 	return;
 }
 
@@ -68,6 +92,10 @@ void AExperimentServiceMonitor::BeginPlay()
 {
 	Super::BeginPlay();
 
+	if (!this->SpawnAndPossessPredator()) {
+		UE_DEBUG_BREAK();
+	}
+
 	this->ServerConnectAttempts(5);
 
 	if (!bConnectedToServer) {
@@ -75,7 +103,6 @@ void AExperimentServiceMonitor::BeginPlay()
 	}
 	this->SubscribeToServer(predator_step_header);
 }
-
 
 void AExperimentServiceMonitor::Tick(float DeltaTime)
 {

@@ -6,6 +6,7 @@
 #include "CLMonitorComponent.h"
 #include "ConfigManager.h"
 #include "PawnMain.h"
+#include "PredatorController/ExperimentServiceMonitor.h"
 //#include "PawnMain.h"
 //#include "Templates/SharedPointer.h" 
 #include "GameModeMain.generated.h"
@@ -28,7 +29,8 @@ public:
 protected:
 	AGameModeMain();
 
-	void SpawnAndPossessPredator();
+	AExperimentServiceMonitor* ExperimentServiceMonitor;
+	void SpawnExperimentServiceMonitor();
 
 	/* debug */
 	FVector debug_vect;

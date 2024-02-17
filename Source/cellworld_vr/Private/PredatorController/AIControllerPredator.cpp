@@ -44,12 +44,11 @@ AAIControllerPredator::AAIControllerPredator(const FObjectInitializer& ObjectIni
 void AAIControllerPredator::OnPossess(APawn* InPawn)
 {
 	Super::OnPossess(InPawn);
-	ACharacterPredator* CharacterPredator = Cast<ACharacterPredator>(InPawn);
-	//BehaviorTreeComponent->SetDynamicSubtree(BehaviorTreeObj)
-	if (CharacterPredator != nullptr && CharacterPredator->BehaviorTreeComponentChar != nullptr) {
-		CharacterPredator->BehaviorTreeComponentChar = BehaviorTreeAsset;
-		CharacterPredator->BehaviorTreeComponentChar->BlackboardAsset = BlackboardAsset;
 
+	ACharacterPredator* CharacterPredator = Cast<ACharacterPredator>(InPawn);
+	if (CharacterPredator != nullptr && CharacterPredator->BehaviorTreeComponentChar != nullptr) {
+		
+		CharacterPredator->BehaviorTreeComponentChar->BlackboardAsset = BlackboardAsset;
 		BlackboardComponent->InitializeBlackboard(*CharacterPredator->BehaviorTreeComponentChar->BlackboardAsset);
 
 		TargetKeyID    = BlackboardComponent->GetKeyID("TargetActor");
@@ -66,6 +65,10 @@ void AAIControllerPredator::StartPatrol()
 {
 	new_location = this->GenerateRandomPredatorPath();
 	this->GetBlackboardComponent()->SetValueAsVector(TEXT("TargetLocation"), new_location);
+}
+
+void AAIControllerPredator::SetNewLocation(FVector Location) {
+	this->GetBlackboardComponent()->SetValueAsVector(TEXT("TargetLocation"), Location);
 }
 
 /* begins following target */
@@ -89,8 +92,6 @@ void AAIControllerPredator::StartFollowingTarget()
 
 	/* actual movement */
 	this->GetBlackboardComponent()->SetValueAsVector(TEXT("TargetLocation"), new_location_nav.Location);
-	//GEngine->AddOnScreenDebugMessage(-1, 0.5, FColor::Red, FString::Printf(TEXT("new location: %f %f %f"), new_location_nav.Location.X, new_location_nav.Location.Y, new_location_nav.Location.Z));
-	
 }
 
 void AAIControllerPredator::BeginPlay()
@@ -199,8 +200,6 @@ void AAIControllerPredator::Tick(float DeltaTime)
 		return;
 	}
 }
-
-
 /* detects another character. Body of this function handles it (for now).
 * eventually, another function will do the processing 
 */

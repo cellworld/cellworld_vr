@@ -7,6 +7,7 @@
 #include "ExperimentPlugin.h"
 #include "MessageClient.h"
 #include "TCPMessages.h"
+#include "PredatorController/CharacterPredator.h"
 #include "ExperimentServiceMonitor.generated.h"
 
 //DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnMessageReceived, FMessage, message);
@@ -32,6 +33,8 @@ public:
 	bool SubscribeToServer(FString header);
 	bool ServerConnect();
 	void ServerConnectAttempts(int attempts);
+	ACharacterPredator* PredatorCharacter;
+	bool SpawnAndPossessPredator();
 
 	UFUNCTION()
 	void UpdatePredator(FMessage message);

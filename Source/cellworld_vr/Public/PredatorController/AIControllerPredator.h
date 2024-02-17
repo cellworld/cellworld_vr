@@ -30,6 +30,7 @@ public:
 
 	void StartFollowingTarget();
 	void StartPatrol();
+	void SetNewLocation(FVector Location);
 	FVector GenerateRandomPredatorPath();
 	FNavLocation NewLocation; 
 	FVector new_location;
