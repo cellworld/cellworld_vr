@@ -2,6 +2,7 @@
 
 
 #include "PredatorController/ExperimentServiceMonitor.h"
+#include "ExperimentUtils.h"
 //#include "GenericPlatform/GenericPlatformProcess.h"
 
 
@@ -57,6 +58,8 @@ void AExperimentServiceMonitor::UpdatePredator(FMessage message)
 {
 	if (PredatorMessageClient == nullptr) { return; }
 	n_samples++;
+	FStep step = UExperimentUtils::JsonStringToStep(message.body); 
+	FVector new_location_ue = UExperimentUtils::canonicalToVr(step.location,map_length); // ue --> unreal engine units 
 	return;
 }
 
@@ -70,9 +73,7 @@ void AExperimentServiceMonitor::BeginPlay()
 	if (!bConnectedToServer) {
 		GEngine->AddOnScreenDebugMessage(1, 2.0f, FColor::Red, TEXT("[AExperimentServiceMonitor::BeginPlay()] Failed to connect to server."));
 	}
-
 	this->SubscribeToServer(predator_step_header);
-
 }
 
 

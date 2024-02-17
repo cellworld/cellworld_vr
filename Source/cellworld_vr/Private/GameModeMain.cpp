@@ -48,21 +48,23 @@ void AGameModeMain::SpawnAndPossessPredator()
 		ACharacterPredator* PredatorCharacter = GetWorld()->SpawnActor<ACharacterPredator>(ACharacterPredator::StaticClass(), Location, Rotation, SpawnParams);
 
 		// Ensure the character was spawned
-		if (PredatorCharacter)
+		if (!PredatorCharacter)
 		{
-			// Spawn the AI controller
-			AAIControllerPredator* PredatorAIController = GetWorld()->SpawnActor<AAIControllerPredator>(AAIControllerPredator::StaticClass(), Location, Rotation, SpawnParams);
+			UE_DEBUG_BREAK();
 
-			// Ensure the AI controller was spawned
-			if (PredatorAIController)
-			{
-				// Possess the character with the AI controller
-				PredatorAIController->Possess(PredatorCharacter);
-			}
+			//// Spawn the AI controller
+			//AAIControllerPredator* AIControllerPredator = GetWorld()->SpawnActor<AAIControllerPredator>(AAIControllerPredator::StaticClass(), Location, Rotation, SpawnParams);
 
-			if (PredatorCharacter == nullptr) {
-				UE_DEBUG_BREAK();
-			}
+			//// Ensure the AI controller was spawned
+			//if (AIControllerPredator)
+			//{
+			//	// Possess the character with the AI controller
+			//	AIControllerPredator->Possess(PredatorCharacter);
+			//}
+
+			//if (PredatorCharacter == nullptr) {
+			//	UE_DEBUG_BREAK();
+			//}
 		}
 	}
 }
@@ -124,7 +126,7 @@ void AGameModeMain::SpawnAllLoggingActor()
 	AGameModeMain::SpawnGetCLMonitorComponentActor();
 
 	/* spawn predator into middle of world */
-	//AGameModeMain::SpawnAndPossessPredator(); // not ready yet, need to finish passing correct trees to ai. workes well in BP
+	AGameModeMain::SpawnAndPossessPredator(); // not ready yet, need to finish passing correct trees to ai. workes well in BP
 }
 
 void AGameModeMain::StartPlay()

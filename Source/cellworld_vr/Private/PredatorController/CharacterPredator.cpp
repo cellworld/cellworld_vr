@@ -2,12 +2,15 @@
 
 
 #include "PredatorController/CharacterPredator.h"
+#include "PredatorController/AIControllerPredator.h"
 #include "GameFramework/CharacterMovementComponent.h"
-
 
 // Sets default values
 ACharacterPredator::ACharacterPredator()
 {
+    AIControllerClass = AAIControllerPredator::StaticClass();
+    AutoPossessAI = EAutoPossessAI::PlacedInWorldOrSpawned;
+
  	// Set this character to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
 	bUseControllerRotationYaw = false;
@@ -34,6 +37,18 @@ ACharacterPredator::ACharacterPredator()
             GetMesh()->SetPhysicsAsset(PhysicsAsset.Object);
         }
     }
+
+    // look for components based in BP 
+    static ConstructorHelpers::FObjectFinder<UBehaviorTree> BehaviorTreeAssetLoad(TEXT("BehaviorTree'/Game/AIPredator/Patrolling_BP.Patrolling_BP'"));
+    if (BehaviorTreeAssetLoad.Succeeded()) {
+        BehaviorTreeComponentChar = BehaviorTreeAssetLoad.Object;
+    }
+
+    //static ConstructorHelpers::FObjectFinder<UBlackboardData> BlackboardAssetLoad(TEXT("BlackboardData'/Game/AIPredator/Blackboard_Predator_BP.Blackboard_Predator_BP'"));
+    //if (BlackboardAssetLoad.Succeeded()) {
+    //    BlackboardAsset = BlackboardAssetLoad.Object;
+    //}
+
 }
 
 // Called when the game starts or when spawned
@@ -47,13 +62,4 @@ void ACharacterPredator::BeginPlay()
 void ACharacterPredator::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
-
 }
-
-// Called to bind functionality to input
-void ACharacterPredator::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
-{
-	Super::SetupPlayerInputComponent(PlayerInputComponent);
-
-}
-

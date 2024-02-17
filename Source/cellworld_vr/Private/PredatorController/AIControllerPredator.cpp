@@ -9,8 +9,18 @@ AAIControllerPredator::AAIControllerPredator(const FObjectInitializer& ObjectIni
 	// Initialize the behavior tree and blackboard references
 	BehaviorTreeComponent = CreateDefaultSubobject<UBehaviorTreeComponent>(TEXT("BehaviorTreeComponentPredatorController"));
 	BlackboardComponent = CreateDefaultSubobject<UBlackboardComponent>(TEXT("BlackboardComponentPredatorController"));
-
 	AIPerceptionComponent = CreateDefaultSubobject<UAIPerceptionComponent>(TEXT("PerceptionComp"));
+
+	// look for components based in BP 
+	static ConstructorHelpers::FObjectFinder<UBehaviorTree> BehaviorTreeAssetLoad(TEXT("BehaviorTree'/Game/AIPredator/Patrolling_BP.Patrolling_BP'"));
+	if (BehaviorTreeAssetLoad.Succeeded()) {
+		BehaviorTreeAsset = BehaviorTreeAssetLoad.Object;
+	}
+	
+	static ConstructorHelpers::FObjectFinder<UBlackboardData> BlackboardAssetLoad(TEXT("BlackboardData'/Game/AIPredator/Blackboard_Predator_BP.Blackboard_Predator_BP'"));
+	if (BlackboardAssetLoad.Succeeded()) {
+		BlackboardAsset = BlackboardAssetLoad.Object;
+	}
 
 	//Create a Sight And Hearing Sense
 	Sight = CreateDefaultSubobject<UAISenseConfig_Sight>(TEXT("Sight Config"));
@@ -28,17 +38,18 @@ AAIControllerPredator::AAIControllerPredator(const FObjectInitializer& ObjectIni
 	//Register the sight sense to our Perception Component
 	AIPerceptionComponent->ConfigureSense(*Sight);
 	AIPerceptionComponent->SetDominantSense(Sight->GetSenseImplementation());
-
 }
 
 /* collects informatino from the predator chracter before running behavior tree (AI) */
 void AAIControllerPredator::OnPossess(APawn* InPawn)
 {
 	Super::OnPossess(InPawn);
-
 	ACharacterPredator* CharacterPredator = Cast<ACharacterPredator>(InPawn);
 	//BehaviorTreeComponent->SetDynamicSubtree(BehaviorTreeObj)
 	if (CharacterPredator != nullptr && CharacterPredator->BehaviorTreeComponentChar != nullptr) {
+		CharacterPredator->BehaviorTreeComponentChar = BehaviorTreeAsset;
+		CharacterPredator->BehaviorTreeComponentChar->BlackboardAsset = BlackboardAsset;
+
 		BlackboardComponent->InitializeBlackboard(*CharacterPredator->BehaviorTreeComponentChar->BlackboardAsset);
 
 		TargetKeyID    = BlackboardComponent->GetKeyID("TargetActor");

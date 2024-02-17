@@ -66,5 +66,9 @@ public:
 	uint8 TargetKeyID;
 	uint8 TargetLocation;
 
+	/* predator assets */
+	UBehaviorTree* BehaviorTreeAsset; 
+	UBlackboardData* BlackboardAsset;
+
 
 };
