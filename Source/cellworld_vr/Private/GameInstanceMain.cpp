@@ -13,7 +13,7 @@ UGameInstanceMain::UGameInstanceMain()
 
 void UGameInstanceMain::Init()
 {
-
+	Super::Init();
 }
 
 void UGameInstanceMain::Shutdown()

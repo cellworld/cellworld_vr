@@ -6,14 +6,15 @@
 #include "GameStateMain.h"
 #include "PawnDebug.h"
 #include "PredatorController/AIControllerPredator.h"
-//#include "PredatorController/CharacterPredator.h"
+#include "ExperimentPlugin.h"
 #include "HPGlia.h"
+#include "AsyncLoadingScreenLibrary.h"
 #include "MouseKeyboardPlayerController.h"
 #include "PlayerControllerVR.h"
 
 AGameModeMain::AGameModeMain()
 {
-	/* Get PawnMain_BP to spawn */
+	/* Get PawnMain to spawn */
 	bool DEBUG = true; 
 	if (DEBUG){
 		DefaultPawnClass = APawnDebug::StaticClass(); 
@@ -30,6 +31,7 @@ AGameModeMain::AGameModeMain()
 	/* standard defaults */
 	PrimaryActorTick.bStartWithTickEnabled = true;
 	PrimaryActorTick.bCanEverTick = true;
+
 }
 
 void AGameModeMain::SpawnExperimentServiceMonitor()
@@ -45,13 +47,13 @@ void AGameModeMain::SpawnExperimentServiceMonitor()
 		FRotator Rotation(0.0f, 0.0f, 0.0f); // Change to desired spawn rotation
 
 		// Spawn the character
-		ExperimentServiceMonitor = GetWorld()->SpawnActor<AExperimentServiceMonitor>(AExperimentServiceMonitor::StaticClass(), Location, Rotation, SpawnParams);
+		//ExperimentServiceMonitor = GetWorld()->SpawnActor<AExperimentServiceMonitor>(AExperimentServiceMonitor::StaticClass(), Location, Rotation, SpawnParams);
 
-		// Ensure the character was spawned
-		if (!ExperimentServiceMonitor)
-		{
-			UE_DEBUG_BREAK();
-		}
+		//// Ensure the character was spawned
+		//if (!ExperimentServiceMonitor)
+		//{
+		//	UE_DEBUG_BREAK();
+		//}
 	}
 }
 
@@ -115,6 +117,16 @@ void AGameModeMain::SpawnAllLoggingActor()
 	AGameModeMain::SpawnExperimentServiceMonitor(); // not ready yet, need to finish passing correct trees to ai. workes well in BP
 }
 
+void AGameModeMain::StartLoadingScreen()
+{
+	UAsyncLoadingScreenLibrary::SetEnableLoadingScreen(true);
+}
+
+void AGameModeMain::StopLoadingScreen()
+{
+	UAsyncLoadingScreenLibrary::StopLoadingScreen();
+}
+
 void AGameModeMain::StartPlay()
 {
 	Super::StartPlay();
@@ -124,7 +136,10 @@ void AGameModeMain::StartPlay()
 	AGameModeMain::SpawnAndPossessPlayer(spawn_location_player, spawn_rotation_player);
 
 	AGameModeMain::SpawnAllLoggingActor();
+
+	AGameModeMain::StopLoadingScreen();
 }
+
 
 void AGameModeMain::EndPlay(const EEndPlayReason::Type EndPlayReason)
 {

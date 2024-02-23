@@ -13,12 +13,13 @@ public class cellworld_vr : ModuleRules
             "Core", "CoreUObject", "HeadMountedDisplay", "Engine", "InputCore", 
             "EyeTracker","InputCore","UMG","NavigationSystem","HPGlia",
             "TCPMessages", "ExperimentPlugin", "AIModule", "GameplayTasks",
-            "Json", "JsonUtilities"
+            "Json", "JsonUtilities", "AsyncLoadingScreen"
         });
         PrivateDependencyModuleNames.AddRange(new string[] { /*"HeadMountedDisplay",*/ "Slate", "SlateCore" });
 
         PublicIncludePaths.AddRange(new string[] {
-            "cellworld_vr/PredatorController"
+            "cellworld_vr/PredatorController",
+            "AsyncLoadingScreen/AsyncLoadingScreenLibrary.h"
         });
         // Uncomment if you are using Slate UI
         // PrivateDependencyModuleNames.AddRange(new string[] { "Slate", "SlateCore" });
