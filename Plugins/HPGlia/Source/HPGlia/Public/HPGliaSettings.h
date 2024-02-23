@@ -23,7 +23,7 @@ public:
 
     FHPGliaConnectionSettings(FString clientID, FString accessKey, ELicensingModel licenseMode) : 
         ClientID(clientID), AccessKey(accessKey), LicenseMode(licenseMode) {}
-    FHPGliaConnectionSettings() : ClientID(""), AccessKey(""), LicenseMode(ELicensingModel::REV_SHARE) {}
+    FHPGliaConnectionSettings() : ClientID(""), AccessKey(""), LicenseMode(ELicensingModel::TRIAL) {}
 
 };
 

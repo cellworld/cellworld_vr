@@ -274,7 +274,7 @@ TArray<FLocation> UExperimentUtils::LoadOcclusions(FString filePath, bool& readS
 		// 1. Get world_implementation as jsonString
 		// 2. Convert to world_implementation
 		// 3. Convert to vr locations
-	FString jsonString = LoadWorldImplementation("C:/Research/hexagonal.canonical");
+	FString jsonString = LoadWorldImplementation("C:/Research/hexagonal.canonical"); // todo: fix hard path 
 	FWorldImplementation world_impl = JsonStringToWorldImplementation(jsonString);
 
 	// Properly loads the file with cell_locations

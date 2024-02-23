@@ -6,8 +6,7 @@
 #include "CLMonitorComponent.h"
 #include "ConfigManager.h"
 #include "PawnMain.h"
-//#include "PawnMain.h"
-//#include "Templates/SharedPointer.h" 
+#include "PredatorController/ExperimentServiceMonitor.h"
 #include "GameModeMain.generated.h"
 
 /**
@@ -28,18 +27,18 @@ public:
 protected:
 	AGameModeMain();
 
+	AExperimentServiceMonitor* ExperimentServiceMonitor;
+	void SpawnExperimentServiceMonitor();
+
 	/* debug */
 	FVector debug_vect;
 
-	//UGameInstanceMain* GI = nullptr;
 	APawnMain* PawnMain   = nullptr;
-
 	APlayerController* PlayerControllerClassCast = nullptr;
 	FVector InitialPlayerLocation;
 	FRotator InitialPlayerRotation;
 
-	virtual void InitGame(const FString& MapName, const FString& Options, FString& ErrorMessage) override;
-
+	/* HP stuff */
 	bool InitializeHPKeys();
 
 	/* spawning player */
@@ -53,11 +52,17 @@ protected:
 
 	/* spawn everything */
 	void SpawnAllLoggingActor(); 
+
+	/* controls loading screen */
+	void StartLoadingScreen();
+	void StopLoadingScreen(); 
 	
 	/* to store waypoint info  */
+	virtual void InitGame(const FString& MapName, const FString& Options, FString& ErrorMessage) override;
 	virtual void InitGameState();
 	virtual void StartPlay() override;
 	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 	virtual void Tick(float DeltaTime) override;
+
 	
 };

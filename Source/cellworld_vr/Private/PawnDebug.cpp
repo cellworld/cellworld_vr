@@ -30,7 +30,7 @@ APawnDebug::APawnDebug()
 	/* create camera component as root so pawn moves with camera */
 	Camera = CreateDefaultSubobject<UCameraComponent>(TEXT("ActualCamera"));
 	Camera->SetMobility(EComponentMobility::Movable);
-	Camera->bUsePawnControlRotation = true;
+	Camera->bUsePawnControlRotation = false;
 	Camera->AttachToComponent(RootComponent, FAttachmentTransformRules::KeepRelativeTransform);
 
 	/* create instance of our movement component */
@@ -47,6 +47,13 @@ APawnDebug::APawnDebug()
 	EAutoReceiveInput::Type::Player0;
 	EAutoPossessAI::PlacedInWorldOrSpawned;
 
+	/* todo: add bIsInVR state */
+	this->Camera->bLockToHmd = false;
+
+	// Calculate the rotation needed to align the component's forward vector with the pawn's forward vector
+	FRotator TargetRotation = this->RootComponent->GetForwardVector().Rotation() - this->Camera->GetForwardVector().Rotation();
+	// Apply the calculated rotation to the component
+	Camera->AddRelativeRotation(TargetRotation);
 }
 
 //void APawnDebug::QuitGame()
@@ -129,7 +136,6 @@ void APawnDebug::MoveForward(float AxisValue)
 		{
 			FVector CameraForwardVector = this->Camera->GetForwardVector();
 			CameraForwardVector.Z = 0.0;
-			//OurMovementComponentChar->AddInputVector(ActorForwardVector * AxisValue, true);
 			this->UpdateMovementComponent(CameraForwardVector * AxisValue * 7.5, /*force*/ true);
 		}
 	}
@@ -150,21 +156,17 @@ void APawnDebug::MoveRight(float AxisValue)
 /* doesn't work with VR */
 void APawnDebug::Turn(float AxisValue)
 {
-	FRotator NewRotation = GetActorRotation();
-	//FRotator NewRotation = this->Camera->GetComponentRotation();
+	FRotator NewRotation = this->Camera->GetRelativeRotation();
 	NewRotation.Yaw += AxisValue;
-	//SetActorRotation(NewRotation);
-	this->Camera->AddRelativeRotation(NewRotation);
+	this->Camera->SetRelativeRotation(NewRotation);
 }
 
 /* doesn't work with VR */
 void APawnDebug::LookUp(float AxisValue)
 {
-	FRotator NewRotation = GetActorRotation();
-	//FRotator NewRotation = this->Camera->GetComponentRotation();
-
+	FRotator NewRotation = this->Camera->GetRelativeRotation();
 	NewRotation.Pitch += AxisValue;
-	SetActorRotation(NewRotation);
+	this->Camera->SetRelativeRotation(NewRotation);
 }
 
 void APawnDebug::OnOverlapBegin(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)

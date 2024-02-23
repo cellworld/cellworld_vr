@@ -18,7 +18,6 @@
 FGetCLMonitorComponentThread::FGetCLMonitorComponentThread(AGetCLMonitorComponentActor* funActor, FString SaveDataDirectory)
 {
 	CurrentThreadActor = funActor;
-	/* init eye-tracker */
 }
 
 bool FGetCLMonitorComponentThread::ConnectToDevice() {
@@ -30,7 +29,6 @@ bool FGetCLMonitorComponentThread::ConnectToDevice() {
 	/* to do: check connection, returns false but I get data that matches the demo...? confusing...*/
 	if (!bIsConnected) { UE_LOG(LogTemp, Error, TEXT("[FGetCLMonitorComponentThread::ConnectToDevice()] HPGlia Client connection: FAILED.")); }
 	else { UE_LOG(LogTemp, Log, TEXT("[FGetCLMonitorComponentThread::ConnectToDevice()] HPGlia Client connection: SUCCESS.")); }
-
 	return bIsConnected;
 }
 
@@ -41,8 +39,6 @@ bool FGetCLMonitorComponentThread::GetEyeTracking(FEyeTracking& OutEyeTracking) 
 void FGetCLMonitorComponentThread::ConvertCombinedGazeToLocation()
 {
 }
-
-
 
 FGetCLMonitorComponentThread::~FGetCLMonitorComponentThread()
 {
@@ -76,12 +72,6 @@ bool FGetCLMonitorComponentThread::SaveToString(FEyeTracking HPEye) {
 		FString::SanitizeFloat(HPEye.LeftPupilDilation) + "," + FString::SanitizeFloat(HPEye.LeftPupilDilationConfidence) + "," + FString::SanitizeFloat(HPEye.RightPupilDilation) + "," + FString::SanitizeFloat(HPEye.RightPupilDilationConfidence) + "," +
 		FString::SanitizeFloat(HPEye.LeftEyeOpenness) + "," + FString::SanitizeFloat(HPEye.LeftEyeOpennessConfidence) + "," + FString::SanitizeFloat(HPEye.RightEyeOpenness) + "," + FString::SanitizeFloat(HPEye.RightEyeOpennessConfidence) + "\n";
 
-	/* print eye data */
-	//UE_LOG(LogTemp, Log, TEXT("[FGetCLMonitorComponentThread::Run()] HPGlia::GetEyeTracking() saving line -> %s"), *save_line);
-	//IFileManager* FileManager;
-	//if (!FileManager) { 
-	//	return false; 
-	//}
 	return UTextFileManager::SaveTxt(*line, *filename);
 }
 
@@ -101,35 +91,29 @@ uint32 FGetCLMonitorComponentThread::Run()
 	ProjectDirectory = FPaths::ConvertRelativePathToFull(FPaths::ProjectDir());
 	filename = ProjectDirectory + "Data/data.csv";
 	FString save_line = FGetCLMonitorComponentThread::GetVariableHeader();
-		
-	UE_LOG(LogTemp, Warning, TEXT("[FGetCLMonitorComponentThread::Run()] HPGlia::GetEyeTracking() saving line -> %s"), *save_line);
+
+	/* check HMD */
+	if (!GEngine->XRSystem || !GEngine->XRSystem->GetHMDDevice() || !GEngine->XRSystem->GetHMDDevice()->IsHMDConnected())
+	{
+		bStopThread = true;
+		UE_LOG(LogTemp, Warning, TEXT("[FGetCLMonitorComponentThread::Run()] HMD NOT connected."))
+	}
 
 	/* check omnicept runtime connection */
 	FGetCLMonitorComponentThread::ConnectToDevice();
 
-	/* check HMD */
-	if (!GEngine->XRSystem->GetHMDDevice()->IsHMDConnected()) {
-		UE_LOG(LogTemp, Warning, TEXT("[FGetCLMonitorComponentThread::Run()] HMD NOT connected."));
-		UE_DEBUG_BREAK();
-	}
-
 	/* to do: change bStopThread to GS */
-	//int i = 0; 
 	while (!bStopThread) {
 
 		/* collect sample */
 		FEyeTracking HPEye;
 		UHPGliaClient::GetEyeTracking(HPEye);
 
-
 		/* push sample GetCLMonitorActor*/
 		if (!FGetCLMonitorComponentThread::PushDataToParentActor(HPEye)) { UE_DEBUG_BREAK(); }
 
 		/* save the data */
 		if (!FGetCLMonitorComponentThread::SaveToString(HPEye)) { UE_DEBUG_BREAK(); }
-
-		/* debug*/
-		//UE_LOG(LogTemp, Warning, TEXT("[FGetCLMonitorComponentThread::Run()] left: %f, %f, %f."), HPEye.LeftGaze.X, HPEye.LeftGaze.Y, HPEye.LeftGaze.Z);
 
 		FPlatformProcess::Sleep(0.1f); // sleep 
 	}
