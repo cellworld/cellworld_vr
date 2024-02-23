@@ -9,15 +9,24 @@ public class cellworld_vr : ModuleRules
 		
 		PCHUsage = PCHUsageMode.UseExplicitOrSharedPCHs;
 	
-		PublicDependencyModuleNames.AddRange(new string[] { "Core", "CoreUObject", "HeadMountedDisplay", "Engine", "InputCore", "EyeTracker","InputCore","UMG","NavigationSystem","HPGlia" });
+		PublicDependencyModuleNames.AddRange(new string[] { 
+            "Core", "CoreUObject", "HeadMountedDisplay", "Engine", "InputCore", 
+            "EyeTracker","InputCore","UMG","NavigationSystem","HPGlia",
+            "TCPMessages", "ExperimentPlugin", "AIModule", "GameplayTasks",
+            "Json", "JsonUtilities", "AsyncLoadingScreen"
+        });
         PrivateDependencyModuleNames.AddRange(new string[] { /*"HeadMountedDisplay",*/ "Slate", "SlateCore" });
 
-		// Uncomment if you are using Slate UI
-		// PrivateDependencyModuleNames.AddRange(new string[] { "Slate", "SlateCore" });
-		
-		// Uncomment if you are using online features
-		// PrivateDependencyModuleNames.Add("OnlineSubsystem");
+        PublicIncludePaths.AddRange(new string[] {
+            "cellworld_vr/PredatorController",
+            "AsyncLoadingScreen/AsyncLoadingScreenLibrary.h"
+        });
+        // Uncomment if you are using Slate UI
+        // PrivateDependencyModuleNames.AddRange(new string[] { "Slate", "SlateCore" });
 
-		// To include OnlineSubsystemSteam, add it to the plugins section in your uproject file with the Enabled attribute set to true
-	}
+        // Uncomment if you are using online features
+        // PrivateDependencyModuleNames.Add("OnlineSubsystem");
+
+        // To include OnlineSubsystemSteam, add it to the plugins section in your uproject file with the Enabled attribute set to true
+    }
 }
