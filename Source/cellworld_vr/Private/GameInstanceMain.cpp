@@ -22,4 +22,5 @@ void UGameInstanceMain::Shutdown()
 
 void UGameInstanceMain::StartGameInstance()
 {
+	Super::StartGameInstance();
 }

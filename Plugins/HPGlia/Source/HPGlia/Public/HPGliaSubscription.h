@@ -2,6 +2,7 @@
 
 #pragma once
 
+#include "UObject/ObjectMacros.h"
 #include "HPGliaSensorInfo.h"
 #include "HPGliaSubscription.generated.h"
 

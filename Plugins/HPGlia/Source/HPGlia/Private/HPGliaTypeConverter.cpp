@@ -77,6 +77,7 @@ HP::Omnicept::Abi::LicensingModel HPGliaTypeConverter::LicenseModelConversion(EL
     case(ELicensingModel::CORE):
         license = HP::Omnicept::Abi::LicensingModel::CORE;
         break;
+
     case(ELicensingModel::TRIAL):
         license = HP::Omnicept::Abi::LicensingModel::TRIAL;
         break;
