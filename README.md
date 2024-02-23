@@ -3,23 +3,6 @@
 
 Virtual Reality project for Unreal Engine 4.27 for testing the HP Reverb G2 VR Headset and OmniceptSDK. 
 
-## To do: 
-
-- save user head positions, rotations, etc for eye-tracking analysis (similar to FGetPlayerTraversePath)
-  
-- figure out a new calibration method to find depth/actor player is looking at (papers support just cast a ray and use temporal information to infer if the object was focused on or not)
-  
-- occlusion spawning: check for black pixel in image and spawn actor there (can be an occlusion). Add unique Id with AActor->SetActorLabel("New_label")
-  
-- HMD Tracking and world scaling: Need to get original HMD position in space. PlayerInitHMDPosAndOrientation = WorldOrigin (door of experiment).
-  
-- update gaze/eye trace to incorporate *individual* eye gaze depth:
-
-    - get pupil location -> get camera height -> get introcular distance (IOD) -> for a single eye: eye_vec.origin (2D) = { pupil position (0.5,0.5 is middle) - IOD/2 (+ IOD/2 for right eye), camera_height) ->  -> get eye-openness (for depth magnitude, will add later) -> solve for interception point ->  
-
-- add spacebar to start trial and open door.
-
-
 ## Notes: 
 
 - Habitat (mouse) to human scale -> 2.63 (length_pred (1.75 m for humans) * 1.4 (prey to predator scale) * 21 (#cells) = 2.63) 
