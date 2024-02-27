@@ -8,18 +8,20 @@
 #include "MessageClient.h"
 #include "TCPMessages.h"
 #include "PredatorController/CharacterPredator.h"
+#include "PredatorController/ControllerTypes.h"
 #include "ExperimentServiceMonitor.generated.h"
 
 //DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnMessageReceived, FMessage, message);
 
 UCLASS()
 class CELLWORLD_VR_API AExperimentServiceMonitor : public AActor
-{
+{ 
 	GENERATED_BODY()
 	
 public:	
 	// Sets default values for this actor's properties
 	AExperimentServiceMonitor();
+	//EControllerTypes EControllerType; 
 	//UMessageClient* MessageClient;
 	UMessageClient* PredatorMessageClient; 
 	UMessageRoute* MessageRoute; 

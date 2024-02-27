@@ -13,6 +13,7 @@ AExperimentServiceMonitor::AExperimentServiceMonitor()
  	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = false;
 }
+/* todo: make this take input ACharacter and spawn that one*/
 bool AExperimentServiceMonitor::SpawnAndPossessPredator() {
 
 	if (GetWorld())
@@ -98,16 +99,16 @@ void AExperimentServiceMonitor::BeginPlay()
 {
 	Super::BeginPlay();
 
-	if (!this->SpawnAndPossessPredator()) {
-		UE_DEBUG_BREAK();
-	}
-
 	this->ServerConnectAttempts(5);
 
 	if (!bConnectedToServer) {
 		GEngine->AddOnScreenDebugMessage(1, 2.0f, FColor::Red, TEXT("[AExperimentServiceMonitor::BeginPlay()] Failed to connect to server."));
 	}
 	this->SubscribeToServer(predator_step_header);
+
+	if (!this->SpawnAndPossessPredator()) {
+		UE_DEBUG_BREAK();
+	}
 }
 
 void AExperimentServiceMonitor::Tick(float DeltaTime)

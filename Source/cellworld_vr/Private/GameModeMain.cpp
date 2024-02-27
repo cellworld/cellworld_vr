@@ -47,7 +47,7 @@ void AGameModeMain::SpawnExperimentServiceMonitor()
 		FRotator Rotation(0.0f, 0.0f, 0.0f); // Change to desired spawn rotation
 
 		// Spawn the character
-		//ExperimentServiceMonitor = GetWorld()->SpawnActor<AExperimentServiceMonitor>(AExperimentServiceMonitor::StaticClass(), Location, Rotation, SpawnParams);
+		ExperimentServiceMonitor = GetWorld()->SpawnActor<AExperimentServiceMonitor>(AExperimentServiceMonitor::StaticClass(), Location, Rotation, SpawnParams);
 
 		//// Ensure the character was spawned
 		//if (!ExperimentServiceMonitor)
