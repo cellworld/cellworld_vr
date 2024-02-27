@@ -37,30 +37,104 @@ bool AExperimentServiceMonitor::SpawnAndPossessPredator() {
 	}
 	return false;
 }
+
+void AExperimentServiceMonitor::HandleExperimentServiceMessage(FMessage message) {
+	UE_LOG(LogTemp, Warning, TEXT("[AExperimentServiceMonitor::HandleExperimentServiceMessage] %s"),*message.body);
+}
+
+bool AExperimentServiceMonitor::SubscribeToExperimentService(FString header) {
+	
+	ExperimentServerClient= UMessageClient::NewMessageClient();
+	if (!ExperimentServerClient) { return false; }
+	ExperimentServerClient->Subscribe();
+
+	ExperimentServerClientRoute = ExperimentServerClient->AddRoute(header);
+
+	if (!ExperimentServerClientRoute) { return false; }
+
+	ExperimentServerClientRoute->MessageReceived.AddDynamic(this, &AExperimentServiceMonitor::HandleExperimentServiceMessage);
+	return true;
+}
+
+bool AExperimentServiceMonitor::StopConnection(UMessageClient* Client)
+{
+	return Client->Disconnect();
+}
+
+void AExperimentServiceMonitor::EpisodeResponse(const FString response) {
+
+}
+
+/* create simple experiment service request */
+URequest* AExperimentServiceMonitor::SendEpisodeRequest(const FString experiment, const FString header)
+{
+	FStartEpisodeRequest request_body;
+	request_body.experiment_name = experiment;
+	FString request_string = UExperimentUtils::StartEpisodeRequestToJsonString(request_body);
+	URequest* request = ExperimentServerClient->SendRequest(header, request_string, 5.0f);
+	if (!request) { return nullptr; }
+	request->ResponseReceived.AddDynamic(this, &AExperimentServiceMonitor::EpisodeResponse);
+	request->TimedOut.AddDynamic(this, &AExperimentServiceMonitor::EpisodeTimedOut);
+	return request;
+}
+
+void AExperimentServiceMonitor::EpisodeTimedOut() {
+	UE_LOG(LogTemp,Error,TEXT("[AExperimentServiceMonitor::EpisodeTimedOut()] Episode request timed out!"))
+}
+
+bool AExperimentServiceMonitor::StartEpisode(const FString experiment) {
+	start_episode_request = this->SendEpisodeRequest(experiment, "start_episode"); // returns true; handle if false
+	if (!start_episode_request) { return false; }
+	return true;
+}
+
+bool AExperimentServiceMonitor::StopEpisode(const FString experiment) {
+
+	start_episode_request = this->SendEpisodeRequest(experiment, "finish_episode"); // returns true; handle if false
+	if (!stop_episode_request) { return false; }
+	return true;
+}
+
 /* subscribes to server and calls UpdatePredator() when messages[header] matches input header. */
 bool AExperimentServiceMonitor::SubscribeToServer(FString header)
 {
-	PredatorMessageClient->Subscribe();
+	PredatorMessageClient = UMessageClient::NewMessageClient();
 
 	if (!PredatorMessageClient) { return false; }
+	PredatorMessageClient->Subscribe();
+
 	MessageRoute = PredatorMessageClient->AddRoute(header);
-	
+
 	if (!MessageRoute) { return false; }
 	MessageRoute->MessageReceived.AddDynamic(this, &AExperimentServiceMonitor::UpdatePredator);
 
 	return true;
 }
- 
+
+/* temp function */
 bool AExperimentServiceMonitor::ServerConnect()
 {
 	PredatorMessageClient = UMessageClient::NewMessageClient();
 
-	if (PredatorMessageClient == nullptr){
-		return false; 
+	if (PredatorMessageClient == nullptr) {
+		return false;
 	}
 
-	bConnectedToServer = PredatorMessageClient->Connect(ServerIP, ServerPort);
+	bConnectedToServer = PredatorMessageClient->Connect(ServerIPMessage, PortMessageServer);
 	return bConnectedToServer;
+}
+
+/* creates a message client; todo: implement and replace old */
+UMessageClient* AExperimentServiceMonitor::ServerConnectMessageClient(const FString IP, const int port, bool& result)
+{
+	UMessageClient* Client = UMessageClient::NewMessageClient();
+
+	if (Client == nullptr){
+		result = false;
+		return Client;
+	}
+	result = Client->Connect(IP, port);
+	return Client;
 }
 
 void AExperimentServiceMonitor::ServerConnectAttempts(int attempts)
@@ -78,6 +152,11 @@ void AExperimentServiceMonitor::ServerConnectAttempts(int attempts)
 	}
 }
 
+void AExperimentServiceMonitor::UpdateOnMessageReceived()
+{
+	//this->UpdatePredator(message);
+}
+
 void AExperimentServiceMonitor::UpdatePredator(FMessage message)
 {
 	if (PredatorMessageClient == nullptr) { return; }
@@ -90,8 +169,20 @@ void AExperimentServiceMonitor::UpdatePredator(FMessage message)
 	AAIControllerPredator* AIControllerPredator = Cast<AAIControllerPredator>(CharacterPredator->GetController());
 	if (!AIControllerPredator) { return; }
 	AIControllerPredator->GetBlackboardComponent()->SetValueAsVector(TEXT("TargetLocation"), new_location_ue);
-		//CharacterPredator->GetController()
-	return;
+	bCanUpdatePreyPosition = true;
+}
+
+bool AExperimentServiceMonitor::UpdatePreyPosition(FMessage message)
+{
+	/* todo: get prey location */
+	if (!bCanUpdatePreyPosition){ return false; }
+
+	UE_LOG(LogTemp, Warning, TEXT("prey_step: %s"),*message.body);
+	PredatorMessageClient->SendMessage(message);
+
+	/* don't overload server with messages before its done processing previous prey update. */
+	bCanUpdatePreyPosition = false;
+	return true;
 }
 
 // Called when the game starts or when spawned
@@ -104,7 +195,9 @@ void AExperimentServiceMonitor::BeginPlay()
 	if (!bConnectedToServer) {
 		GEngine->AddOnScreenDebugMessage(1, 2.0f, FColor::Red, TEXT("[AExperimentServiceMonitor::BeginPlay()] Failed to connect to server."));
 	}
-	this->SubscribeToServer(predator_step_header);
+	if (!this->SubscribeToServer(predator_step_header)) {
+		UE_DEBUG_BREAK();
+	}
 
 	if (!this->SpawnAndPossessPredator()) {
 		UE_DEBUG_BREAK();
