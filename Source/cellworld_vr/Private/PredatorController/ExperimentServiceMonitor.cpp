@@ -44,7 +44,7 @@ void AExperimentServiceMonitor::HandleExperimentServiceMessage(FMessage message)
 
 bool AExperimentServiceMonitor::SubscribeToExperimentService(FString header) {
 	
-	ExperimentServerClient= UMessageClient::NewMessageClient();
+	//ExperimentServerClient = UMessageClient::NewMessageClient();
 	if (!ExperimentServerClient) { return false; }
 	ExperimentServerClient->Subscribe();
 
@@ -58,14 +58,15 @@ bool AExperimentServiceMonitor::SubscribeToExperimentService(FString header) {
 
 bool AExperimentServiceMonitor::StopConnection(UMessageClient* Client)
 {
+	UE_LOG(LogTemp, Warning, TEXT("[AExperimentServiceMonitor::StopConnection] Disconecting."));
 	return Client->Disconnect();
 }
 
 void AExperimentServiceMonitor::EpisodeResponse(const FString response) {
-
+	UE_LOG(LogTemp, Warning, TEXT("[AExperimentServiceMonitor::EpisodeResponse] %s"), *response);
 }
 
-/* create simple experiment service request */
+/* create and send simple experiment service request */
 URequest* AExperimentServiceMonitor::SendEpisodeRequest(const FString experiment, const FString header)
 {
 	FStartEpisodeRequest request_body;
@@ -78,16 +79,19 @@ URequest* AExperimentServiceMonitor::SendEpisodeRequest(const FString experiment
 	return request;
 }
 
+/* handle experiment service timeout */
 void AExperimentServiceMonitor::EpisodeTimedOut() {
 	UE_LOG(LogTemp,Error,TEXT("[AExperimentServiceMonitor::EpisodeTimedOut()] Episode request timed out!"))
 }
 
+/* start experiment service episode stream */
 bool AExperimentServiceMonitor::StartEpisode(const FString experiment) {
 	start_episode_request = this->SendEpisodeRequest(experiment, "start_episode"); // returns true; handle if false
 	if (!start_episode_request) { return false; }
 	return true;
 }
 
+/* stop experiment service episode stream */
 bool AExperimentServiceMonitor::StopEpisode(const FString experiment) {
 
 	start_episode_request = this->SendEpisodeRequest(experiment, "finish_episode"); // returns true; handle if false
@@ -95,16 +99,32 @@ bool AExperimentServiceMonitor::StopEpisode(const FString experiment) {
 	return true;
 }
 
+/* checks if subscription was successful */
+void AExperimentServiceMonitor::HandleSubscriptionResponse(const FString message) {
+	UE_LOG(LogTemp, Warning, TEXT("[AExperimentServiceMonitor::HandleSubscriptionResponse] %s"), *message);
+	if (message != "success") {
+		UE_DEBUG_BREAK();
+	}
+}
+
+void AExperimentServiceMonitor::HandleSubscriptionTimedOut() {
+	UE_LOG(LogTemp, Warning, TEXT("[AExperimentServiceMonitor::HandleSubscriptionTimedOut] Timed out!"));
+
+}
+
 /* subscribes to server and calls UpdatePredator() when messages[header] matches input header. */
 bool AExperimentServiceMonitor::SubscribeToServer(FString header)
 {
-	PredatorMessageClient = UMessageClient::NewMessageClient();
 
 	if (!PredatorMessageClient) { return false; }
-	PredatorMessageClient->Subscribe();
+
+	URequest* request = PredatorMessageClient->Subscribe();
+	if (!request) { return false; }
+
+	request->ResponseReceived.AddDynamic(this, &AExperimentServiceMonitor::HandleSubscriptionResponse);
+	request->TimedOut.AddDynamic(this, &AExperimentServiceMonitor::HandleSubscriptionTimedOut);
 
 	MessageRoute = PredatorMessageClient->AddRoute(header);
-
 	if (!MessageRoute) { return false; }
 	MessageRoute->MessageReceived.AddDynamic(this, &AExperimentServiceMonitor::UpdatePredator);
 
@@ -150,11 +170,6 @@ void AExperimentServiceMonitor::ServerConnectAttempts(int attempts)
 			return; 
 		}
 	}
-}
-
-void AExperimentServiceMonitor::UpdateOnMessageReceived()
-{
-	//this->UpdatePredator(message);
 }
 
 void AExperimentServiceMonitor::UpdatePredator(FMessage message)

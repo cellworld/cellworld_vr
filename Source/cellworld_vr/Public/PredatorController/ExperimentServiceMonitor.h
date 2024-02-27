@@ -34,9 +34,10 @@ public:
 	const FString ServerIPMessage = "127.0.0.1";
 	const int PortMessageServer = 6001;
 	const int PortExperimentServer = 6100; 
-	bool bConnectedToServer = false; 
 	float map_length = 5100;
 	int n_samples = 0; 
+	bool bConnectedToServer = false;
+	bool bCanUpdatePreyPosition = false;
 
 	const FString predator_step_header = "predator_step";
 	bool SubscribeToServer(FString header);
@@ -46,21 +47,28 @@ public:
 	ACharacterPredator* CharacterPredator;
 	bool SpawnAndPossessPredator();
 
-	void HandleExperimentServiceMessage(FMessage message);
 	bool SubscribeToExperimentService(FString header);
 	bool StartEpisode(const FString experiment);
 	bool StopEpisode(const FString experiment);
 	URequest* AExperimentServiceMonitor::SendEpisodeRequest(const FString experiment, const FString header);
 	bool StopConnection(UMessageClient* Client);
-	void EpisodeResponse(const FString response);
-	void UpdateOnMessageReceived();
-	void EpisodeTimedOut();
 
+	/* delegates */
+	UFUNCTION()
+	void HandleExperimentServiceMessage(FMessage message);
+	UFUNCTION()
+	void HandleSubscriptionResponse(const FString message);
+	UFUNCTION()
+	void HandleSubscriptionTimedOut();
+	UFUNCTION()
+	void EpisodeResponse(const FString response);
+	UFUNCTION()
+	void EpisodeTimedOut();
 	UFUNCTION()
 	void UpdatePredator(FMessage message);
+	UFUNCTION()
 	bool UpdatePreyPosition(FMessage message);
 
-	bool bCanUpdatePreyPosition = false;
 
 
 protected:
