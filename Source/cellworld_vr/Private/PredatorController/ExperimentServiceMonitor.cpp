@@ -3,6 +3,7 @@
 
 #include "PredatorController/ExperimentServiceMonitor.h"
 #include "PredatorController/AIControllerPredator.h"
+#include "Kismet/GameplayStatics.h"
 #include "ExperimentUtils.h"
 //#include "GenericPlatform/GenericPlatformProcess.h"
 
@@ -131,6 +132,7 @@ bool AExperimentServiceMonitor::SubscribeToServer(FString header)
 	return true;
 }
 
+
 /* temp function */
 bool AExperimentServiceMonitor::ServerConnect()
 {
@@ -187,16 +189,36 @@ void AExperimentServiceMonitor::UpdatePredator(FMessage message)
 	bCanUpdatePreyPosition = true;
 }
 
-bool AExperimentServiceMonitor::UpdatePreyPosition(FMessage message)
+void AExperimentServiceMonitor::UpdatePreyPosition(FVector vector)
 {
 	/* todo: get prey location */
-	if (!bCanUpdatePreyPosition){ return false; }
+ 	//if (!bCanUpdatePreyPosition) { return; }
+
+	FLocation Location; 
+	Location.x = vector.X;
+	Location.y = vector.Y;
+
+	FString body = UExperimentUtils::LocationToJsonString(Location);
+	FString header_prey = "prey_step";
+	FMessage message = UMessageClient::NewMessage(header_prey, body);
 
 	UE_LOG(LogTemp, Warning, TEXT("prey_step: %s"),*message.body);
 	PredatorMessageClient->SendMessage(message);
 
 	/* don't overload server with messages before its done processing previous prey update. */
 	bCanUpdatePreyPosition = false;
+}
+
+bool AExperimentServiceMonitor::GetPlayerPawn()
+{
+	APawn* Pawn = UGameplayStatics::GetPlayerPawn(GetWorld(), 0);
+	if (!Pawn) { return false; }
+
+	PlayerPawn = Cast<APawnMain>(Pawn);
+	if (!PlayerPawn) { return false; }
+	
+	PlayerPawn->MovementDetectedEvent.AddDynamic(this, &AExperimentServiceMonitor::UpdatePreyPosition);
+
 	return true;
 }
 
@@ -215,6 +237,10 @@ void AExperimentServiceMonitor::BeginPlay()
 	}
 
 	if (!this->SpawnAndPossessPredator()) {
+		UE_DEBUG_BREAK();
+	}
+
+	if (!this->GetPlayerPawn()) {
 		UE_DEBUG_BREAK();
 	}
 }

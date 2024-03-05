@@ -9,6 +9,7 @@
 #include "TCPMessages.h"
 #include "PredatorController/CharacterPredator.h"
 #include "PredatorController/ControllerTypes.h"
+#include "PawnMain.h"
 #include "ExperimentServiceMonitor.generated.h"
 
 //DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnMessageReceived, FMessage, message);
@@ -52,6 +53,9 @@ public:
 	bool StopEpisode(const FString experiment);
 	URequest* AExperimentServiceMonitor::SendEpisodeRequest(const FString experiment, const FString header);
 	bool StopConnection(UMessageClient* Client);
+	
+	APawnMain* PlayerPawn;
+	bool GetPlayerPawn();
 
 	/* delegates */
 	UFUNCTION()
@@ -67,7 +71,7 @@ public:
 	UFUNCTION()
 	void UpdatePredator(FMessage message);
 	UFUNCTION()
-	bool UpdatePreyPosition(FMessage message);
+	void UpdatePreyPosition(FVector Location);
 
 
 

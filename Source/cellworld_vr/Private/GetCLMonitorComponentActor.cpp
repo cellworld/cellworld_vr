@@ -233,8 +233,7 @@ bool AGetCLMonitorComponentActor::DrawEyeTraceOnPlayer(float DeltaTime)
 		thickness
 	);
 	FVector offset = hit_result_left.Location - hit_result_right.Location;
-	UE_LOG(LogTemp, Warning, TEXT("[AGetCLMonitorComponentActor::DrawEyeTraceOnPlayer] offset: %f, %f, %f"), offset.X, offset.Y, offset.Z);
-
+	//UE_LOG(LogTemp, Warning, TEXT("[AGetCLMonitorComponentActor::DrawEyeTraceOnPlayer] offset: %f, %f, %f"), offset.X, offset.Y, offset.Z);
 	//DrawDebugLine(GetWorld(), trace_start_left, trace_end_left, FColor::Red, true, draw_duration, depth_priority, thickness); // line following view direction
 	//DrawDebugLine(GetWorld(), trace_start, trace_end, FColor::Orange, true, draw_duration, depth_priority, thickness); // line following view direction
 	//DrawDebugLine(GetWorld(), trace_start_right, trace_end_right, FColor::Green, true, draw_duration, depth_priority, thickness); // line following view direction

@@ -18,6 +18,9 @@
 #include "MotionControllerComponent.h"
 #include "PawnMain.generated.h"
 
+
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnMovementDetected, FVector, Location);
+
 UCLASS()
 class CELLWORLD_VR_API APawnMain : public APawn
 {
@@ -28,6 +31,8 @@ public:
 	// Sets default values for this pawn's properties
 	APawnMain();
 
+	UPROPERTY()
+	FOnMovementDetected MovementDetectedEvent; 
 
 	void ResetOrigin();
 	void RestartGame();
