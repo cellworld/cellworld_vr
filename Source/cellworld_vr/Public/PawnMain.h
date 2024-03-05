@@ -12,6 +12,7 @@
 #include "Kismet/GameplayStatics.h" 
 #include "GameFramework/FloatingPawnMovement.h" 
 #include "GameFramework/CharacterMovementComponent.h" // test 
+#include "Components/CustomCharacterMovementComponent.h"
 
 //#include "Runtime/Steam/SteamVR/Source/SteamVR/Classes/SteamVRChaperoneComponent.h"
 #include "MotionControllerComponent.h"
@@ -51,6 +52,7 @@ public:
 	//UPROPERTY(VisibleDefaultsOnly, meta = (Category = "Default"))
 	class UCameraComponent* Camera;
 	UCapsuleComponent* CapsuleComponent;
+	UCustomCharacterMovementComponent* MovementComponent; 
 	
 	void SetupPlayerInputComponent(class UInputComponent* InInputComponent);
 
@@ -72,12 +74,18 @@ public:
 	UCameraComponent* GetCameraComponent();
 
 private: 
-	const float capsule_radius      = 30.0f;
-	const float player_height       = 175.0f; // 1.75 m
-	const float capsule_half_height = player_height / 2;
-	const FVector camera_location = FVector(0.0f, 0.0f, capsule_half_height);
+	const float _capsule_radius      = 30.0f;
+	const float _player_height       = 175.0f; // 1.75 m
+	const float _capsule_half_height = _player_height / 2;
+	const FVector _camera_location = FVector(0.0f, 0.0f, _capsule_half_height);
 
 	FVector current_location; 
 	FVector HMDPosition;
 	FXRHMDData HMDData;
+
+	bool DetectMovement();
+	void OnMovementDetected();
+	FVector _old_location; 
+	FVector _new_location;
+	float _movement_threshold = 5	; 
 };

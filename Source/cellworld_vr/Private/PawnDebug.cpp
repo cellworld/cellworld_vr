@@ -39,13 +39,12 @@ APawnDebug::APawnDebug()
 	OurMovementComponentChar->MaxWalkSpeed = 9000.0f;
 	OurMovementComponentChar->MaxAcceleration = 9000.0f;
 	OurMovementComponentChar->BrakingDecelerationWalking = 4'000.0f;
-	OurMovementComponentChar->bDeferUpdateMoveComponent = true;
+	OurMovementComponentChar->bDeferUpdateMoveComponent = false;
 	OurMovementComponentChar->SetActive(true);
 	OurMovementComponentChar->UpdatedComponent = RootComponent;
-
+	
 	///* auto-possess */
 	EAutoReceiveInput::Type::Player0;
-	EAutoPossessAI::PlacedInWorldOrSpawned;
 
 	/* todo: add bIsInVR state */
 	this->Camera->bLockToHmd = false;

@@ -55,7 +55,6 @@ void APlayerControllerVR::ResetOrigin()
 
 void APlayerControllerVR::QuitGame()
 {
-	//if (PossessedPawn) {
-	//	PossessedPawn->QuitGame();
-	//}
+	FGenericPlatformMisc::RequestExit(true);
+	UE_LOG(LogTemp, Warning, TEXT("APlayerControllerVR::QuitGame() Requesting Exit."));
 }

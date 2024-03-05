@@ -6,13 +6,13 @@
 #include "ExperimentUtils.h"
 //#include "GenericPlatform/GenericPlatformProcess.h"
 
-
 // Sets default values
 AExperimentServiceMonitor::AExperimentServiceMonitor()
 {
  	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = false;
 }
+
 /* todo: make this take input ACharacter and spawn that one*/
 bool AExperimentServiceMonitor::SpawnAndPossessPredator() {
 
