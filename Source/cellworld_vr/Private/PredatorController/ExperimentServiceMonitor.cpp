@@ -95,7 +95,7 @@ bool AExperimentServiceMonitor::StartEpisode(const FString experiment) {
 /* stop experiment service episode stream */
 bool AExperimentServiceMonitor::StopEpisode(const FString experiment) {
 
-	start_episode_request = this->SendEpisodeRequest(experiment, "finish_episode"); // returns true; handle if false
+	start_episode_request = this->SendEpisodeRequest(experiment, "stop_episode"); // returns true; handle if false
 	if (!stop_episode_request) { return false; }
 	return true;
 }
@@ -131,7 +131,6 @@ bool AExperimentServiceMonitor::SubscribeToServer(FString header)
 
 	return true;
 }
-
 
 /* temp function */
 bool AExperimentServiceMonitor::ServerConnect()
