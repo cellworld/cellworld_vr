@@ -24,16 +24,15 @@ void UHMDTest::GetConfidenceValues()
 	///*static FXRHMDData */
 	UHMDTest::HMDData = UHMDTest::GetHMDData();
 	
-	//return; 
-	//if (!UHMDTest::HMDData.bValid) {
-	//	UE_LOG(LogTemp, Error, TEXT("[UHMDTest::GetConfidenceValues()] Return: HMDData.bValid = false."));
-	//	//return;
-	//}
+	if (!UHMDTest::HMDData.bValid) {
+		UE_LOG(LogTemp, Error, TEXT("[UHMDTest::GetConfidenceValues()] Return: HMDData.bValid = false."));
+		//return;
+	}
 
-	//if (!UHMDTest::SaveData(UHMDTest::HMDData)) {
-	//	UE_LOG(LogTemp, Error, TEXT("[UHMDTest::GetConfidenceValues()] Return: SaveData failed."));
-	//	//UE_DEBUG_BREAK(); 
-	//}
+	if (!UHMDTest::SaveData(UHMDTest::HMDData)) {
+		UE_LOG(LogTemp, Error, TEXT("[UHMDTest::GetConfidenceValues()] Return: SaveData failed."));
+		//UE_DEBUG_BREAK(); 
+	}
 
 	if (GEngine) {
 		//GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Yellow, FString::Printf(TEXT("Example text that prints a float: %f"), 
@@ -89,7 +88,7 @@ FXRHMDData UHMDTest::GetHMDData()
 	}
 
 	if (!GEngine->XRSystem.IsValid() || !GEngine->XRSystem->GetHMDDevice() || !GEngine->StereoRenderingDevice.IsValid()) {
-		UE_DEBUG_BREAK();
+		return HMDDataTemp;
 	}
 
 	IXRTrackingSystem* XRSystem = GEngine->XRSystem.Get();
@@ -99,7 +98,6 @@ FXRHMDData UHMDTest::GetHMDData()
 	}
 
 	/* good until here */
-
 	if (!UHeadMountedDisplayFunctionLibrary::HasValidTrackingPosition()) {
 		return HMDDataTemp;
 	}
@@ -145,7 +143,5 @@ bool UHMDTest::SaveData(FXRHMDData Data)
 	return UTextFileManager::SaveTxt(*line, *filename);
 }
 
-void UHMDTest::test()
-{
-}
+
 

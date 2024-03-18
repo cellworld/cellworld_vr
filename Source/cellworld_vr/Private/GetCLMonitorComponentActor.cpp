@@ -188,7 +188,6 @@ bool AGetCLMonitorComponentActor::DrawEyeTraceOnPlayer(float DeltaTime)
 	trace_start_right.X = trace_start_right.X + eye_position_horizontal_offset;
 
 	/* trace params  */
-
 	const FVector trace_end_left = trace_start_left + UKismetMathLibrary::TransformDirection(CameraComponent->GetComponentTransform(), eye_left) * 1000 * 100; // 10 meters = 10*100 u.u. (1 cm = 100 u.u) // 1000 for line
 	FHitResult hit_result_left;
 	const FCollisionQueryParams collision_params_left;

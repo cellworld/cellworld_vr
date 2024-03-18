@@ -4,7 +4,8 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
-#include "Tests/HMDTest.h"
+#include "IXRTrackingSystem.h"
+#include "HeadMountedDisplayFunctionLibrary.h"
 #include "TestActor.generated.h"
 
 UCLASS()
@@ -21,5 +22,20 @@ public:
 	virtual void EndPlay(EEndPlayReason::Type EndPlayReason) override; 
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
+
+	/* HMD functions */
+	void GetConfidenceValues();
+	bool IsHMDEnabled();
+	FXRHMDData GetHMDData();
+	bool SaveData(FXRHMDData Data);
+	FXRHMDData HMDData;
+
+	/* control */
+	bool bStopThread = false;
+	FString ProjectDirectory;
+	FString filename;
+	FString delim = ",";
+	uint64 query_count_init; 
+	bool bQuery_count_init_valid; 
 
 };
