@@ -89,7 +89,7 @@ bool FGetCLMonitorComponentThread::PushDataToParentActor(FEyeTracking HPEye) {
 uint32 FGetCLMonitorComponentThread::Run()
 {
 	ProjectDirectory = FPaths::ConvertRelativePathToFull(FPaths::ProjectDir());
-	filename = ProjectDirectory + "Data/data.csv";
+	filename = ProjectDirectory + "Data/data.csv"; // todo: if Data/ doesnt exists -> create folder 
 	FString save_line = FGetCLMonitorComponentThread::GetVariableHeader();
 
 	/* check HMD */

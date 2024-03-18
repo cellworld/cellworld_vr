@@ -57,7 +57,7 @@ protected:
 	bool SaveToString(FEyeTracking HPEye);
 	bool PushDataToParentActor(FEyeTracking HPEye);
 	FString ProjectDirectory;
-	FString filename;;
+	FString filename;
 
 
 	// to save data 

@@ -135,7 +135,7 @@ void AGameModeMain::StartPlay()
 	/* spawn player */
 	AGameModeMain::SpawnAndPossessPlayer(spawn_location_player, spawn_rotation_player);
 
-	AGameModeMain::SpawnAllLoggingActor();
+	//AGameModeMain::SpawnAllLoggingActor();
 
 	AGameModeMain::StopLoadingScreen();	
 }
