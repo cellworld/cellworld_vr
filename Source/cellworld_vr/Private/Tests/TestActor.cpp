@@ -20,7 +20,9 @@ void ATestActor::BeginPlay()
 {
 	Super::BeginPlay();
 	bQuery_count_init_valid = UQueryPerformanceCounter::GetCounter2(query_count_init);
-		
+	/* save header*/
+	const FString header = "time,px,py,pz,rx,ry,rz,tracking_status\n";
+	UTextFileManager::SaveStringToFile(*header, *filename, false);
 }
 
 void ATestActor::EndPlay(EEndPlayReason::Type EndPlayReason)
@@ -33,7 +35,6 @@ void ATestActor::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 	ATestActor::GetConfidenceValues();
-	//UHMDTest::test();
 }
 
 void ATestActor::GetConfidenceValues()
@@ -41,11 +42,9 @@ void ATestActor::GetConfidenceValues()
 
 	if (!this->IsHMDEnabled()) {
 		UE_LOG(LogTemp, Error, TEXT("[UHMDTest::GetConfidenceValues()] Return: Error. Check logs."));
-		//UE_DEBUG_BREAK();
 		return;
 	}
 
-	///*static FXRHMDData */
 	HMDData = ATestActor::GetHMDData();
 
 	if (!ATestActor::HMDData.bValid) {
@@ -55,7 +54,6 @@ void ATestActor::GetConfidenceValues()
 
 	if (!ATestActor::SaveData(HMDData)) {
 		UE_LOG(LogTemp, Error, TEXT("[UHMDTest::GetConfidenceValues()] Return: SaveData failed."));
-		UE_DEBUG_BREAK(); 
 	}
 
 	return;
@@ -146,7 +144,7 @@ bool ATestActor::SaveData(FXRHMDData Data)
 
 	FString line = FString::SanitizeFloat(query_count_elapsed) + delim
 		+ f2s(p.X) + delim + f2s(p.Y) + delim + f2s(p.Z) + delim
-		+ f2s(r.X) + delim + f2s(r.Y) + delim + f2s(r.Z) + "\n";
+		+ f2s(r.X) + delim + f2s(r.Y) + delim + f2s(r.Z) + "status" + "\n";
 
 	return UTextFileManager::SaveStringToFile(*line, *filename, true);
 }

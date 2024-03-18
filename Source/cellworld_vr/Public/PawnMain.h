@@ -58,6 +58,8 @@ public:
 	class UCameraComponent* Camera;
 	UCapsuleComponent* CapsuleComponent;
 	UCustomCharacterMovementComponent* MovementComponent; 
+	class UMotionControllerComponent* MotionControllerLeft;
+	class UMotionControllerComponent* MotionControllerRight;
 	
 	void SetupPlayerInputComponent(class UInputComponent* InInputComponent);
 

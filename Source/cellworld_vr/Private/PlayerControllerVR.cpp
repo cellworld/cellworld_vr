@@ -55,6 +55,7 @@ void APlayerControllerVR::ResetOrigin()
 
 void APlayerControllerVR::QuitGame()
 {
-	FGenericPlatformMisc::RequestExit(true);
+	/*FGenericPlatformMisc::RequestExit(false);*/
+	UKismetSystemLibrary::QuitGame(this, this, EQuitPreference::Quit,false);
 	UE_LOG(LogTemp, Warning, TEXT("APlayerControllerVR::QuitGame() Requesting Exit."));
 }

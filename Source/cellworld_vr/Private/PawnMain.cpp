@@ -41,6 +41,25 @@ APawnMain::APawnMain() : Super()
 	CapsuleComponent->OnComponentBeginOverlap.AddDynamic(this, &APawnMain::OnOverlapBegin); // overlap events
 	CapsuleComponent->OnComponentEndOverlap.AddDynamic(this, &APawnMain::OnOverlapEnd); // overlap events 
 
+	/*Create Motion Controllers*/
+	MotionControllerLeft = CreateDefaultSubobject<UMotionControllerComponent>(TEXT("MotionControllerLeft"));
+	MotionControllerLeft->CreationMethod = EComponentCreationMethod::Native;
+	MotionControllerLeft->AttachToComponent(RootComponent, FAttachmentTransformRules::KeepRelativeTransform);
+	MotionControllerLeft->bDisplayDeviceModel = true;
+	MotionControllerLeft->SetCanEverAffectNavigation(false);
+	MotionControllerLeft->bEditableWhenInherited = true;
+	MotionControllerLeft->MotionSource = FName("Left");
+	MotionControllerLeft->SetVisibility(false, false);
+
+	MotionControllerRight = CreateDefaultSubobject<UMotionControllerComponent>(TEXT("MotionControllerRight"));
+	MotionControllerRight->CreationMethod = EComponentCreationMethod::Native;
+	MotionControllerRight->AttachToComponent(RootComponent, FAttachmentTransformRules::KeepRelativeTransform);
+	MotionControllerRight->bDisplayDeviceModel = true;
+	MotionControllerRight->SetCanEverAffectNavigation(false);
+	MotionControllerRight->bEditableWhenInherited = true;
+	MotionControllerRight->MotionSource = FName("Right");
+	MotionControllerRight->SetVisibility(false, false);
+
 	/* auto-possess */
 	//EAutoReceiveInput::Type::Player0;
 	EAutoReceiveInput::Player0;
@@ -51,9 +70,6 @@ APawnMain::APawnMain() : Super()
 void APawnMain::SetupPlayerInputComponent(class UInputComponent* InInputComponent)
 {
 	Super::SetupPlayerInputComponent(InInputComponent);
-
-	/* map toggling stuff */
-	InInputComponent->BindAction("ResetOrigin", IE_Pressed, this, &APawnMain::ResetOrigin);
 }
 
 UCameraComponent* APawnMain::GetCameraComponent()
@@ -108,11 +124,8 @@ void APawnMain::RestartGame() {
 void APawnMain::QuitGame()
 {
 	if (GEngine) {
-		GEngine->AddOnScreenDebugMessage(-1, 0.5f, FColor::Red, FString::Printf(TEXT("Quit game.")));
+		GEngine->AddOnScreenDebugMessage(-1, 0.5f, FColor::Red, FString::Printf(TEXT("[APawnMain::QuitGame()] Quit game.")));
 	}
-
-	GameMode = (AGameModeMain*)GetWorld()->GetAuthGameMode();
-	GameMode->EndGame();
 }
 
 // Called when the game starts or when spawned
