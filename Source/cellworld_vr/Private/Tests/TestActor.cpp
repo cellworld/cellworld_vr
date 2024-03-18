@@ -125,10 +125,26 @@ static FString f2s(float v) {
 	return FString::SanitizeFloat(v);
 }
 
+static FString TrackingEnumToString(ETrackingStatus TrackingStatus) {
+	
+	switch (TrackingStatus)
+	{
+	case ETrackingStatus::InertialOnly:
+		return "InertialOnly";
+	case ETrackingStatus::NotTracked:
+		return "NotTracked";
+	case ETrackingStatus::Tracked:
+		return "Tracked";
+	}
+	ensure(false);
+	return TEXT("Unknown");
+	
+}
+
 bool ATestActor::SaveData(FXRHMDData Data)
 {
 	/* header:
-		time,px,py,pz,rx,ry,rz,tracking_status,
+		times,px,py,pz,rx,ry,rz,tracking_status,
 	//*/
 
 
@@ -141,10 +157,9 @@ bool ATestActor::SaveData(FXRHMDData Data)
 	if (!bQuery_count_init_valid || !UQueryPerformanceCounter::GetCounter2(query_count_now) || !UQueryPerformanceCounter::GetQueryElapsedTime(query_count_init, query_count_elapsed)) {
 		query_count_elapsed = 0;
 	}
-
 	FString line = FString::SanitizeFloat(query_count_elapsed) + delim
 		+ f2s(p.X) + delim + f2s(p.Y) + delim + f2s(p.Z) + delim
-		+ f2s(r.X) + delim + f2s(r.Y) + delim + f2s(r.Z) + "status" + "\n";
+		+ f2s(r.X) + delim + f2s(r.Y) + delim + f2s(r.Z) + delim + TrackingEnumToString(Data.TrackingStatus) + "\n";
 
 	return UTextFileManager::SaveStringToFile(*line, *filename, true);
 }

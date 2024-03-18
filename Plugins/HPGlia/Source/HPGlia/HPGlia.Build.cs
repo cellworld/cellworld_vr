@@ -22,7 +22,6 @@ public class HPGlia : ModuleRules
     }
 
     private const string libzmqDll = "libzmq-mt-4_3_3.dll";
-    private const string log4cplusDll = "log4cplusU.dll";
     private const string jsoncppDll = "jsoncpp.dll";
 
     public HPGlia(ReadOnlyTargetRules Target) : base(Target)
@@ -41,7 +40,6 @@ public class HPGlia : ModuleRules
 
         //Don't put any paths in here, just *.dll name
         PublicDelayLoadDLLs.Add(libzmqDll);
-        PublicDelayLoadDLLs.Add(log4cplusDll);
         PublicDelayLoadDLLs.Add(jsoncppDll);
 
         PublicSystemLibraries.Add("wintrust.lib");
@@ -87,7 +85,6 @@ public class HPGlia : ModuleRules
             string win64DllPath = System.IO.Path.Combine(basePath, "..", "..", "Binaries", "Win64");
 
             RuntimeDependencies.Add(Path.Combine(win64DllPath, libzmqDll));
-            RuntimeDependencies.Add(Path.Combine(win64DllPath, log4cplusDll));
             RuntimeDependencies.Add(Path.Combine(win64DllPath, jsoncppDll));
         }
     }

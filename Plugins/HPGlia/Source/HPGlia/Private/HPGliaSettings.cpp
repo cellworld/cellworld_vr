@@ -4,6 +4,6 @@
 
 UHPGliaSettings::UHPGliaSettings(const FObjectInitializer& ObjectInitializer)
     : Super(ObjectInitializer)
-    , ConnectionSettings("", "", ELicensingModel::CORE)
+    , ConnectionSettings("", "", ELicensingModel::REV_SHARE)
 {
 }

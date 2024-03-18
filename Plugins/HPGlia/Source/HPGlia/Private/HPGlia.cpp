@@ -17,7 +17,6 @@
 void FHPGliaModule::StartupModule()
 {
     dllsToLoad.push_back( { "libzmq-mt-4_3_3.dll", nullptr } );
-    dllsToLoad.push_back( { "log4cplusU.dll", nullptr } );
     dllsToLoad.push_back( { "jsoncpp.dll", nullptr } );
 
     for (auto dll : dllsToLoad)
