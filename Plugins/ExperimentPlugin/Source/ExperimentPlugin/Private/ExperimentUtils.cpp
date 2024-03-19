@@ -181,6 +181,12 @@ FCellGroup UExperimentUtils::JsonStringToCellGroup(FString jsonString) {
 	return structOutput;
 }
 
+FString UExperimentUtils::StepToJsonString(FStep Step) {
+	FString jsonString; 
+	FJsonObjectConverter::UStructToJsonObjectString(Step, jsonString, 0, 0, 0);
+	return jsonString;
+}
+
 /// <summary>
 ///		Reads in a filePath, which contains the indices of the occlusions to spawn.
 ///		Requires reading the cell_locations from hexagonal.canonical

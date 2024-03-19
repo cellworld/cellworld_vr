@@ -115,6 +115,9 @@ public:
 		static FCellGroup JsonStringToCellGroup(FString jsonString);
 
 	UFUNCTION(BlueprintCallable, Category = Experiment)
+		static FString StepToJsonString(FStep Step);
+
+	UFUNCTION(BlueprintCallable, Category = Experiment)
 		static TArray<FLocation> LoadOcclusions(FString filePath, bool& readStatus, float mapLength);
 
 		static FString LoadWorldImplementation(FString filePath);

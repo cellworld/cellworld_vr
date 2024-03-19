@@ -49,6 +49,11 @@ void APlayerControllerVR::Tick(float DeltaTime)
 void APlayerControllerVR::ResetOrigin()
 {
 	if (PossessedPawn) {
+		//FVector TargetLocation = ...; // Set this to your desired world location
+		//FVector Direction = (TargetLocation - GetActorLocation()).GetSafeNormal();
+		//FRotator NewRotation = Direction.Rotation();
+		//SetActorRotation(NewRotation);
+
 		PossessedPawn->ResetOrigin();
 	}
 }

@@ -41,7 +41,7 @@ bool UQueryPerformanceCounter::GetQueryFrequency(uint64& frequency) {
 		return false; 
 	}
 
-	frequency =li.QuadPart; 
+	frequency = li.QuadPart; // todo: confirm proper value 
 	return true;
 }
 

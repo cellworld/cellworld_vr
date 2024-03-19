@@ -118,8 +118,7 @@ void AGameModeMain::SpawnAllLoggingActor()
 	/* eye-tracker */
 	AGameModeMain::SpawnGetCLMonitorComponentActor();
 
-	/* spawn predator into middle of world */
-	AGameModeMain::SpawnExperimentServiceMonitor(); // not ready yet, need to finish passing correct trees to ai. workes well in BP
+	
 }
 
 void AGameModeMain::StartLoadingScreen()
@@ -142,6 +141,8 @@ void AGameModeMain::StartPlay()
 
 	//AGameModeMain::SpawnAllLoggingActor();
 
+	AGameModeMain::SpawnExperimentServiceMonitor(); // not ready yet, need to finish passing correct trees to ai. workes well in BP
+	
 	AGameModeMain::StopLoadingScreen();	
 }
 
