@@ -15,7 +15,7 @@
 AGameModeMain::AGameModeMain()
 {
 	/* Get PawnMain to spawn */
-	bool DEBUG = false; 
+	bool DEBUG = true; 
 	if (DEBUG){
 		DefaultPawnClass = APawnDebug::StaticClass(); 
 		PlayerControllerClass = AMouseKeyboardPlayerController::StaticClass();
@@ -117,8 +117,6 @@ void AGameModeMain::SpawnAllLoggingActor()
 {
 	/* eye-tracker */
 	AGameModeMain::SpawnGetCLMonitorComponentActor();
-
-	
 }
 
 void AGameModeMain::StartLoadingScreen()

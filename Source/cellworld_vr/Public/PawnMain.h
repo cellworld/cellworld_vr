@@ -13,11 +13,9 @@
 #include "GameFramework/FloatingPawnMovement.h" 
 #include "GameFramework/CharacterMovementComponent.h" // test 
 #include "Components/CustomCharacterMovementComponent.h"
-
-//#include "Runtime/Steam/SteamVR/Source/SteamVR/Classes/SteamVRChaperoneComponent.h"
+#include "Kismet/GameplayStatics.h" 
 #include "MotionControllerComponent.h"
 #include "PawnMain.generated.h"
-
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnMovementDetected, FVector, Location);
 
@@ -37,7 +35,6 @@ public:
 	void ResetOrigin();
 	void RestartGame();
 	void QuitGame();
-
 
 	/* temp */
 	FVector RelLoc;
@@ -94,5 +91,5 @@ private:
 	void OnMovementDetected();
 	FVector _old_location; 
 	FVector _new_location;
-	float _movement_threshold = 5	; 
+	float _movement_threshold = 5; 
 };

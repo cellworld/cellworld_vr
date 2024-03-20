@@ -11,8 +11,11 @@
 #include "Components/CapsuleComponent.h"
 #include "Components/SphereComponent.h"
 #include "Components/SceneComponent.h"
+#include "Kismet/GameplayStatics.h" 
 #include "HeadMountedDisplay.h"
 #include "PawnDebug.generated.h"
+
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnMovementDetectedDebug, FVector, Location);
 
 UCLASS()
 class CELLWORLD_VR_API APawnDebug : public APawn
@@ -22,6 +25,9 @@ class CELLWORLD_VR_API APawnDebug : public APawn
 public:
 	// Sets default values for this pawn's properties
 	APawnDebug();
+
+	UPROPERTY()
+		FOnMovementDetectedDebug MovementDetectedEvent;
 
 	void ResetOrigin();
 	const float capsule_height = 175.0f;
@@ -60,7 +66,6 @@ public:
 	UFUNCTION()
 	void OnOverlapEnd(class UPrimitiveComponent* OverlappedComp, class AActor* OtherActor, class UPrimitiveComponent* OtherComp, int32 OtherBodyIndex);
 
-
 	virtual UPawnMovementComponent* GetMovementComponent() const override;
 	FHitResult OutHit;
 	ETeleportType TeleportType = ETeleportType::None;
@@ -73,4 +78,10 @@ public:
 	FVector current_location;
 	FVector HMDPosition;
 	FXRHMDData HMDData;
+
+	bool DetectMovement();
+	void OnMovementDetected();
+	FVector _old_location;
+	FVector _new_location;
+	float _movement_threshold = 5;
 };

@@ -1,13 +1,10 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
-
 #include "PawnDebug.h"
 #include "GameModeMain.h"
 #include "HeadMountedDisplayFunctionLibrary.h"
 #include "HeadMountedDisplayTypes.h"
 #include "IXRTrackingSystem.h"
-
-// Sets default values
 
 //AGameModeMain* GameMode;
 
@@ -55,16 +52,29 @@ APawnDebug::APawnDebug()
 	Camera->AddRelativeRotation(TargetRotation);
 }
 
-//void APawnDebug::QuitGame()
-//{
-//
-//	if (GEngine) {
-//		GEngine->AddOnScreenDebugMessage(-1, 0.5f, FColor::Red, FString::Printf(TEXT("Quit game.")));
-//	}
-//
-//	GameMode = (AGameModeMain*)GetWorld()->GetAuthGameMode();
-//	GameMode->EndGame();
-//}
+bool APawnDebug::DetectMovement()
+{
+	/* process */
+	bool _blocation_updated = false;
+
+	_new_location = this->GetActorLocation();
+
+	if (!_new_location.Equals(_old_location, 2)) {
+		_blocation_updated = true;
+		_old_location = _new_location;
+	}
+	else {
+		_blocation_updated = false;
+	}
+	return _blocation_updated;
+}
+
+void APawnDebug::OnMovementDetected()
+{
+	MovementDetectedEvent.Broadcast(_new_location);
+	UE_LOG(LogTemp, Log, TEXT("[APawnDebug::OnMovementDetected()] Movement detected."));
+	//if (GEngine) GEngine->AddOnScreenDebugMessage(-1, 0.5f, FColor::Blue, FString::Printf(TEXT("Movement detected")));
+}
 
 void APawnDebug::ResetOrigin()
 {
@@ -93,6 +103,10 @@ void APawnDebug::BeginPlay()
 void APawnDebug::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
+	/* check if we moved */
+	if (this->DetectMovement()) {
+		this->OnMovementDetected();
+	}
 }
 
 // Called to bind functionality to input

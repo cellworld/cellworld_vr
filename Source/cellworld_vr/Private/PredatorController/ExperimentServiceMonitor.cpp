@@ -39,7 +39,6 @@ bool AExperimentServiceMonitor::SpawnAndPossessPredator() {
 	return false;
 }
 
-
 bool AExperimentServiceMonitor::StopConnection(UMessageClient* Client)
 {
 	UE_LOG(LogTemp, Warning, TEXT("[AExperimentServiceMonitor::StopConnection] Disconecting."));
@@ -112,17 +111,31 @@ bool AExperimentServiceMonitor::StopEpisode(const FString experiment) {
 /* handle experiment service message received */
 void AExperimentServiceMonitor::HandleExperimentServiceMessage(FMessage message) {
 	if (GEngine) {
-		if (GEngine) GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Yellow, FString::Printf(TEXT("experiment message : %s"), *message.body));
+		if (GEngine) GEngine->AddOnScreenDebugMessage(-1, 0.5f, FColor::Magenta, FString::Printf(TEXT("experiment message : %s"), *message.body));
 	}
 }
 
 /* handle experiment service message timeout */
 void AExperimentServiceMonitor::HandleExperimentServiceMessageTimedOut(FMessage message) {
 	if (GEngine) {
-		if (GEngine) GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Yellow, FString::Printf(TEXT("experiment timeout message : %s"), *message.body));
+		if (GEngine) GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Red, FString::Printf(TEXT("experiment timeout message : %s"), *message.body));
 	}
 }
 
+void AExperimentServiceMonitor::HandleTrackingServiceMessagePredator(FMessage message)
+{
+	if (GEngine) {
+		if (GEngine) GEngine->AddOnScreenDebugMessage(-1, 0.1f, FColor::Green, FString::Printf(TEXT("predator tracking message : %s"), *message.body));
+	}
+	this->UpdatePredator(message);
+}
+
+void AExperimentServiceMonitor::HandleTrackingServiceMessagePrey(FMessage message)
+{
+	if (GEngine) {
+		if (GEngine) GEngine->AddOnScreenDebugMessage(-1, 0.5f, FColor::Yellow, FString::Printf(TEXT("Prey tracking message: %s"), *message.body));
+	}
+}
 /* Handle experiment service response (during subscription) */
 void AExperimentServiceMonitor::HandleExperimentServiceResponse(const FString message) {
 	UE_LOG(LogTemp, Warning, TEXT("[AExperimentServiceMonitor::HandleExperimentServiceResponse] ES: %s"), *message);
@@ -138,7 +151,7 @@ void AExperimentServiceMonitor::HandleExperimentServiceResponseTimedOut() {
 
 /* Handle tracking service response (during subscription) */
 void AExperimentServiceMonitor::HandleTrackingServiceResponse(const FString message) {
-	UE_LOG(LogTemp, Warning, TEXT("[HandleTrackingServiceResponseResponse::HandleExperimentServiceResponse] ES: %s"), *message);
+	UE_LOG(LogTemp, Warning, TEXT("[AExperimentServiceMonitor::HandleTrackingServiceResponse] ES: %s"), *message);
 	if (message != "success") {
 		UE_DEBUG_BREAK();
 	}
@@ -146,7 +159,7 @@ void AExperimentServiceMonitor::HandleTrackingServiceResponse(const FString mess
 
 /* Handle tracking service response timeout (during subscription */
 void AExperimentServiceMonitor::HandleTrackingServiceResponseTimedOut() {
-	UE_LOG(LogTemp, Warning, TEXT("HandleTrackingServiceResponseTimedOut] Timed out!"));
+	UE_LOG(LogTemp, Warning, TEXT("[AExperimentServiceMonitor::HandleTrackingServiceResponseTimedOut] Timed out!"));
 }
 
 /* create tracking service client */
@@ -170,7 +183,7 @@ bool AExperimentServiceMonitor::ConnectToTrackingService() {
 		return false;
 	}
 
-	/* 1. connect tracking client to server */
+	/* connect tracking client to server */
 	int att_max = 5;
 	int att = 0;
 	UE_LOG(LogTemp, Log, TEXT("[AExperimentServiceMonitor::TrackingServiceSetRoute()] Connecting to Tracking Service."));
@@ -188,11 +201,31 @@ bool AExperimentServiceMonitor::ConnectToTrackingService() {
 
 	return true;
 }
+
 /* route tracking service messages (steps) */
 bool AExperimentServiceMonitor::TrackingServiceRouteMessages() {
+
+	/* route to send data*/
 	TrackingServiceRoute = TrackingServiceClient->AddRoute(header_tracking_service);
-	TrackingServiceRoute->MessageReceived.AddDynamic(this, &AExperimentServiceMonitor::HandleTrackingServiceMessage);
+	
+	/* handle messages received with unknown headers/routes */
 	TrackingServiceClient->UnroutedMessageEvent.AddDynamic(this, &AExperimentServiceMonitor::HandleTrackingServiceUnroutedMessage);
+
+	/* prey route */
+	TrackingServiceRoutePrey = TrackingServiceClient->AddRoute(header_tracking_service_prey);
+
+	/* predator route */
+	TrackingServiceRoutePredator = TrackingServiceClient->AddRoute(header_tracking_service_predator);
+
+	/* bind only if all routes valid */
+	if (!TrackingServiceRoute && !TrackingServiceRoutePrey && !TrackingServiceRoutePredator) {
+		return false;
+	}
+
+	TrackingServiceRoute->MessageReceived.AddDynamic(this, &AExperimentServiceMonitor::HandleTrackingServiceMessage);
+	TrackingServiceRoutePrey->MessageReceived.AddDynamic(this, &AExperimentServiceMonitor::HandleTrackingServiceMessagePrey);
+	TrackingServiceRoutePredator->MessageReceived.AddDynamic(this, &AExperimentServiceMonitor::HandleTrackingServiceMessagePredator);
+
 	return true; 
 }
 
@@ -240,13 +273,13 @@ bool AExperimentServiceMonitor::SubscribeToExperimentServiceServer(FString heade
 		att += 1;
 	}
 
-	URequest* request = ExperimentServiceClient->Subscribe();
-	if (!request) { 
+	URequest* ExperimentServiceRequestSubscribe = ExperimentServiceClient->Subscribe();
+	if (!ExperimentServiceRequestSubscribe) {
 		return false; 
 	}
 
-	request->ResponseReceived.AddDynamic(this, &AExperimentServiceMonitor::HandleExperimentServiceResponse);
-	request->TimedOut.AddDynamic(this, &AExperimentServiceMonitor::HandleExperimentServiceResponseTimedOut);
+	ExperimentServiceRequestSubscribe->ResponseReceived.AddDynamic(this, &AExperimentServiceMonitor::HandleExperimentServiceResponse);
+	ExperimentServiceRequestSubscribe->TimedOut.AddDynamic(this, &AExperimentServiceMonitor::HandleExperimentServiceResponseTimedOut);
 
 	ExperimentServiceRoute = ExperimentServiceClient->AddRoute(header);
 	if (!ExperimentServiceRoute) { 
@@ -297,10 +330,9 @@ void AExperimentServiceMonitor::UpdatePreyPosition(FVector vector)
 	FString body = UExperimentUtils::StepToJsonString(send_step); 
 
 	/* send message to ES */
-	//FMessage message = UMessageClient::NewMessage(header_prey, body);
 	FMessage message = UMessageClient::NewMessage(header_tracking_service, body);
 
-	//UE_LOG(LogTemp, Log, TEXT("send_step: %s"),*message.body);
+	UE_LOG(LogTemp, Log, TEXT("send_step: (%s) %s"),*header_tracking_service,*message.body);
 	if (TrackingServiceClient->IsConnected()) {
 		TrackingServiceClient->SendMessage(message);
 	}
@@ -312,28 +344,68 @@ void AExperimentServiceMonitor::UpdatePreyPosition(FVector vector)
 void AExperimentServiceMonitor::HandleTrackingServiceMessage(FMessage message)
 {
 	if (GEngine) {
-		if (GEngine) GEngine->AddOnScreenDebugMessage(-1, 1.0f, FColor::Green, FString::Printf(TEXT("tracking message : %s"), *message.body));
+		if (GEngine) GEngine->AddOnScreenDebugMessage(-1, 1.0f, FColor::Green, FString::Printf(TEXT("tracking message: (%s) %s"),*message.header, *message.body));
 	}
 }
 
 void AExperimentServiceMonitor::HandleTrackingServiceUnroutedMessage(FMessage message)
 {
-	if (GEngine) GEngine->AddOnScreenDebugMessage(-1, 1.0f, FColor::Red, FString::Printf(TEXT("tracking timedout : %s"), *message.body));
+	if (GEngine) GEngine->AddOnScreenDebugMessage(-1, 1.0f, FColor::Red, FString::Printf(TEXT("tracking unrouted: (%s) %s"), *message.header, *message.body));
 }
 
 /* gets player pawn from world */
 bool AExperimentServiceMonitor::GetPlayerPawn()
 {
 	APawn* Pawn = UGameplayStatics::GetPlayerPawn(GetWorld(), 0);
-	if (!Pawn) { return false; }
+	if (!Pawn) {
+		if (GEngine) GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Red, TEXT("[AExperimentServiceMonitor::GetPlayerPawn()] No pawn found."));
+		return false;
+	}
 
-	PlayerPawn = Cast<APawnMain>(Pawn);
-	if (!PlayerPawn) { return false; }
-	
-	PlayerPawn->MovementDetectedEvent.AddDynamic(this, &AExperimentServiceMonitor::UpdatePreyPosition);
+	// Attempt to cast to APawnMain or APawnDebug and assign to PlayerPawn if successful.
+	if (Cast<APawnMain>(Pawn)) {
+		APawnMain* PlayerPawn = Cast<APawnMain>(Pawn); // Assuming PlayerPawn is a member of type APawn* or APawnMain*
+		if (GEngine) GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Green, TEXT("[AExperimentServiceMonitor::GetPlayerPawn()] APawnMain found and assigned."));
+		PlayerPawn->MovementDetectedEvent.AddDynamic(this, &AExperimentServiceMonitor::UpdatePreyPosition);
+	}
+	else if (Cast<APawnDebug>(Pawn)) {
+		APawnDebug* PlayerPawn = Cast<APawnDebug>(Pawn); // Adjust according to the actual type of PlayerPawn
+		if (GEngine) GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Green, TEXT("[AExperimentServiceMonitor::GetPlayerPawn()] APawnDebug found and assigned."));
+		PlayerPawn->MovementDetectedEvent.AddDynamic(this, &AExperimentServiceMonitor::UpdatePreyPosition);
+	}
+	else {
+		if (GEngine) GEngine->AddOnScreenDebugMessage(-1, 1.0f, FColor::Yellow, TEXT("[AExperimentServiceMonitor::GetPlayerPawn()] Pawn found, but it is neither APawnMain nor APawnDebug."));
+		return false;
+	}
 
 	return true;
 }
+
+void AExperimentServiceMonitor::SelfDestruct(const FString ErrorMessageIn)
+{
+	const FString DebugMessage = TEXT("[AExperimentServiceMonitor::SelfDestruct] Tracking and Experiment ABORTED. Something happened.");
+	if (GEngine) GEngine->AddOnScreenDebugMessage(1, 30.0f, FColor::Red, DebugMessage);
+
+
+	UE_LOG(LogTemp, Error, TEXT("[AExperimentServiceMonitor::SelfDestruct()] Something went wrong. Destroying."));
+	UE_LOG(LogTemp, Error, TEXT("[AExperimentServiceMonitor::SelfDestruct()] Error Message: %s."), *ErrorMessageIn);
+	
+	// Make sure to check if the actor is valid and has not already been marked for destruction.
+	if (!this->IsPendingKill())
+	{
+		/* stop connections if clients exist */
+		if (ExperimentServiceClient && ExperimentServiceClient->IsConnected()) { 
+			ExperimentServiceClient->Disconnect(); 
+		}
+		if (TrackingServiceClient && TrackingServiceClient->IsConnected()) { 
+			TrackingServiceClient->Disconnect(); 
+		}
+		
+		// Destroy the actor.
+		this->Destroy();
+	}
+}
+
 
 /* main stuff happens here */
 void AExperimentServiceMonitor::BeginPlay()
@@ -342,20 +414,30 @@ void AExperimentServiceMonitor::BeginPlay()
 
 	/* connect tracking service */
 	bSubscribedToTrackingService = this->SubscribeToTrackingService();
-	if (!bSubscribedToTrackingService) { UE_DEBUG_BREAK(); }
+	if (!bSubscribedToTrackingService) { 
+		this->SelfDestruct(FString("Subscribe to TS failed."));
+		return;
+	}
 
 	/* route tracking messages */
 	bRoutedMessagesTrackingService = this->TrackingServiceRouteMessages();
-	if (!bRoutedMessagesTrackingService) { UE_DEBUG_BREAK(); }
-
-	if (!this->SubscribeToExperimentServiceServer(predator_step_header)) { UE_DEBUG_BREAK(); }
-
-	if (!this->SpawnAndPossessPredator()) {
-		UE_DEBUG_BREAK();
+	if (!bRoutedMessagesTrackingService) { 
+		this->SelfDestruct(FString("Create routes for TS failed."));
+		return;
 	}
 
+	if (!this->SubscribeToExperimentServiceServer(header_tracking_service)) { 
+		this->SelfDestruct(FString("Subscribe to ES failed."));
+		return;
+	}
+
+	if (!this->SpawnAndPossessPredator()) {
+		this->SelfDestruct(FString("spawn and possess predator failed."));
+		return;
+	}
 	if (!this->GetPlayerPawn()) {
-		UE_DEBUG_BREAK();
+		this->SelfDestruct(FString("GetPlayerPawn() failed.."));
+		return;
 	}
 
 	if (TrackingServiceClient->IsConnected() && GEngine) {

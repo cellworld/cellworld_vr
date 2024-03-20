@@ -10,6 +10,7 @@
 #include "PredatorController/CharacterPredator.h"
 #include "PredatorController/ControllerTypes.h"
 #include "PawnMain.h"
+#include "PawnDebug.h"
 #include "ExperimentServiceMonitor.generated.h"
 
 //DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnMessageReceived, FMessage, message);
@@ -31,14 +32,18 @@ public:
 
 	UMessageRoute* MessageRoute; 
 	UMessageRoute* TrackingServiceRoute; 
+	UMessageRoute* TrackingServiceRoutePrey; 
+	UMessageRoute* TrackingServiceRoutePredator; 
 
 	URequest* start_episode_request;
 	URequest* stop_episode_request;
 
 	URequest* TrackingServiceRequest; 
 
-	const FString header_experiment_service = "predator_step";
-	const FString header_tracking_service   = "send_step";
+	const FString header_experiment_service			= "predator_step";
+	const FString header_tracking_service			= "send_step";
+	const FString header_tracking_service_prey		= "prey_step";
+	const FString header_tracking_service_predator  = "predator_step";
 
 	const FString ServerIPMessage   = "127.0.0.1";
 	const int PortTrackingService   = 4510;
@@ -49,11 +54,17 @@ public:
 	bool bConnectedToServer     = false;
 	bool bCanUpdatePreyPosition = false;
 
+	/* connection control */
 	bool bConnectedToExperimentService  = false; 
 	bool bCOnnectedToTrackingService    = false; 
+	
+	/* subscription control */
 	bool bSubscribedToTrackingService   = false;
 	bool bRoutedMessagesTrackingService = false; 
 
+	/* episode controll */
+
+	/* setu[ */
 	const FString predator_step_header = "predator_step";
 	bool SubscribeToTrackingService();
 	bool ConnectToTrackingService(); 
@@ -72,12 +83,18 @@ public:
 
 	bool ConnectTrackingService();
 	
-	APawnMain* PlayerPawn;
 	bool GetPlayerPawn();
+
+	/* abort if anything goes wrong */
+	void SelfDestruct(const FString ErrorMessageIn);
 	
-	/* delegates */
+	/* ==== delegates ==== */
 
 	/* experiment service */
+	UFUNCTION()
+		void HandleTrackingServiceMessagePredator(FMessage message);
+	UFUNCTION()
+		void HandleTrackingServiceMessagePrey(FMessage message);
 	UFUNCTION()
 		void HandleExperimentServiceMessage(FMessage message);
 	UFUNCTION()
@@ -86,13 +103,11 @@ public:
 		void HandleExperimentServiceResponse(const FString message);
 	UFUNCTION()
 		void HandleExperimentServiceResponseTimedOut();
-
 	/* tracking service */
 	UFUNCTION()
 		void HandleTrackingServiceResponse(const FString message);
 	UFUNCTION()
 		void HandleTrackingServiceResponseTimedOut();
-	
 	/* Episode */
 	UFUNCTION()
 		void EpisodeResponse(const FString response);
@@ -106,7 +121,6 @@ public:
 		void UpdatePredator(FMessage message);
 	UFUNCTION()
 		void UpdatePreyPosition(FVector Location);
-
 	UFUNCTION()
 		void HandleTrackingServiceMessage(FMessage message);
 	UFUNCTION()

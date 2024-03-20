@@ -97,10 +97,8 @@ bool APawnMain::DetectMovement()
 void APawnMain::OnMovementDetected()
 {
 	MovementDetectedEvent.Broadcast(_new_location);
-
-	if (GEngine) {
-		GEngine->AddOnScreenDebugMessage(-1, 0.5f, FColor::Blue, FString::Printf(TEXT("Movement detected")));
-	}
+	UE_LOG(LogTemp, Log, TEXT("[APawnMain::OnMovementDetected()] Movement detected."));
+	//if (GEngine) GEngine->AddOnScreenDebugMessage(-1, 0.5f, FColor::Blue, FString::Printf(TEXT("Movement detected")));
 }
 
 void APawnMain::ResetOrigin() 
