@@ -68,9 +68,14 @@ public:
 
 	UFUNCTION(BlueprintCallable, Category = Experiment)
 		static FStartEpisodeRequest JsonStringToStartEpisodeRequest(FString jsonString);
-
+	
+	UFUNCTION(BlueprintCallable, Category = Experiment)
+		static FString StartExperimentRequestToJsonString(FStartExperimentRequestVR structInput);
+	
 	UFUNCTION(BlueprintCallable, Category = Experiment)
 		static FString StartEpisodeRequestToJsonString(FStartEpisodeRequest structInput);
+	UFUNCTION(BlueprintCallable, Category = Experiment)
+		static FString WorldInfoToJsonString(FWorldInfo structInput);
 
 	UFUNCTION(BlueprintCallable, Category = Experiment)
 		static FStartEpisodeResponse JsonStringToStartEpisodeResponse(FString jsonString);

@@ -17,7 +17,6 @@ static FString TYPE ##ToJsonString (F##TYPE structInput) { \
 	return jsonString; \
 } 
 
-
 USTRUCT(Blueprintable)
 struct FLocation
 {
@@ -143,6 +142,49 @@ public:
 	}
 };
 
+USTRUCT(Blueprintable)
+struct FStartExperimentRequestVR
+{
+	GENERATED_BODY()
+public:
+	// prefix: str, 
+	// suffix : str, 
+	// world_configuration : str, 
+	// world_implementation : str, 
+	// occlusions : str, 
+	// subject_name : str, 
+	// duration : int, 
+	// rewards_cells : Cell_group_builder = None, 
+	// rewards_orientations : JsonList = None
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Experiment)
+		FString prefix = "VR";
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Experiment)
+		FString suffix = "suffix";
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Experiment)
+		FString world_implementation = "canonical";
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Experiment)
+		FString world_configuration = "hexagonal";
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Experiment)
+		FString occlusions = "21_05";
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Experiment)
+		FString subject_name;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Experiment)
+		int duration = 0; 
+};
+
+USTRUCT(Blueprintable)
+struct FWorldInfo
+{
+	GENERATED_BODY()
+public:
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Experiment)
+		FString world_configuration = "hexagonal";
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Experiment)
+		FString world_implementation = "canonical";
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Experiment)
+		FString occlusions = "21_05";
+};
 
 USTRUCT(Blueprintable)
 struct FStartEpisodeRequest

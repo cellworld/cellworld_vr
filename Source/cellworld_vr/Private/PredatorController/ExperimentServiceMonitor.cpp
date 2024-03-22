@@ -39,73 +39,125 @@ bool AExperimentServiceMonitor::SpawnAndPossessPredator() {
 	return false;
 }
 
+/* stop connection for ClientIn */
 bool AExperimentServiceMonitor::StopConnection(UMessageClient* Client)
 {
 	UE_LOG(LogTemp, Warning, TEXT("[AExperimentServiceMonitor::StopConnection] Disconecting."));
 	return Client->Disconnect();
 }
 
-void AExperimentServiceMonitor::EpisodeResponse(const FString response) {
-	UE_LOG(LogTemp, Warning, TEXT("[AExperimentServiceMonitor::EpisodeResponse] %s"), *response);
-}
+/* sends request to experiment service to start experiment */
+bool AExperimentServiceMonitor::StartExperiment(const FString ExperimentNameIn) {
 
-/* create and send simple experiment service request */
-URequest* AExperimentServiceMonitor::SendStartEpisodeRequest(const FString experiment, const FString header)
-{
-	if (!ExperimentServiceClient) { 
-		return nullptr;  
-	}
+	if (!ExperimentServiceClient) { return false; }
+	if (!ExperimentServiceClient->IsConnected()) { return false; }
 
-	FStartEpisodeRequest request_body;
-	request_body.experiment_name = experiment;
+	FWorldInfo world_info; 
+	FString world_info_string = UExperimentUtils::WorldInfoToJsonString(world_info);
+
+	FStartExperimentRequestVR request_body;
+	request_body.subject_name = ExperimentNameIn;
 	
-	FString request_string = UExperimentUtils::StartEpisodeRequestToJsonString(request_body);
-	URequest* request = ExperimentServiceClient->SendRequest(header, request_string, 5.0f);
-	
-	if (!request) { 
-		return nullptr; 
-	}
+	FString request_string = UExperimentUtils::StartExperimentRequestToJsonString(request_body);
+	start_experiment_request = ExperimentServiceClient->SendRequest("start_experiment_vr", request_string, 5.0f);
 
-	request->ResponseReceived.AddDynamic(this, &AExperimentServiceMonitor::EpisodeResponse);
-	request->TimedOut.AddDynamic(this, &AExperimentServiceMonitor::EpisodeTimedOut);
-	
-	return request;
+	if (!start_experiment_request) { return false; }
+
+	start_experiment_request->ResponseReceived.AddDynamic(this, &AExperimentServiceMonitor::HandleStartExperimentResponse);
+	start_experiment_request->TimedOut.AddDynamic(this, &AExperimentServiceMonitor::HandleStartExperimentTimedOut);
+
+	return true; 
 }
 
-/* create and send simple experiment service request */
-URequest* AExperimentServiceMonitor::SendStopEpisodeRequest(const FString experiment, const FString header)
-{
-	FFinishEpisodeRequest request_body;
-	request_body.experiment_name = experiment;
+bool AExperimentServiceMonitor::StopExperiment(const FString ExperimentNameIn) {
 
-	FString request_string = UExperimentUtils::FinishEpisodeRequestToJsonString(request_body);
-	URequest* request = ExperimentServiceClient->SendRequest(header, request_string, 5.0f);
-
-	if (!request) { return nullptr; }
-	request->ResponseReceived.AddDynamic(this, &AExperimentServiceMonitor::EpisodeResponse);
-	request->TimedOut.AddDynamic(this, &AExperimentServiceMonitor::EpisodeTimedOut);
-
-	return request;
+	if (!ExperimentServiceClient->IsConnected()) { return false; }
+	return true; 
 }
 
-/* handle experiment service timeout */
-void AExperimentServiceMonitor::EpisodeTimedOut() {
-	UE_LOG(LogTemp,Error,TEXT("[AExperimentServiceMonitor::EpisodeTimedOut()] Episode request timed out!"))
-}
 
 /* start experiment service episode stream */
-bool AExperimentServiceMonitor::StartEpisode(const FString experiment) {
-	start_episode_request = this->SendStartEpisodeRequest(experiment, "start_episode"); // returns true; handle if false
+bool AExperimentServiceMonitor::StartEpisode(const FString ExperimentNameIn) {
+	start_episode_request = this->SendStartEpisodeRequest(ExperimentNameIn, "start_episode"); // returns true; handle if false
 	if (!start_episode_request) { return false; }
 	return true;
 }
 
 /* stop experiment service episode stream */
-bool AExperimentServiceMonitor::StopEpisode(const FString experiment) {
+bool AExperimentServiceMonitor::StopEpisode(const FString ExperimentNameIn) {
 
-	start_episode_request = this->SendStopEpisodeRequest(experiment, "stop_episode"); // returns true; handle if false
+	start_episode_request = this->SendStopEpisodeRequest(ExperimentNameIn, "stop_episode"); // returns true; handle if false
 	if (!stop_episode_request) { return false; }
 	return true;
+}
+
+/* Handle episode response */
+void AExperimentServiceMonitor::HandleEpisodeRequestResponse(const FString response) {
+
+	UE_LOG(LogTemp, Warning, TEXT("[AExperimentServiceMonitor::EpisodeResponse] %s"), *response);
+	if (GEngine) if (GEngine) GEngine->AddOnScreenDebugMessage(-1, 0.5f, FColor::Magenta, FString::Printf(TEXT("Episode response: %s"), *response));
+	
+	if (response != "success") {
+		UE_DEBUG_BREAK();
+	}
+	bInEpisode = true;
+}
+
+/* handle experiment service timeout */
+void AExperimentServiceMonitor::HandleEpisodeRequestTimedOut() {
+	UE_LOG(LogTemp, Error, TEXT("[AExperimentServiceMonitor::EpisodeTimedOut()] Episode request timed out!"))
+}
+
+void AExperimentServiceMonitor::HandleStartExperimentResponse(const FString ResponseIn)
+{
+	UE_LOG(LogTemp, Warning, TEXT("[AExperimentServiceMonitor::HandleStartExperimentResponse] %s"), *ResponseIn);
+	if (GEngine) if (GEngine) GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Green, FString::Printf(TEXT("Episode response: %s"), *ResponseIn));
+
+	if (ResponseIn != "success") {
+		UE_DEBUG_BREAK();
+	}
+	bInExperiment = true;
+}
+
+void AExperimentServiceMonitor::HandleStartExperimentTimedOut()
+{
+	UE_LOG(LogTemp, Warning, TEXT("[AExperimentServiceMonitor::HandleStartExperimentResponse] Start experiment timed out"));
+	if (GEngine) if (GEngine) GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Red, TEXT("Start experiment timed out"));
+}
+
+/* create and send simple experiment service request */
+URequest* AExperimentServiceMonitor::SendStartEpisodeRequest(const FString ExperimentNameIn, const FString header)
+{
+	if (!ExperimentServiceClient) { return nullptr; }
+
+	FStartEpisodeRequest request_body;
+	request_body.experiment_name = ExperimentNameIn;
+	
+	FString request_string = UExperimentUtils::StartEpisodeRequestToJsonString(request_body);
+	URequest* request = ExperimentServiceClient->SendRequest(header, request_string, 5.0f);
+	
+	if (!request) { return nullptr; }
+
+	request->ResponseReceived.AddDynamic(this, &AExperimentServiceMonitor::HandleEpisodeRequestResponse);
+	request->TimedOut.AddDynamic(this, &AExperimentServiceMonitor::HandleEpisodeRequestTimedOut);
+	
+	return request;
+}
+
+/* create and send simple experiment service request */
+URequest* AExperimentServiceMonitor::SendStopEpisodeRequest(const FString ExperimentNameIn, const FString header)
+{
+	FFinishEpisodeRequest request_body;
+	request_body.experiment_name = ExperimentNameIn;
+
+	FString request_string = UExperimentUtils::FinishEpisodeRequestToJsonString(request_body);
+	URequest* request = ExperimentServiceClient->SendRequest(header, request_string, 5.0f);
+
+	if (!request) { return nullptr; }
+	request->ResponseReceived.AddDynamic(this, &AExperimentServiceMonitor::HandleEpisodeRequestResponse);
+	request->TimedOut.AddDynamic(this, &AExperimentServiceMonitor::HandleEpisodeRequestTimedOut);
+
+	return request;
 }
 
 /* handle experiment service message received */
@@ -122,6 +174,7 @@ void AExperimentServiceMonitor::HandleExperimentServiceMessageTimedOut(FMessage 
 	}
 }
 
+/* handle tracking service message through predator route */
 void AExperimentServiceMonitor::HandleTrackingServiceMessagePredator(FMessage message)
 {
 	if (GEngine) {
@@ -136,17 +189,18 @@ void AExperimentServiceMonitor::HandleTrackingServiceMessagePrey(FMessage messag
 		if (GEngine) GEngine->AddOnScreenDebugMessage(-1, 0.5f, FColor::Yellow, FString::Printf(TEXT("Prey tracking message: %s"), *message.body));
 	}
 }
+
 /* Handle experiment service response (during subscription) */
 void AExperimentServiceMonitor::HandleExperimentServiceResponse(const FString message) {
-	UE_LOG(LogTemp, Warning, TEXT("[AExperimentServiceMonitor::HandleExperimentServiceResponse] ES: %s"), *message);
+	UE_LOG(LogTemp, Warning, TEXT("[AExperimentServiceMonitor::HandleExperimentServiceResponse] ES response: %s"), *message);
 	if (message != "success") {
 		UE_DEBUG_BREAK();
 	}
 }
 
-/* Handle experiment service response timeout (during subscription */
+/* Handle experiment service response timeout (during subscription) */
 void AExperimentServiceMonitor::HandleExperimentServiceResponseTimedOut() {
-	UE_LOG(LogTemp, Warning, TEXT("[AExperimentServiceMonitor::HandleExperimentServiceTimedOut] ES Timed out!"));
+	UE_LOG(LogTemp, Warning, TEXT("[AExperimentServiceMonitor::HandleExperimentServiceTimedOut] ES response timed out!"));
 }
 
 /* Handle tracking service response (during subscription) */
@@ -176,6 +230,7 @@ bool AExperimentServiceMonitor::ConnectTrackingService() {
 	return TrackingServiceClient->Connect(ServerIPMessage, PortTrackingService);
 }
 
+/* connect tro tracking service. Connection parameters are defined in header file. */
 bool AExperimentServiceMonitor::ConnectToTrackingService() {
 	TrackingServiceClient = UMessageClient::NewMessageClient();
 
@@ -254,6 +309,7 @@ bool AExperimentServiceMonitor::SubscribeToTrackingService()
 	return true;
 }
 
+/* subscribe to experiment service monitor */
 bool AExperimentServiceMonitor::SubscribeToExperimentServiceServer(FString header)
 {	
 	ExperimentServiceClient = UMessageClient::NewMessageClient();
@@ -290,6 +346,7 @@ bool AExperimentServiceMonitor::SubscribeToExperimentServiceServer(FString heade
 	return true;
 }
 
+/* update predator ai's goal location using step message from tracking service */
 void AExperimentServiceMonitor::UpdatePredator(FMessage message)
 {
 	if (TrackingServiceClient == nullptr) { return; }
@@ -307,6 +364,7 @@ void AExperimentServiceMonitor::UpdatePredator(FMessage message)
 	bCanUpdatePreyPosition = true;
 }
 
+/* get updated player position and send to prey route via tracking service client */
 void AExperimentServiceMonitor::UpdatePreyPosition(FVector vector)
 {
 /*
@@ -341,6 +399,7 @@ void AExperimentServiceMonitor::UpdatePreyPosition(FVector vector)
 	bCanUpdatePreyPosition = false;
 }
 
+/* handle tracking service message coming to default "send_step" route */
 void AExperimentServiceMonitor::HandleTrackingServiceMessage(FMessage message)
 {
 	if (GEngine) {
@@ -348,6 +407,8 @@ void AExperimentServiceMonitor::HandleTrackingServiceMessage(FMessage message)
 	}
 }
 
+/* handles unrouted messages coming from tracking service. messages that do not have a route set up inside 
+this class (ExperimentServiceMonitor) will end up here */
 void AExperimentServiceMonitor::HandleTrackingServiceUnroutedMessage(FMessage message)
 {
 	if (GEngine) GEngine->AddOnScreenDebugMessage(-1, 1.0f, FColor::Red, FString::Printf(TEXT("tracking unrouted: (%s) %s"), *message.header, *message.body));
@@ -381,11 +442,11 @@ bool AExperimentServiceMonitor::GetPlayerPawn()
 	return true;
 }
 
+/* destroy this actor. This is primarily used as an abort */
 void AExperimentServiceMonitor::SelfDestruct(const FString ErrorMessageIn)
 {
 	const FString DebugMessage = TEXT("[AExperimentServiceMonitor::SelfDestruct] Tracking and Experiment ABORTED. Something happened.");
 	if (GEngine) GEngine->AddOnScreenDebugMessage(1, 30.0f, FColor::Red, DebugMessage);
-
 
 	UE_LOG(LogTemp, Error, TEXT("[AExperimentServiceMonitor::SelfDestruct()] Something went wrong. Destroying."));
 	UE_LOG(LogTemp, Error, TEXT("[AExperimentServiceMonitor::SelfDestruct()] Error Message: %s."), *ErrorMessageIn);
@@ -406,7 +467,6 @@ void AExperimentServiceMonitor::SelfDestruct(const FString ErrorMessageIn)
 	}
 }
 
-
 /* main stuff happens here */
 void AExperimentServiceMonitor::BeginPlay()
 {
@@ -425,9 +485,23 @@ void AExperimentServiceMonitor::BeginPlay()
 		this->SelfDestruct(FString("Create routes for TS failed."));
 		return;
 	}
-
+	/* subscribe to ES */
 	if (!this->SubscribeToExperimentServiceServer(header_tracking_service)) { 
 		this->SelfDestruct(FString("Subscribe to ES failed."));
+		return;
+	}
+
+	/* start experiment */
+	if (!this->StartExperiment(experiment_name)) {
+		this->SelfDestruct(FString("StartExperiment failed."));
+		return; 
+	}
+
+
+	/* start episode in ES */
+	//if (!bInExperiment || !this->StartEpisode(FString(experiment_name))){
+	if (!this->StartEpisode(FString(experiment_name))){
+		this->SelfDestruct(FString("Start episode failed"));
 		return;
 	}
 
@@ -450,7 +524,7 @@ void AExperimentServiceMonitor::BeginPlay()
 	}
 }
 
-/* hopefully never used */
+/* run a (light!) command every frame */
 void AExperimentServiceMonitor::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);

@@ -38,12 +38,16 @@ public:
 	URequest* start_episode_request;
 	URequest* stop_episode_request;
 
+	URequest* start_experiment_request;
+	URequest* stop_experiment_request;
+
 	URequest* TrackingServiceRequest; 
 
 	const FString header_experiment_service			= "predator_step";
 	const FString header_tracking_service			= "send_step";
 	const FString header_tracking_service_prey		= "prey_step";
 	const FString header_tracking_service_predator  = "predator_step";
+	const FString experiment_name = "test_experiment";
 
 	const FString ServerIPMessage   = "127.0.0.1";
 	const int PortTrackingService   = 4510;
@@ -63,6 +67,8 @@ public:
 	bool bRoutedMessagesTrackingService = false; 
 
 	/* episode controll */
+	bool bInExperiment  = false;
+	bool bInEpisode		= false; 
 
 	/* setu[ */
 	const FString predator_step_header = "predator_step";
@@ -71,12 +77,15 @@ public:
 	bool TrackingServiceRouteMessages(); 
 
 	bool SubscribeToExperimentServiceServer(FString header);
+
 	ACharacterPredator* CharacterPredator;
 	bool SpawnAndPossessPredator();
 
 	//bool SubscribeToExperimentService(FString header);
-	bool StartEpisode(const FString experiment);
-	bool StopEpisode(const FString experiment);
+	bool StartExperiment(const FString ExperimentNameIn);
+	bool StopExperiment(const FString ExperimentNameIn);
+	bool StartEpisode(const FString ExperimentNameIn);
+	bool StopEpisode(const FString ExperimentNameIn);
 	bool StopConnection(UMessageClient* Client);
 	
 	bool TrackingServiceCreateMessageClient();
@@ -110,13 +119,18 @@ public:
 		void HandleTrackingServiceResponseTimedOut();
 	/* Episode */
 	UFUNCTION()
-		void EpisodeResponse(const FString response);
+		URequest* SendStartEpisodeRequest(const FString ExperimentNameIn, const FString header);
 	UFUNCTION()
-		URequest* SendStartEpisodeRequest(const FString experiment, const FString header);
+		URequest* SendStopEpisodeRequest(const FString ExperimentNameIn, const FString header);
 	UFUNCTION()
-		URequest* SendStopEpisodeRequest(const FString experiment, const FString header);
+		void HandleEpisodeRequestResponse(const FString response);
 	UFUNCTION()
-		void EpisodeTimedOut();
+		void HandleEpisodeRequestTimedOut();
+	UFUNCTION()
+		void HandleStartExperimentResponse(const FString ResponseIn);
+
+	UFUNCTION()
+		void HandleStartExperimentTimedOut();
 	UFUNCTION()
 		void UpdatePredator(FMessage message);
 	UFUNCTION()
