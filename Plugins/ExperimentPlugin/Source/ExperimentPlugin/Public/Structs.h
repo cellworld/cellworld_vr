@@ -143,7 +143,37 @@ public:
 };
 
 USTRUCT(Blueprintable)
-struct FStartExperimentRequestVR
+struct FWorldInfo
+{
+	GENERATED_BODY()
+public:
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Experiment)
+	FString world_configuration = "hexagonal";
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Experiment)
+	FString world_implementation = "canonical";
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Experiment)
+	FString occlusions = "21_05";
+};
+
+USTRUCT(Blueprintable)
+struct FStartExperimentResponse {
+	GENERATED_BODY()
+public:
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Experiment)
+		FString experiment_name = "";
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Experiment)
+		FString start_date = "";
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Experiment)
+		FWorldInfo world; 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Experiment)
+		FString subject_name = "";
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Experiment)
+		int duration; 
+	
+};
+
+USTRUCT(Blueprintable)
+struct FStartExperimentRequest
 {
 	GENERATED_BODY()
 public:
@@ -162,28 +192,11 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Experiment)
 		FString suffix = "suffix";
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Experiment)
-		FString world_implementation = "canonical";
+		FWorldInfo world;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Experiment)
-		FString world_configuration = "hexagonal";
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Experiment)
-		FString occlusions = "21_05";
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Experiment)
-		FString subject_name;
+		FString subject_name = "vr_dude";
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Experiment)
 		int duration = 0; 
-};
-
-USTRUCT(Blueprintable)
-struct FWorldInfo
-{
-	GENERATED_BODY()
-public:
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Experiment)
-		FString world_configuration = "hexagonal";
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Experiment)
-		FString world_implementation = "canonical";
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Experiment)
-		FString occlusions = "21_05";
 };
 
 USTRUCT(Blueprintable)

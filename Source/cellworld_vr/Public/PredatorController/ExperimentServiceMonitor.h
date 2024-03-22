@@ -66,11 +66,14 @@ public:
 	bool bSubscribedToTrackingService   = false;
 	bool bRoutedMessagesTrackingService = false; 
 
+	/* experiment control */
+	FString ExperimentNameActive;
+
 	/* episode controll */
 	bool bInExperiment  = false;
 	bool bInEpisode		= false; 
 
-	/* setu[ */
+	/* setup */
 	const FString predator_step_header = "predator_step";
 	bool SubscribeToTrackingService();
 	bool ConnectToTrackingService(); 
@@ -84,14 +87,16 @@ public:
 	//bool SubscribeToExperimentService(FString header);
 	bool StartExperiment(const FString ExperimentNameIn);
 	bool StopExperiment(const FString ExperimentNameIn);
-	bool StartEpisode(const FString ExperimentNameIn);
-	bool StopEpisode(const FString ExperimentNameIn);
 	bool StopConnection(UMessageClient* Client);
-	
-	bool TrackingServiceCreateMessageClient();
 
-	bool ConnectTrackingService();
+	/* will be used in BP to called by door opening (start episode)*/
+	UFUNCTION(BlueprintCallable, Category = Experiment)
+		bool StartEpisode();
+	UFUNCTION(BlueprintCallable, Category = Experiment)
+		bool StopEpisode();
 	
+		
+	bool TrackingServiceCreateMessageClient();
 	bool GetPlayerPawn();
 
 	/* abort if anything goes wrong */
@@ -128,23 +133,21 @@ public:
 		void HandleEpisodeRequestTimedOut();
 	UFUNCTION()
 		void HandleStartExperimentResponse(const FString ResponseIn);
-
 	UFUNCTION()
 		void HandleStartExperimentTimedOut();
 	UFUNCTION()
-		void UpdatePredator(FMessage message);
+		void UpdatePredator(const FMessage message);
 	UFUNCTION()
-		void UpdatePreyPosition(FVector Location);
+		void UpdatePreyPosition(const FVector Location);
 	UFUNCTION()
-		void HandleTrackingServiceMessage(FMessage message);
+		void HandleTrackingServiceMessage(const FMessage message);
 	UFUNCTION()
-		void HandleTrackingServiceUnroutedMessage(FMessage message);
-
-
+		void HandleTrackingServiceUnroutedMessage(const FMessage message);
 
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
+	const FString SubjectName = "vr_dude";
 
 public:	
 	// Called every frame

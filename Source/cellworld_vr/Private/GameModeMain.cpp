@@ -24,7 +24,7 @@ AGameModeMain::AGameModeMain()
 		DefaultPawnClass = APawnMain::StaticClass(); 
 		PlayerControllerClass = APlayerControllerVR::StaticClass();
 	}
-
+	 
 	/* Assign default game state */
 	GameStateClass = AGameStateMain::StaticClass();
 
@@ -33,6 +33,11 @@ AGameModeMain::AGameModeMain()
 	PrimaryActorTick.bCanEverTick = true;
 
 }
+
+
+/* to do: UFUNCTION() getexperimentservicemonitor()->StopEpisode()*/
+
+/* to do: UFUNCTION() getexperimentservicemonitor()->StartEpisode()*/
 
 void AGameModeMain::SpawnExperimentServiceMonitor()
 {
@@ -153,4 +158,14 @@ void AGameModeMain::EndPlay(const EEndPlayReason::Type EndPlayReason)
 void AGameModeMain::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
+}
+
+bool AGameModeMain::ExperimentStartEpisode() { 
+	if (!ExperimentServiceMonitor) { return false; }
+	return ExperimentServiceMonitor->StartEpisode(); 
+}
+
+bool AGameModeMain::ExperimentStopEpisode() {
+	if (!ExperimentServiceMonitor) { return false; }
+	return ExperimentServiceMonitor->StopEpisode(); 
 }

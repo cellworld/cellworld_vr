@@ -115,10 +115,17 @@ FStartEpisodeRequest UExperimentUtils::JsonStringToStartEpisodeRequest(FString j
 	return structOutput;
 }
 
-FString UExperimentUtils::StartExperimentRequestToJsonString(FStartExperimentRequestVR structInput) {
+FString UExperimentUtils::StartExperimentRequestToJsonString(FStartExperimentRequest structInput) {
 	FString jsonString;
 	FJsonObjectConverter::UStructToJsonObjectString(structInput, jsonString, 0, 0, 0);
 	return jsonString;
+}
+
+FStartExperimentResponse UExperimentUtils::JsonStringToStartExperimentResponse(FString jsonString)
+{
+	FStartExperimentResponse structOutput;
+	FJsonObjectConverter::JsonObjectStringToUStruct(jsonString, &structOutput, 0, 0);
+	return structOutput;
 }
 
 FString UExperimentUtils::StartEpisodeRequestToJsonString(FStartEpisodeRequest structInput) {
