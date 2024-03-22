@@ -445,6 +445,8 @@ void AExperimentServiceMonitor::HandleTrackingServiceUnroutedMessage(const FMess
 /* gets player pawn from world */
 bool AExperimentServiceMonitor::GetPlayerPawn()
 {
+	if (!GetWorld()) { return false; }
+
 	APawn* Pawn = UGameplayStatics::GetPlayerPawn(GetWorld(), 0);
 	if (!Pawn) {
 		if (GEngine) GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Red, TEXT("[AExperimentServiceMonitor::GetPlayerPawn()] No pawn found."));
@@ -454,15 +456,16 @@ bool AExperimentServiceMonitor::GetPlayerPawn()
 	// Attempt to cast to APawnMain or APawnDebug and assign to PlayerPawn if successful.
 	if (Cast<APawnMain>(Pawn)) {
 		APawnMain* PlayerPawn = Cast<APawnMain>(Pawn); // Assuming PlayerPawn is a member of type APawn* or APawnMain*
-		if (GEngine) GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Green, TEXT("[AExperimentServiceMonitor::GetPlayerPawn()] APawnMain found and assigned."));
+		UE_LOG(LogTemp, Log, TEXT("[AExperimentServiceMonitor::GetPlayerPawn()] APawnMain found and assigned."));
 		PlayerPawn->MovementDetectedEvent.AddDynamic(this, &AExperimentServiceMonitor::UpdatePreyPosition);
 	}
 	else if (Cast<APawnDebug>(Pawn)) {
 		APawnDebug* PlayerPawn = Cast<APawnDebug>(Pawn); // Adjust according to the actual type of PlayerPawn
-		if (GEngine) GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Green, TEXT("[AExperimentServiceMonitor::GetPlayerPawn()] APawnDebug found and assigned."));
+		UE_LOG(LogTemp, Log, TEXT("[AExperimentServiceMonitor::GetPlayerPawn()] APawnDebug found and assigned."));
 		PlayerPawn->MovementDetectedEvent.AddDynamic(this, &AExperimentServiceMonitor::UpdatePreyPosition);
 	}
 	else {
+		UE_LOG(LogTemp, Error, TEXT("[AExperimentServiceMonitor::GetPlayerPawn()] APawnDebug found and assigned."));
 		if (GEngine) GEngine->AddOnScreenDebugMessage(-1, 1.0f, FColor::Yellow, TEXT("[AExperimentServiceMonitor::GetPlayerPawn()] Pawn found, but it is neither APawnMain nor APawnDebug."));
 		return false;
 	}
@@ -528,26 +531,11 @@ void AExperimentServiceMonitor::BeginPlay()
 		return; 
 	}
 
-	/* wait for experiment to start */
-	//for (int i = 0; i < 10; i++) {
-	//	if (bInExperiment) { 
-	//		UE_LOG(LogTemp, Warning, TEXT("found experiment"));
-	//		break; 
-	//	}
-	//	FPlatformProcess::Sleep(0.5);
-	//}
-
-	///* start episode in ES */
-	//if (!bInExperiment || !this->StartEpisode(ExperimentNameActive)){
-	////if (!this->StartEpisode(ExperimentNameActive)){
-	//	this->SelfDestruct(FString("Start episode failed"));
-	//	return;
-	//}
-
 	if (!this->SpawnAndPossessPredator()) {
 		this->SelfDestruct(FString("spawn and possess predator failed."));
 		return;
 	}
+
 	if (!this->GetPlayerPawn()) {
 		this->SelfDestruct(FString("GetPlayerPawn() failed.."));
 		return;
