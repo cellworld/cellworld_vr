@@ -40,14 +40,13 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Experiment)
 	int frame;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Experiment)
-	float time_stamp;
+	float time_stamp; // delta time in seconds 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Experiment)
 	FString agent_name;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Experiment)
 	FString data;
 
 };
-
 
 USTRUCT(Blueprintable)
 struct FCoordinates
@@ -110,7 +109,6 @@ public:
 	}
 };
 
-
 USTRUCT(Blueprintable)
 struct FAgentState
 {
@@ -143,6 +141,41 @@ public:
 };
 
 USTRUCT(Blueprintable)
+struct FGetExperimentRequest
+{
+	GENERATED_BODY()
+public:
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Experiment)
+	FString ExperimentName;
+};
+
+USTRUCT(Blueprintable)
+struct FCell {
+	GENERATED_BODY()
+public:
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Experiment)
+	int id;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Experiment)
+	FCoordinates coordinates;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Experiment)
+	FLocation location;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Experiment)
+	bool occluded;
+};
+
+USTRUCT(Blueprintable)
+struct FCellGroup {
+	GENERATED_BODY()
+public:
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Experiment)
+	TArray<FCell> cell_locations;
+};
+
+USTRUCT(Blueprintable)
 struct FWorldInfo
 {
 	GENERATED_BODY()
@@ -153,6 +186,35 @@ public:
 	FString world_implementation = "canonical";
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Experiment)
 	FString occlusions = "21_05";
+};
+
+USTRUCT(Blueprintable)
+struct FGetExperimentRequestResponse
+{
+	//    def __init__(self, experiment_name: str = "", world_info: World_info = None, 
+	// start_date: datetime = None, subject_name: str = "", 
+	// duration: int = 0, remaining_time: float =0.0, episode_count: int=0, 
+	// rewards_cells:Cell_group_builder=None):
+
+	GENERATED_BODY()
+public:
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Experiment)
+		FString experiment_name = "";
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Experiment)
+		FWorldInfo world_info;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Experiment)
+		FString start_date;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Experiment)
+		FString subject_name;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Experiment)
+		int duration;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Experiment)
+		float remaining_time;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Experiment)
+		int episode_count;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Experiment)
+		FCellGroup reward_cells;
+
 };
 
 USTRUCT(Blueprintable)
@@ -196,7 +258,7 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Experiment)
 		FString subject_name = "vr_dude";
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Experiment)
-		int duration = 0; 
+		int duration = 0; // Tmax 30 min (convert to seconds)
 };
 
 USTRUCT(Blueprintable)
@@ -250,7 +312,6 @@ public:
 		float rotation;
 };
 
-
 USTRUCT(Blueprintable)
 struct FTransformation
 {
@@ -262,7 +323,6 @@ public:
 		float rotation;
 };
 
-
 USTRUCT(Blueprintable)
 struct FShape
 {
@@ -271,7 +331,6 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Experiment)
 		int sides;
 };
-
 
 USTRUCT(Blueprintable)
 struct FSpace
@@ -287,7 +346,6 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Experiment)
 		FTransformation transformation;
 };
-
 
 USTRUCT(Blueprintable)
 struct FWorldImplementation
@@ -310,30 +368,4 @@ struct FColumnsWrapper {
 public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Experiment)
 	TArray<AActor*> Columns;
-};
-
-USTRUCT(Blueprintable)
-struct FCell {
-	GENERATED_BODY()
-public:
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Experiment)
-		int id;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Experiment)
-		FCoordinates coordinates;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Experiment)
-		FLocation location;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Experiment)
-		bool occluded;
-};
-
-USTRUCT(Blueprintable)
-struct FCellGroup{
-	GENERATED_BODY()
-public:
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Experiment)
-	TArray<FCell> cell_locations;
 };

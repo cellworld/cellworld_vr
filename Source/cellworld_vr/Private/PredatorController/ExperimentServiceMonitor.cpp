@@ -1,10 +1,9 @@
 // Fill out your copyright notice in the Description page of Project Settings.
-
-
 #include "PredatorController/ExperimentServiceMonitor.h"
 #include "PredatorController/AIControllerPredator.h"
 #include "Kismet/GameplayStatics.h"
 #include "ExperimentUtils.h"
+
 //#include "GenericPlatform/GenericPlatformProcess.h"
 
 // Sets default values
@@ -56,6 +55,7 @@ bool AExperimentServiceMonitor::StartExperiment(const FString ExperimentNameIn) 
 	const FString world_info_string = UExperimentUtils::WorldInfoToJsonString(world_info);
 
 	FStartExperimentRequest request_body;
+	request_body.duration = 30;
 	request_body.subject_name = ExperimentNameIn;
 	
 	const FString request_string = UExperimentUtils::StartExperimentRequestToJsonString(request_body);
@@ -77,6 +77,7 @@ bool AExperimentServiceMonitor::StopExperiment(const FString ExperimentNameIn) {
 
 /* start experiment service episode stream */
 bool AExperimentServiceMonitor::StartEpisode() {
+	if (!ExperimentServiceClient) { UE_LOG(LogTemp, Error, TEXT("Can't start episode, Experiment Service client not valid.")); return false; }
 	if (ExperimentNameActive.Len() < 1) { UE_LOG(LogTemp, Warning, TEXT("Can't stop episode, experiment name not valid.")); return false; }
 	if (!bInExperiment) { UE_LOG(LogTemp, Warning, TEXT("Can't stop episode, no active experiment.")); return false; }
 	
@@ -88,6 +89,7 @@ bool AExperimentServiceMonitor::StartEpisode() {
 /* stop experiment service episode stream */
 bool AExperimentServiceMonitor::StopEpisode() 
 {
+	if (!ExperimentServiceClient) { UE_LOG(LogTemp, Error, TEXT("Can't stop episode, Experiment Service client not valid.")); return false; }
 	if (ExperimentNameActive.Len() < 1) { UE_LOG(LogTemp, Warning, TEXT("Can't stop episode, experiment name not valid.")); return false; }
 	if (!bInExperiment) { UE_LOG(LogTemp, Warning, TEXT("Can't stop episode, no active experiment.")); return false; }
 	if (!bInEpisode) { UE_LOG(LogTemp,Warning,TEXT("Can't stop episode, no active episode."));  return false; }
@@ -111,7 +113,7 @@ void AExperimentServiceMonitor::HandleEpisodeRequestResponse(const FString respo
 	UE_LOG(LogTemp, Warning, TEXT("[AExperimentServiceMonitor::EpisodeResponse] %s"), *response);
 	if (GEngine) if (GEngine) GEngine->AddOnScreenDebugMessage(-1, 0.5f, FColor::Magenta, FString::Printf(TEXT("Episode response: %s"), *response));
 	
-	if (response != "success") {
+	if (response == "fail") {
 		UE_DEBUG_BREAK();
 		return;
 	}
@@ -126,7 +128,7 @@ void AExperimentServiceMonitor::HandleEpisodeRequestTimedOut() {
 void AExperimentServiceMonitor::HandleStartExperimentResponse(const FString ResponseIn)
 {
 	UE_LOG(LogTemp, Warning, TEXT("[AExperimentServiceMonitor::HandleStartExperimentResponse] %s"), *ResponseIn);
-	if (GEngine) if (GEngine) GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Green, FString::Printf(TEXT("Episode response: %s"), *ResponseIn));
+	if (GEngine) if (GEngine) GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Green, FString::Printf(TEXT("Experiment response: %s"), *ResponseIn));
 	
 	/* convert to usable format */
 	FStartExperimentResponse StartExperimentResponse = UExperimentUtils::JsonStringToStartExperimentResponse(*ResponseIn);
@@ -262,9 +264,7 @@ bool AExperimentServiceMonitor::TrackingServiceCreateMessageClient() {
 bool AExperimentServiceMonitor::ConnectToTrackingService() {
 	TrackingServiceClient = UMessageClient::NewMessageClient();
 	
-	if (!TrackingServiceClient) {
-		return false;
-	}
+	if (!TrackingServiceClient) { return false; }
 
 	/* connect tracking client to server */
 	int att_max = 5;
@@ -315,12 +315,6 @@ bool AExperimentServiceMonitor::TrackingServiceRouteMessages() {
 /* subscribes to server and calls UpdatePredator() when messages[header] matches input header. */
 bool AExperimentServiceMonitor::SubscribeToTrackingService()
 {
-	/* 
-	steps: 
-		1. connect 
-		2. add route 
-		3. subscribe 
-	*/
 
 	bCOnnectedToTrackingService = this->ConnectToTrackingService();
 
@@ -331,6 +325,7 @@ bool AExperimentServiceMonitor::SubscribeToTrackingService()
 
 	/* 3. subscribe */
 	TrackingServiceRequest = TrackingServiceClient->Subscribe();
+	if (!TrackingServiceRequest) { return false;  }
 	TrackingServiceRequest->ResponseReceived.AddDynamic(this, &AExperimentServiceMonitor::HandleTrackingServiceResponse);
 	TrackingServiceRequest->TimedOut.AddDynamic(this, &AExperimentServiceMonitor::HandleTrackingServiceResponseTimedOut);
 	
@@ -410,14 +405,13 @@ void AExperimentServiceMonitor::UpdatePreyPosition(const FVector vector)
 	send_step.frame = frame_count;
 	send_step.location = Location; 
 	send_step.rotation = 0.0f; // todo: change! 
-	send_step.time_stamp = frame_count; // todo: change!
+	send_step.time_stamp = frame_count; // todo: change to querycounterelapsedtime!
 
 	/* convert FStep to JsonString */
 	FString body = UExperimentUtils::StepToJsonString(send_step); 
 
 	/* send message to ES */
 	FMessage message = UMessageClient::NewMessage(header_tracking_service, body);
-
 	UE_LOG(LogTemp, Log, TEXT("send_step: (%s) %s"),*header_tracking_service,*message.body);
 	if (TrackingServiceClient->IsConnected()) {
 		TrackingServiceClient->SendMessage(message);
@@ -430,6 +424,7 @@ void AExperimentServiceMonitor::UpdatePreyPosition(const FVector vector)
 /* handle tracking service message coming to default "send_step" route */
 void AExperimentServiceMonitor::HandleTrackingServiceMessage(const FMessage message)
 {
+
 	if (GEngine) {
 		if (GEngine) GEngine->AddOnScreenDebugMessage(-1, 1.0f, FColor::Green, FString::Printf(TEXT("tracking message: (%s) %s"),*message.header, *message.body));
 	}
@@ -440,6 +435,30 @@ this class (ExperimentServiceMonitor) will end up here */
 void AExperimentServiceMonitor::HandleTrackingServiceUnroutedMessage(const FMessage message)
 {
 	if (GEngine) GEngine->AddOnScreenDebugMessage(-1, 1.0f, FColor::Red, FString::Printf(TEXT("tracking unrouted: (%s) %s"), *message.header, *message.body));
+}
+
+//bool AExperimentServiceMonitor::SendGetExperimentRequest(const FGetExperimentRequest RequestIn)
+//{
+//	return false;
+//}
+
+void AExperimentServiceMonitor::HandleGetExperimentResponse(const FMessage MessageIn)
+{
+	UE_LOG(LogTemp, Warning, TEXT("[AExperimentServiceMonitor::HandleTrackingServiceResponse] ES: %s"), *MessageIn.body);
+	if (MessageIn.body != "success") {
+		UE_DEBUG_BREAK();
+	}
+}
+
+void AExperimentServiceMonitor::HandleGetExperimentResponseTimedOut()
+{
+	UE_LOG(LogTemp, Warning, TEXT("[AExperimentServiceMonitor::HandleGetExperimentResponseTimedOut] Timed out!"));
+}
+
+bool AExperimentServiceMonitor::IsExperimentActive(const FString ExperimentNameIn)
+{
+	//UExperimentUtils::Start
+	return false;
 }
 
 /* gets player pawn from world */

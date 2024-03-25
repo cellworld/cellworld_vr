@@ -26,9 +26,8 @@ public:
 	
 protected:
 	AGameModeMain();
-
-	AExperimentServiceMonitor* ExperimentServiceMonitor;
-	void SpawnExperimentServiceMonitor();
+	
+	
 
 	/* debug */
 	FVector debug_vect;
@@ -65,9 +64,16 @@ protected:
 	virtual void Tick(float DeltaTime) override;
 
 	/* functions for door and experiment control */
+	UPROPERTY(BlueprintReadWrite)
+		AExperimentServiceMonitor* ExperimentServiceMonitor;
+	UFUNCTION(BlueprintCallable, Category = Experiment)
+		void SpawnExperimentServiceMonitor();
 	UFUNCTION(BlueprintCallable, Category = Experiment)
 		bool ExperimentStartEpisode(); 
 	
 	UFUNCTION(BlueprintCallable, Category = Experiment)
 		bool ExperimentStopEpisode();
+
+	UFUNCTION(BlueprintCallable, Category = Experiment)
+		bool ExperimentStopExperiment(FString ExperimentName);
 };

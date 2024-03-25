@@ -34,10 +34,8 @@ AGameModeMain::AGameModeMain()
 
 }
 
-
-/* to do: UFUNCTION() getexperimentservicemonitor()->StopEpisode()*/
-
 /* to do: UFUNCTION() getexperimentservicemonitor()->StartEpisode()*/
+/* to do: UFUNCTION() getexperimentservicemonitor()->StopEpisode()*/
 
 void AGameModeMain::SpawnExperimentServiceMonitor()
 {
@@ -67,13 +65,11 @@ void AGameModeMain::EndGame()
 	UE_LOG(LogTemp, Warning, TEXT("[ AGameModeMain::EndGame()] Force quit."));
 	FGenericPlatformMisc::RequestExit(false);
 }
-
 /* 
 * Updates GameInstance with HP keys. Will use variables inside GameInstanceMain.h 
 * to find, load, and process the HP keys. 
 */
 bool AGameModeMain::InitializeHPKeys() {
-
 	return false;
 }
 
@@ -114,7 +110,6 @@ void AGameModeMain::SpawnGetCLMonitorComponentActor()
 	SpawnInfo.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
 	GetCLMonitorComponentActor = Cast<AGetCLMonitorComponentActor>(GetWorld()->SpawnActor(AGetCLMonitorComponentActor::StaticClass(), &TempLoc, &TempRot, SpawnInfo));
 }
-
 /* spawn all logging actors, some may contain threads but they handle themselves. 
 * right now, theres only one, but im gonna call this function to maintain consitency.
 */
@@ -149,7 +144,6 @@ void AGameModeMain::StartPlay()
 	AGameModeMain::StopLoadingScreen();	
 }
 
-
 void AGameModeMain::EndPlay(const EEndPlayReason::Type EndPlayReason)
 {
 	Super::EndPlay(EndPlayReason);
@@ -168,4 +162,10 @@ bool AGameModeMain::ExperimentStartEpisode() {
 bool AGameModeMain::ExperimentStopEpisode() {
 	if (!ExperimentServiceMonitor) { return false; }
 	return ExperimentServiceMonitor->StopEpisode(); 
+}
+
+bool AGameModeMain::ExperimentStopExperiment(FString ExperimentName)
+{
+	if (!ExperimentServiceMonitor) { return false; }
+	return false;
 }

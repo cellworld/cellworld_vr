@@ -126,5 +126,4 @@ public:
 		static TArray<FLocation> LoadOcclusions(FString filePath, bool& readStatus, float mapLength);
 
 		static FString LoadWorldImplementation(FString filePath);
-
 };

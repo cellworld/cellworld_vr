@@ -66,13 +66,6 @@ public:
 	bool bSubscribedToTrackingService   = false;
 	bool bRoutedMessagesTrackingService = false; 
 
-	/* experiment control */
-	FString ExperimentNameActive;
-
-	/* episode controll */
-	bool bInExperiment  = false;
-	bool bInEpisode		= false; 
-
 	/* setup */
 	const FString predator_step_header = "predator_step";
 	bool SubscribeToTrackingService();
@@ -143,7 +136,24 @@ public:
 		void HandleTrackingServiceMessage(const FMessage message);
 	UFUNCTION()
 		void HandleTrackingServiceUnroutedMessage(const FMessage message);
+	/*UFUNCTION()
+		bool SendGetExperimentRequest(const FGetExperimentRequest RequestIn);*/
+	UFUNCTION()
+		void HandleGetExperimentResponse(const FMessage MessageIn);
+	UFUNCTION()
+		void HandleGetExperimentResponseTimedOut();
+	UFUNCTION()
+		bool IsExperimentActive(const FString ExperimentNameIn);
 
+	/* experiment control */
+	UPROPERTY(BlueprintReadWrite)
+		FString ExperimentNameActive;
+	
+	/* episode controll */
+	UPROPERTY(BlueprintReadWrite)
+		bool bInExperiment = false;
+	UPROPERTY(BlueprintReadWrite)
+		bool bInEpisode = false;
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
