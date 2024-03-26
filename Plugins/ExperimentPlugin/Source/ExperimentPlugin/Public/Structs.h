@@ -18,6 +18,30 @@ static FString TYPE ##ToJsonString (F##TYPE structInput) { \
 } 
 
 USTRUCT(Blueprintable)
+struct FExperimentsActive
+{
+	GENERATED_BODY()
+public:
+
+	FExperimentsActive() { ExperimentNameArr = {}; }
+
+	bool Add(const FString ExperimentName) {
+		if (ExperimentNameArr.Num() == MaxActiveExperiments) {
+			UE_LOG(LogTemp, Error, TEXT("[FExperimentsActive] Can't add new experiment. Reached max amount of experiments."));
+			return false;
+		}
+		return true;
+	}
+	
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Experiment)
+		TArray<FString> ExperimentNameArr;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Experiment)
+		int32 MaxActiveExperiments = 10;
+
+
+};
+
+USTRUCT(Blueprintable)
 struct FLocation
 {
 	GENERATED_BODY()
@@ -139,16 +163,6 @@ public:
 		return !(*(this) == other);
 	}
 };
-
-USTRUCT(Blueprintable)
-struct FGetExperimentRequest
-{
-	GENERATED_BODY()
-public:
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Experiment)
-	FString ExperimentName;
-};
-
 USTRUCT(Blueprintable)
 struct FCell {
 	GENERATED_BODY()
@@ -188,6 +202,16 @@ public:
 	FString occlusions = "21_05";
 };
 
+/* Get experiment  */
+USTRUCT(Blueprintable)
+struct FGetExperimentRequest
+{
+	GENERATED_BODY()
+public:
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Experiment)
+	FString ExperimentName;
+};
+
 USTRUCT(Blueprintable)
 struct FGetExperimentRequestResponse
 {
@@ -195,27 +219,27 @@ struct FGetExperimentRequestResponse
 	// start_date: datetime = None, subject_name: str = "", 
 	// duration: int = 0, remaining_time: float =0.0, episode_count: int=0, 
 	// rewards_cells:Cell_group_builder=None):
-
 	GENERATED_BODY()
 public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Experiment)
-		FString experiment_name = "";
+	FString experiment_name = "";
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Experiment)
-		FWorldInfo world_info;
+	FWorldInfo world_info;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Experiment)
-		FString start_date;
+	FString start_date;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Experiment)
-		FString subject_name;
+	FString subject_name;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Experiment)
-		int duration;
+	int duration;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Experiment)
-		float remaining_time;
+	float remaining_time;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Experiment)
-		int episode_count;
+	int episode_count;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Experiment)
-		FCellGroup reward_cells;
+	FCellGroup reward_cells;
 
 };
+
 
 USTRUCT(Blueprintable)
 struct FStartExperimentResponse {
@@ -239,15 +263,6 @@ struct FStartExperimentRequest
 {
 	GENERATED_BODY()
 public:
-	// prefix: str, 
-	// suffix : str, 
-	// world_configuration : str, 
-	// world_implementation : str, 
-	// occlusions : str, 
-	// subject_name : str, 
-	// duration : int, 
-	// rewards_cells : Cell_group_builder = None, 
-	// rewards_orientations : JsonList = None
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Experiment)
 		FString prefix = "VR";
@@ -259,6 +274,15 @@ public:
 		FString subject_name = "vr_dude";
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Experiment)
 		int duration = 0; // Tmax 30 min (convert to seconds)
+};
+
+USTRUCT(Blueprintable)
+struct FFinishExperimentRequest
+{
+	GENERATED_BODY()
+public:
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Experiment)
+	FString experiment_name;
 };
 
 USTRUCT(Blueprintable)

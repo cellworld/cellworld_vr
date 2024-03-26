@@ -81,7 +81,8 @@ public:
 	bool StartExperiment(const FString ExperimentNameIn);
 	bool StopExperiment(const FString ExperimentNameIn);
 	bool StopConnection(UMessageClient* Client);
-
+	bool DisconnectAll();
+	bool DisconnectClients(); 
 	/* will be used in BP to called by door opening (start episode)*/
 	UFUNCTION(BlueprintCallable, Category = Experiment)
 		bool StartEpisode();
@@ -115,6 +116,7 @@ public:
 		void HandleTrackingServiceResponse(const FString message);
 	UFUNCTION()
 		void HandleTrackingServiceResponseTimedOut();
+
 	/* Episode */
 	UFUNCTION()
 		URequest* SendStartEpisodeRequest(const FString ExperimentNameIn, const FString header);
@@ -124,24 +126,33 @@ public:
 		void HandleEpisodeRequestResponse(const FString response);
 	UFUNCTION()
 		void HandleEpisodeRequestTimedOut();
+
+	/* Experiment */
 	UFUNCTION()
 		void HandleStartExperimentResponse(const FString ResponseIn);
 	UFUNCTION()
 		void HandleStartExperimentTimedOut();
 	UFUNCTION()
+		URequest* SendStartExperimentRequest(const FString ExperimentNameIn);
+	UFUNCTION()
+		URequest* SendFinishExperimentRequest(const FString ExperimentNameIn);
+	UFUNCTION()
+		void HandleFinishExperimentResponse(const FString ResponseIn);
+	UFUNCTION()
+		void HandleFinishExperimentTimedOut();
+	
+	/* update players */
+	UFUNCTION()
 		void UpdatePredator(const FMessage message);
 	UFUNCTION()
 		void UpdatePreyPosition(const FVector Location);
+	/* other */
 	UFUNCTION()
 		void HandleTrackingServiceMessage(const FMessage message);
 	UFUNCTION()
 		void HandleTrackingServiceUnroutedMessage(const FMessage message);
-	/*UFUNCTION()
-		bool SendGetExperimentRequest(const FGetExperimentRequest RequestIn);*/
 	UFUNCTION()
-		void HandleGetExperimentResponse(const FMessage MessageIn);
-	UFUNCTION()
-		void HandleGetExperimentResponseTimedOut();
+		void HandleExperimentServiceUnroutedMessage(const FMessage message);
 	UFUNCTION()
 		bool IsExperimentActive(const FString ExperimentNameIn);
 
@@ -154,13 +165,16 @@ public:
 		bool bInExperiment = false;
 	UPROPERTY(BlueprintReadWrite)
 		bool bInEpisode = false;
+
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
 	const FString SubjectName = "vr_dude";
+	const float TimeOut = 5.0f;
 
 public:	
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
+	virtual void EndPlay(const EEndPlayReason::Type EndPLayReason) override;
 
 };

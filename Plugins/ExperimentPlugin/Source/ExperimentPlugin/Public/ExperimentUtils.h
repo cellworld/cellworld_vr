@@ -71,11 +71,16 @@ public:
 	UFUNCTION(BlueprintCallable, Category = Experiment)
 		static FString StartExperimentRequestToJsonString(FStartExperimentRequest structInput);
 	UFUNCTION(BlueprintCallable, Category = Experiment)
+		static FString FinishExperimentRequestToJsonString(FFinishExperimentRequest structInput);
+	UFUNCTION(BlueprintCallable, Category = Experiment)
 		static FStartExperimentResponse JsonStringToStartExperimentResponse(FString jsonString);
 	UFUNCTION(BlueprintCallable, Category = Experiment)
 		static FString StartEpisodeRequestToJsonString(FStartEpisodeRequest structInput);
 	UFUNCTION(BlueprintCallable, Category = Experiment)
 		static FString WorldInfoToJsonString(FWorldInfo structInput);
+
+	UFUNCTION(BlueprintCallable, Category = Experiment)
+		static FString GetExperimentRequestToJsonString(FGetExperimentRequest structInput);
 
 	UFUNCTION(BlueprintCallable, Category = Experiment)
 		static FStartEpisodeResponse JsonStringToStartEpisodeResponse(FString jsonString);

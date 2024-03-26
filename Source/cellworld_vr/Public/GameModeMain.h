@@ -27,8 +27,6 @@ public:
 protected:
 	AGameModeMain();
 	
-	
-
 	/* debug */
 	FVector debug_vect;
 
