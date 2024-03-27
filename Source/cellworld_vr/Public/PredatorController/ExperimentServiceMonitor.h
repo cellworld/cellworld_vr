@@ -44,7 +44,7 @@ public:
 	URequest* TrackingServiceRequest; 
 
 	const FString header_experiment_service			= "predator_step";
-	const FString header_tracking_service			= "send_step";
+	const FString header_tracking_service			= "send_step_vr";
 	const FString header_tracking_service_prey		= "prey_step";
 	const FString header_tracking_service_predator  = "predator_step";
 	const FString experiment_name = "test_experiment";

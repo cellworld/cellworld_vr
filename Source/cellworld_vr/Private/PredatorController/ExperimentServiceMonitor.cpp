@@ -402,7 +402,7 @@ bool AExperimentServiceMonitor::ConnectToTrackingService() {
 bool AExperimentServiceMonitor::TrackingServiceRouteMessages() {
 
 	/* route to send data*/
-	TrackingServiceRoute = TrackingServiceClient->AddRoute(header_tracking_service);
+	//TrackingServiceRoute = TrackingServiceClient->AddRoute(header_tracking_service);
 	
 	/* handle messages received with unknown headers/routes */
 	TrackingServiceClient->UnroutedMessageEvent.AddDynamic(this, &AExperimentServiceMonitor::HandleTrackingServiceUnroutedMessage);
@@ -414,13 +414,14 @@ bool AExperimentServiceMonitor::TrackingServiceRouteMessages() {
 	TrackingServiceRoutePredator = TrackingServiceClient->AddRoute(header_tracking_service_predator);
 
 	/* bind only if all routes valid */
-	if (!TrackingServiceRoute && !TrackingServiceRoutePrey && !TrackingServiceRoutePredator) {
+	//if (!TrackingServiceRoute && !TrackingServiceRoutePrey && !TrackingServiceRoutePredator) {
+	if (!TrackingServiceRoutePrey && !TrackingServiceRoutePredator) {
 		return false;
 	}
 
-	TrackingServiceRoute->MessageReceived.AddDynamic(this, &AExperimentServiceMonitor::HandleTrackingServiceMessage);
-	TrackingServiceRoutePrey->MessageReceived.AddDynamic(this, &AExperimentServiceMonitor::HandleTrackingServiceMessagePrey);
-	TrackingServiceRoutePredator->MessageReceived.AddDynamic(this, &AExperimentServiceMonitor::HandleTrackingServiceMessagePredator);
+	//TrackingServiceRoute->MessageReceived.AddDynamic(this, &AExperimentServiceMonitor::HandleTrackingServiceMessage);
+	//TrackingServiceRoutePrey->MessageReceived.AddDynamic(this, &AExperimentServiceMonitor::HandleTrackingServiceMessagePrey);
+	//TrackingServiceRoutePredator->MessageReceived.AddDynamic(this, &AExperimentServiceMonitor::HandleTrackingServiceMessagePredator);
 
 	return true; 
 }
@@ -483,6 +484,8 @@ bool AExperimentServiceMonitor::SubscribeToExperimentServiceServer(FString heade
 /* update predator ai's goal location using step message from tracking service */
 void AExperimentServiceMonitor::UpdatePredator(const FMessage message)
 {
+	UE_LOG(LogTemp, Error, TEXT("%s"), *message.body);
+
 	if (TrackingServiceClient == nullptr) { return; }
 	frame_count++;
 	FStep step = UExperimentUtils::JsonStringToStep(message.body); 
@@ -510,7 +513,7 @@ void AExperimentServiceMonitor::UpdatePreyPosition(const FVector vector)
 	Location.y = vector.Y;
 
 	/* prepare Step */
-	FString header_prey = "send_step";
+	//FString header_prey = "send_step";
 	FStep send_step; 
 	send_step.agent_name = "prey";
 	send_step.frame = frame_count;
@@ -523,19 +526,18 @@ void AExperimentServiceMonitor::UpdatePreyPosition(const FVector vector)
 
 	/* send message to ES */
 	FMessage message = UMessageClient::NewMessage(header_tracking_service, body);
-	UE_LOG(LogTemp, Log, TEXT("send_step: (%s) %s"),*header_tracking_service,*message.body);
+	UE_LOG(LogTemp, Log, TEXT("sending prey step: (route: %s; body: %s"),*header_tracking_service,*message.body);
 	if (TrackingServiceClient->IsConnected()) {
 		TrackingServiceClient->SendMessage(message);
 	}
 
 	/* don't overload server with messages before its done processing previous prey update. */
-	bCanUpdatePreyPosition = false;
+	//bCanUpdatePreyPosition = false;
 }
 
 /* handle tracking service message coming to default "send_step" route */
 void AExperimentServiceMonitor::HandleTrackingServiceMessage(const FMessage message)
 {
-
 	if (GEngine) {
 		if (GEngine) GEngine->AddOnScreenDebugMessage(-1, 1.0f, FColor::Green, FString::Printf(TEXT("tracking message: (%s) %s"),*message.header, *message.body));
 	}
@@ -545,7 +547,7 @@ void AExperimentServiceMonitor::HandleTrackingServiceMessage(const FMessage mess
 this class (ExperimentServiceMonitor) will end up here */
 void AExperimentServiceMonitor::HandleTrackingServiceUnroutedMessage(const FMessage message)
 {
-	if (GEngine) GEngine->AddOnScreenDebugMessage(-1, 1.0f, FColor::Red, FString::Printf(TEXT("tracking unrouted: (%s) %s"), *message.header, *message.body));
+	if (GEngine) GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Red, FString::Printf(TEXT("tracking unrouted: (%s) %s"), *message.header, *message.body));
 }
 
 void AExperimentServiceMonitor::HandleExperimentServiceUnroutedMessage(const FMessage message)
