@@ -2,14 +2,13 @@
 
 #pragma once
 
-#include <omnicept/lib-abi-cpp/LicensingModel.h>
 #include "UObject/ObjectMacros.h"
 
 UENUM(BlueprintType)
-enum class ELicensingModel : uint8
+    enum class ELicensingModel : uint8
 {
-    CORE = 1 UMETA(ToolTip = "No credentials needed. HRV and CL will not work with Core licenses."),
-    TRIAL = 0 UMETA(DisplayName = "[Deprecated] TRIAL", Hidden),
-    ENTERPRISE = 2 UMETA(DisplayName = "[Deprecated] ENTERPRISE", Hidden),
-    REV_SHARE = 3 UMETA(DisplayName = "DEVELOPER")
+    CORE = 1,
+    TRIAL = 0,
+    ENTERPRISE = 2,
+    REV_SHARE = 3
 };
