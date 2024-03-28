@@ -141,12 +141,14 @@ void AGameModeMain::StartPlay()
 
 	AGameModeMain::SpawnExperimentServiceMonitor(); // not ready yet, need to finish passing correct trees to ai. workes well in BP
 	
-	AGameModeMain::StopLoadingScreen();	
+	AGameModeMain::StopLoadingScreen();
+
 }
 
 void AGameModeMain::EndPlay(const EEndPlayReason::Type EndPlayReason)
 {
 	Super::EndPlay(EndPlayReason);
+	this->ExperimentStopEpisode();
 }
 
 void AGameModeMain::Tick(float DeltaTime)

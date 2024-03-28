@@ -195,7 +195,7 @@ void AExperimentServiceMonitor::HandleFinishExperimentTimedOut()
 
 /* start experiment service episode stream */
 bool AExperimentServiceMonitor::StartEpisode() {
-	if (!ExperimentServiceClient) { UE_LOG(LogTemp, Error, TEXT("Can't start episode, Experiment Service client not valid.")); return false; }
+	if (!ExperimentServiceClient) { UE_LOG(LogTemp, Error, TEXT("Can't stop episode, Experiment Service client not valid.")); return false; }
 	if (ExperimentNameActive.Len() < 1) { UE_LOG(LogTemp, Warning, TEXT("Can't stop episode, experiment name not valid.")); return false; }
 	if (!bInExperiment) { UE_LOG(LogTemp, Warning, TEXT("Can't stop episode, no active experiment.")); return false; }
 	
@@ -259,7 +259,7 @@ void AExperimentServiceMonitor::HandleStartExperimentResponse(const FString Resp
 	UE_LOG(LogTemp, Warning, TEXT("[AExperimentServiceMonitor::HandleStartExperimentResponse] Experiment name: %s"), *ExperimentNameActive);
 	
 	bInExperiment = true;
-
+	this->StartEpisode();
 	//if (!bInExperiment || !this->StartEpisode()){
 	////if (!this->StartEpisode(ExperimentNameActive)){
 	//	this->SelfDestruct(FString("Start episode failed"));
@@ -509,8 +509,9 @@ void AExperimentServiceMonitor::UpdatePreyPosition(const FVector vector)
 	self.rotation = rotation 
 */
 	FLocation Location; 
-	Location.x = vector.X;
-	Location.y = vector.Y;
+	//Location.x = (0.5 - (vector.X)/(250*15)) + 0.5 ; // todo: change make dynamic
+	Location.x = ((vector.X)/(250*15)); // todo: change make dynamic
+	Location.y = vector.Y/(-250*15);
 
 	/* prepare Step */
 	//FString header_prey = "send_step";
@@ -659,7 +660,7 @@ void AExperimentServiceMonitor::BeginPlay()
 	if (ExperimentServiceClient->IsConnected() && GEngine) {
 		GEngine->AddOnScreenDebugMessage(1, 5.0f, FColor::Green, TEXT("experiment service connected"));
 	}
-	//FPlatformProcess::Sleep(5);
+	
 }
 
 /* run a (light!) command every frame */
