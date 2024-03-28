@@ -295,7 +295,7 @@
 		},
 		{
 			"Name": "RgbPoseLiveLink",
-			"Enabled": true,
+			"Enabled": false,
 			"MarketplaceURL": "com.epicgames.launcher://ue/marketplace/product/c26b8f6cb4eb42f49bbd9c2413c3c2c1"
 		},
 		{
