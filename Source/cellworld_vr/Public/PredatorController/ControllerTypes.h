@@ -1,3 +1,4 @@
+#pragma once
 #include "ControllerTypes.generated.h"
 
 UENUM()

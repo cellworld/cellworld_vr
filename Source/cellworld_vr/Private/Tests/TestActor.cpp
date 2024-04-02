@@ -121,9 +121,9 @@ FXRHMDData ATestActor::GetHMDData()
 	return HMDDataTemp;
 }
 
-static FString f2s(float v) {
-	return FString::SanitizeFloat(v);
-}
+//static FString f2s(float v) {
+//	return FString::SanitizeFloat(v);
+//}
 
 static FString TrackingEnumToString(ETrackingStatus TrackingStatus) {
 	
@@ -143,24 +143,25 @@ static FString TrackingEnumToString(ETrackingStatus TrackingStatus) {
 
 bool ATestActor::SaveData(FXRHMDData Data)
 {
-	/* header:
-		times,px,py,pz,rx,ry,rz,tracking_status,
-	//*/
+	///* header:
+	//	times,px,py,pz,rx,ry,rz,tracking_status,
+	////*/
 
 
-	FVector p = Data.Position;
-	FVector r = Data.Rotation.Euler();
+	//FVector p = Data.Position;
+	//FVector r = Data.Rotation.Euler();
 
-	uint64 query_count_now = 0;
-	double query_count_elapsed;
+	//uint64 query_count_now = 0;
+	//double query_count_elapsed;
 
-	if (!bQuery_count_init_valid || !UQueryPerformanceCounter::GetCounter2(query_count_now) || !UQueryPerformanceCounter::GetQueryElapsedTime(query_count_init, query_count_elapsed)) {
-		query_count_elapsed = 0;
-	}
-	FString line = FString::SanitizeFloat(query_count_elapsed) + delim
-		+ f2s(p.X) + delim + f2s(p.Y) + delim + f2s(p.Z) + delim
-		+ f2s(r.X) + delim + f2s(r.Y) + delim + f2s(r.Z) + delim + TrackingEnumToString(Data.TrackingStatus) + "\n";
+	//if (!bQuery_count_init_valid || !UQueryPerformanceCounter::GetCounter2(query_count_now) || !UQueryPerformanceCounter::GetQueryElapsedTime(query_count_init, query_count_elapsed)) {
+	//	query_count_elapsed = 0;
+	//}
+	//FString line = FString::SanitizeFloat(query_count_elapsed) + delim
+	//	+ f2s(p.X) + delim + f2s(p.Y) + delim + f2s(p.Z) + delim
+	//	+ f2s(r.X) + delim + f2s(r.Y) + delim + f2s(r.Z) + delim + TrackingEnumToString(Data.TrackingStatus) + "\n";
 
-	return UTextFileManager::SaveStringToFile(*line, *filename, true);
+	//return UTextFileManager::SaveStringToFile(*line, *filename, true);
+	return false; 
 }
 

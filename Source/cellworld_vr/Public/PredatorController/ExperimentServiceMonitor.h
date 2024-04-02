@@ -7,10 +7,12 @@
 #include "ExperimentPlugin.h"
 #include "MessageClient.h"
 #include "TCPMessages.h"
+#include "ExperimentUtils.h"
 #include "PredatorController/CharacterPredator.h"
 #include "PredatorController/ControllerTypes.h"
 #include "PawnMain.h"
 #include "PawnDebug.h"
+#include "ExperimentComponents/Occlusion.h"
 #include "ExperimentServiceMonitor.generated.h"
 
 //DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnMessageReceived, FMessage, message);
@@ -28,7 +30,7 @@ public:
 	UMessageClient* ExperimentServiceClient;
 	
 	UMessageRoute* ExperimentServiceClientRoute;
-	UMessageRoute* ExperimentServiceRoute;
+	UMessageRoute* ExperimentServicePreyRoute;
 
 	UMessageRoute* MessageRoute; 
 	UMessageRoute* TrackingServiceRoute; 
@@ -38,25 +40,31 @@ public:
 	URequest* start_episode_request;
 	URequest* stop_episode_request;
 
-	URequest* start_experiment_request;
+	URequest* StartExperimentRequest;
 	URequest* stop_experiment_request;
 
 	URequest* TrackingServiceRequest; 
 
-	const FString header_experiment_service			= "predator_step";
-	const FString header_tracking_service			= "send_step_vr";
+	//const FString header_experiment_service			= "predator_step";
+	const FString header_tracking_service			= "send_step";
 	const FString header_tracking_service_prey		= "prey_step";
 	const FString header_tracking_service_predator  = "predator_step";
 	const FString experiment_name = "test_experiment";
 
+	/* server stuff */
 	const FString ServerIPMessage   = "127.0.0.1";
 	const int PortTrackingService   = 4510;
 	const int PortExperimentService = 4540; 
+	bool bConnectedToServer     = false;
+	bool bCanUpdatePreyPosition = false;
+
+	/* world stuff */
 	float map_length                = 5100;
 	int frame_count                 = 0; 
 
-	bool bConnectedToServer     = false;
-	bool bCanUpdatePreyPosition = false;
+	/* coordinate system stuff */
+	const float MapLength = 250; 
+	int WorldScale = 15; 
 
 	/* connection control */
 	bool bConnectedToExperimentService  = false; 
@@ -68,6 +76,7 @@ public:
 
 	/* setup */
 	const FString predator_step_header = "predator_step";
+
 	bool SubscribeToTrackingService();
 	bool ConnectToTrackingService(); 
 	bool TrackingServiceRouteMessages(); 
@@ -146,6 +155,7 @@ public:
 		void UpdatePredator(const FMessage message);
 	UFUNCTION()
 		void UpdatePreyPosition(const FVector Location);
+
 	/* other */
 	UFUNCTION()
 		void HandleTrackingServiceMessage(const FMessage message);
@@ -165,6 +175,27 @@ public:
 		bool bInExperiment = false;
 	UPROPERTY(BlueprintReadWrite)
 		bool bInEpisode = false;
+
+	/* occlusion control */
+	TArray<FLocation> OcclusionLocationsAll;
+	TArray<int32> OcclusionIDsIntArr;
+
+	UFUNCTION()
+		URequest* SendGetCellLocationsRequest();
+	UFUNCTION()
+		void HandleGetCellLocationsResponse(const FString ResponseIn);
+	UFUNCTION()
+		void HandleGetCellLocationsTimedOut();
+	UFUNCTION()
+		URequest* SendGetOcclusionsRequest();
+	UFUNCTION()
+		void SpawnOcclusions(const TArray<int32> OcclusionIDsIn, const TArray<FLocation> Locations);
+	UFUNCTION()
+		void HandleGetOcclusionsResponse(const FString ResponseIn);
+	UFUNCTION()
+		void HandleGetOcclusionsTimedOut();
+	UFUNCTION()
+		void HandleOcclusionLocation(const FMessage MessageIn);
 
 protected:
 	// Called when the game starts or when spawned

@@ -158,7 +158,7 @@ void AGameModeMain::Tick(float DeltaTime)
 
 bool AGameModeMain::ExperimentStartEpisode() { 
 	if (!ExperimentServiceMonitor) { return false; }
-	return ExperimentServiceMonitor->StartEpisode(); 
+	return ExperimentServiceMonitor->StartEpisode();  
 }
 
 bool AGameModeMain::ExperimentStopEpisode() {

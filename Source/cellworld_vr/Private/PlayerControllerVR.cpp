@@ -1,6 +1,7 @@
 #pragma once
 #include "PlayerControllerVR.h"
-#include "GameModeMain.h"
+
+class AGameModeMain; 
 
 APlayerControllerVR::APlayerControllerVR()
 {
@@ -12,9 +13,9 @@ void APlayerControllerVR::BeginPlay()
 {
 	Super::BeginPlay();
 	UE_LOG(LogTemp, Warning, TEXT("APlayerControllerVR::BeginPlay()"));
-	AGameModeMain* GameMode;
+
 	if (GetWorld()) {
-		GameMode = (AGameModeMain*)GetWorld()->GetAuthGameMode();
+		//AGameModeMain* GameMode = (AGameModeMain*)GetWorld()->GetAuthGameMode();
 		PossessedPawn = Cast<APawnMain>(GetPawn());
 	}
 	return;

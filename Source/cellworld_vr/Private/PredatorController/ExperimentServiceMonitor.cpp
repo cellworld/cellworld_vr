@@ -2,7 +2,6 @@
 #include "PredatorController/ExperimentServiceMonitor.h"
 #include "PredatorController/AIControllerPredator.h"
 #include "Kismet/GameplayStatics.h"
-#include "ExperimentUtils.h"
 
 //#include "GenericPlatform/GenericPlatformProcess.h"
 
@@ -83,20 +82,23 @@ bool AExperimentServiceMonitor::StartExperiment(const FString ExperimentNameIn) 
 	if (!ExperimentServiceClient) { UE_LOG(LogTemp, Error, TEXT("Can't start experiment, Experiment Service client not valid.")); return false; }
 	if (!ExperimentServiceClient->IsConnected()) { UE_LOG(LogTemp, Error, TEXT("Can't start experiment, Experiment Service client not connected.")); return false; }
 
-	const FWorldInfo world_info; 
-	const FString world_info_string = UExperimentUtils::WorldInfoToJsonString(world_info);
+	/* set up world info (defaults to hexagonal and canonical) */
+	FWorldInfo WorldInfo; 
+	WorldInfo.occlusions = "21_05"; 
 
-	FStartExperimentRequest request_body;
-	request_body.duration = 30;
-	request_body.subject_name = ExperimentNameIn;
+	/* set up request body */
+	FStartExperimentRequest StartExperimentRequestBody;
+	StartExperimentRequestBody.duration = 30;
+	StartExperimentRequestBody.subject_name = ExperimentNameIn;
+	StartExperimentRequestBody.world = WorldInfo; 
 	
-	const FString request_string = UExperimentUtils::StartExperimentRequestToJsonString(request_body);
-	start_experiment_request = ExperimentServiceClient->SendRequest("start_experiment", request_string, 5.0f);
+	const FString StartExperimentRequestBodyString = UExperimentUtils::StartExperimentRequestToJsonString(StartExperimentRequestBody);
+	StartExperimentRequest = ExperimentServiceClient->SendRequest("start_experiment", StartExperimentRequestBodyString, 5.0f);
 
-	if (!start_experiment_request) { return false; }
+	if (!StartExperimentRequest) { return false; }
 
-	start_experiment_request->ResponseReceived.AddDynamic(this, &AExperimentServiceMonitor::HandleStartExperimentResponse);
-	start_experiment_request->TimedOut.AddDynamic(this, &AExperimentServiceMonitor::HandleStartExperimentTimedOut);
+	StartExperimentRequest->ResponseReceived.AddDynamic(this, &AExperimentServiceMonitor::HandleStartExperimentResponse);
+	StartExperimentRequest->TimedOut.AddDynamic(this, &AExperimentServiceMonitor::HandleStartExperimentTimedOut);
 
 	return true; 
 }
@@ -114,6 +116,7 @@ bool AExperimentServiceMonitor::StopExperiment(const FString ExperimentNameIn) {
 	return true; 
 }
 
+/* DEPRECATED */
 URequest* AExperimentServiceMonitor::SendStartExperimentRequest(const FString ExperimentNameIn)
 {
 	if (!ExperimentServiceClient) { return nullptr; }
@@ -142,8 +145,8 @@ URequest* AExperimentServiceMonitor::SendFinishExperimentRequest(const FString E
 
 	if (!request) { return nullptr; }
 
-	request->ResponseReceived.AddDynamic(this, &AExperimentServiceMonitor::HandleStartExperimentResponse); // uses same one as start/stop
-	request->TimedOut.AddDynamic(this, &AExperimentServiceMonitor::HandleStartExperimentTimedOut);
+	request->ResponseReceived.AddDynamic(this, &AExperimentServiceMonitor::HandleFinishExperimentResponse); // uses same one as start/stop
+	request->TimedOut.AddDynamic(this, &AExperimentServiceMonitor::HandleFinishExperimentTimedOut);
 
 	return request;
 }
@@ -221,6 +224,8 @@ bool AExperimentServiceMonitor::StopEpisode()
 	if (!request) { return false; }
 	request->ResponseReceived.AddDynamic(this, &AExperimentServiceMonitor::HandleEpisodeRequestResponse);
 	request->TimedOut.AddDynamic(this, &AExperimentServiceMonitor::HandleEpisodeRequestTimedOut);
+	
+
 
 	return true;
 }
@@ -235,7 +240,8 @@ void AExperimentServiceMonitor::HandleEpisodeRequestResponse(const FString respo
 		UE_DEBUG_BREAK();
 		return;
 	}
-	bInEpisode = true;
+	this->SendGetCellLocationsRequest();
+	bInEpisode = true; // todo: fix, HandelEpisodeRequest both starts and stops, need unique functions 
 }
 
 /* handle experiment service timeout */
@@ -259,7 +265,9 @@ void AExperimentServiceMonitor::HandleStartExperimentResponse(const FString Resp
 	UE_LOG(LogTemp, Warning, TEXT("[AExperimentServiceMonitor::HandleStartExperimentResponse] Experiment name: %s"), *ExperimentNameActive);
 	
 	bInExperiment = true;
+
 	this->StartEpisode();
+
 	//if (!bInExperiment || !this->StartEpisode()){
 	////if (!this->StartEpisode(ExperimentNameActive)){
 	//	this->SelfDestruct(FString("Start episode failed"));
@@ -472,12 +480,11 @@ bool AExperimentServiceMonitor::SubscribeToExperimentServiceServer(FString heade
 	ExperimentServiceRequestSubscribe->ResponseReceived.AddDynamic(this, &AExperimentServiceMonitor::HandleExperimentServiceResponse);
 	ExperimentServiceRequestSubscribe->TimedOut.AddDynamic(this, &AExperimentServiceMonitor::HandleExperimentServiceResponseTimedOut);
 
-	ExperimentServiceRoute = ExperimentServiceClient->AddRoute(header);
-	if (!ExperimentServiceRoute) { 
-		return false; 
-	}
-
-	ExperimentServiceRoute->MessageReceived.AddDynamic(this, &AExperimentServiceMonitor::UpdatePredator);
+	/* Update prey route */
+	ExperimentServicePreyRoute = ExperimentServiceClient->AddRoute(header);
+	if (!ExperimentServicePreyRoute) { return false;  }
+	ExperimentServicePreyRoute->MessageReceived.AddDynamic(this, &AExperimentServiceMonitor::UpdatePredator);
+	
 	return true;
 }
 
@@ -489,7 +496,7 @@ void AExperimentServiceMonitor::UpdatePredator(const FMessage message)
 	if (TrackingServiceClient == nullptr) { return; }
 	frame_count++;
 	FStep step = UExperimentUtils::JsonStringToStep(message.body); 
-	FVector new_location_ue = UExperimentUtils::canonicalToVr(step.location,map_length); // ue --> unreal engine units 
+	FVector new_location_ue = UExperimentUtils::CanonicalToVr(step.location,MapLength, WorldScale); // ue --> unreal engine units 
 	
 	GEngine->AddOnScreenDebugMessage(1, 5.0f, FColor::Green, FString::Printf(TEXT("New location: %f %f %f"), new_location_ue.X, new_location_ue.Y, new_location_ue.Z));
 	
@@ -508,10 +515,7 @@ void AExperimentServiceMonitor::UpdatePreyPosition(const FVector vector)
 	self.time_stamp = time_stamp 
 	self.rotation = rotation 
 */
-	FLocation Location; 
-	//Location.x = (0.5 - (vector.X)/(250*15)) + 0.5 ; // todo: change make dynamic
-	Location.x = ((vector.X)/(250*15)); // todo: change make dynamic
-	Location.y = vector.Y/(-250*15);
+	FLocation Location = UExperimentUtils::VrToCanonical(vector, MapLength, WorldScale);
 
 	/* prepare Step */
 	//FString header_prey = "send_step";
@@ -610,6 +614,106 @@ void AExperimentServiceMonitor::SelfDestruct(const FString ErrorMessageIn)
 		// Destroy the actor.
 		//this->Destroy();
 	}
+}
+
+/* get occlusions in our specific experiment (FWorldInfo.occlusions; default: "21_05") */
+URequest* AExperimentServiceMonitor::SendGetOcclusionsRequest()
+{
+	if (!ExperimentServiceClient) { UE_LOG(LogTemp, Error, TEXT("Cant send get occlusion request, Experiment service client not valid.")); return nullptr; }
+	URequest* Request = ExperimentServiceClient->SendRequest("get_occlusions", "21_05", TimeOut);
+	if (!Request) { return nullptr; }
+	FPlatformProcess::Sleep(0.5);
+	Request->ResponseReceived.AddDynamic(this, &AExperimentServiceMonitor::HandleGetOcclusionsResponse);
+	Request->TimedOut.AddDynamic(this, &AExperimentServiceMonitor::HandleGetOcclusionsTimedOut);
+
+	return Request;
+}
+
+void AExperimentServiceMonitor::SpawnOcclusions(const TArray<int32> OcclusionIDsIn, const TArray<FLocation> Locations) {
+	FRotator Rotation(0.0f, 0.0f, 0.0f); // Desired spawn rotation
+	FVector Location(0.0f, 0.0f, 0.0f); // Desired spawn location
+
+	FActorSpawnParameters SpawnParams;
+
+	for (int i = 0; i < Locations.Num(); i++) {
+		AOcclusion* MyMeshActor = GetWorld()->SpawnActor<AOcclusion>(
+			AOcclusion::StaticClass(), 
+			UExperimentUtils::CanonicalToVr(Locations[i], 250, 15), 
+			Rotation, 
+			SpawnParams);
+
+		MyMeshActor->SetActorScale3D(FVector(WorldScale,WorldScale, WorldScale));
+		UE_LOG(LogTemp, Warning, TEXT("Spawned ! "));
+	}
+}
+
+/* gets location of all possible occlusions in our given experiment/world configuration */
+void AExperimentServiceMonitor::HandleGetOcclusionsResponse(const FString ResponseIn) 
+{
+	UE_LOG(LogTemp, Warning, TEXT("[AExperimentServiceMonitor::HandleGetOcclusionsResponse] Occlusion IDs (raw): %s"), *ResponseIn);
+	
+	/* start empty */
+	OcclusionIDsIntArr.Empty(); 
+
+	/* process the array before using */
+	TArray<FString> OcclusionIDsStringArr; 
+	FString OcclusionIDs_temp = ResponseIn.Replace(TEXT("["), TEXT("")).Replace(TEXT("]"), TEXT(""));
+	int32 Samples = OcclusionIDs_temp.ParseIntoArray(OcclusionIDsStringArr, TEXT(","), true);
+
+	UE_LOG(LogTemp, Log, TEXT("[AExperimentServiceMonitor::HandleGetOcclusionsResponse] Number of occlusions in configuration: %i"),Samples);
+
+	/* convert to integer array */
+	int32 SamplesLost = 0; 
+	for (FString value : OcclusionIDsStringArr) {
+		if (FCString::IsNumeric(*value)) OcclusionIDsIntArr.Add(FCString::Atoi(*value));
+		else SamplesLost++;
+	}
+
+	UE_LOG(LogTemp, Warning, TEXT("[AExperimentServiceMonitor::HandleGetOcclusionsResponse] Number of occlusions lost druing AtoI: %i"),SamplesLost);
+	// todo: pass this information to game state 
+	SpawnOcclusions(OcclusionIDsIntArr, OcclusionLocationsAll);
+	return;
+}
+
+
+void AExperimentServiceMonitor::HandleGetOcclusionsTimedOut() {
+	UE_LOG(LogTemp, Warning, TEXT("Get occlussion request timed out!"));
+	return;
+}
+
+URequest* AExperimentServiceMonitor::SendGetCellLocationsRequest()
+{
+	UE_LOG(LogTemp, Log, TEXT("[AExperimentServiceMonitor::SendGetCellLocationsRequest()] Starting request."));
+	if (!ExperimentServiceClient) { UE_LOG(LogTemp, Error, TEXT("Cant send get occlusion request, Experiment service client not valid.")); return false; }
+	
+	const FString BodyOut   = "bodyout";
+	const FString HeaderOut = "get_cells_locations";
+	URequest* Request = ExperimentServiceClient->SendRequest(HeaderOut,BodyOut,TimeOut);
+
+	if (!Request) { return false; }
+
+	Request->ResponseReceived.AddDynamic(this, &AExperimentServiceMonitor::HandleGetCellLocationsResponse);
+	Request->TimedOut.AddDynamic(this, &AExperimentServiceMonitor::HandleGetCellLocationsTimedOut);
+
+	return Request;
+}
+
+/* gets location of all possible occlusions in our given experiment/world configuration */
+void AExperimentServiceMonitor::HandleGetCellLocationsResponse(const FString ResponseIn) {
+	UE_LOG(LogTemp, Log, TEXT("%s"), *ResponseIn);
+	OcclusionLocationsAll = UExperimentUtils::OcclusionsParseAllLocations(ResponseIn);
+	this->SendGetOcclusionsRequest();
+	return;
+}
+
+void AExperimentServiceMonitor::HandleGetCellLocationsTimedOut() {
+	UE_LOG(LogTemp, Warning, TEXT("Get cell location request timed out!"));
+	return;
+}
+
+void AExperimentServiceMonitor::HandleOcclusionLocation(const FMessage MessageIn)
+{
+	UE_LOG(LogTemp, Warning, TEXT("OcclusionLocation: %s"), *MessageIn.body);
 }
 
 /* main stuff happens here */
