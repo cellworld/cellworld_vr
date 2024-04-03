@@ -15,25 +15,21 @@ AExperimentServiceMonitor::AExperimentServiceMonitor()
 /* todo: make this take input ACharacter and spawn that one*/
 bool AExperimentServiceMonitor::SpawnAndPossessPredator() {
 
-	if (GetWorld())
-	{
-		// Define spawn parameters
-		FActorSpawnParameters SpawnParams;
-		SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButAlwaysSpawn;
+	if (!GetWorld()) { UE_LOG(LogTemp, Fatal, TEXT("[AExperimentServiceMonitor::SpawnAndPossessPredator()] GetWorld() failed!")); return false; }
 
-		// Specify the location and rotation for the new actor
-		FVector Location(-2426.0f, 1264.0f, 90.0f); // Change to desired spawn location
-		FRotator Rotation(0.0f, 0.0f, 0.0f); // Change to desired spawn rotation
+	// Define spawn parameters
+	FActorSpawnParameters SpawnParams;
+	SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButAlwaysSpawn;
 
-		// Spawn the character
-		CharacterPredator = GetWorld()->SpawnActor<ACharacterPredator>(ACharacterPredator::StaticClass(), Location, Rotation, SpawnParams);
+	// Specify the location and rotation for the new actor
+	FVector Location(-2426.0f, 1264.0f, 90.0f); // Change to desired spawn location
+	FRotator Rotation(0.0f, 0.0f, 0.0f); // Change to desired spawn rotation
+
+	// Spawn the character
+	CharacterPredator = GetWorld()->SpawnActor<ACharacterPredator>(ACharacterPredator::StaticClass(), Location, Rotation, SpawnParams);
 
 		// Ensure the character was spawned
-		if (CharacterPredator)
-		{
-			return true;
-		}
-	}
+	if (!CharacterPredator) { UE_LOG(LogTemp, Fatal, TEXT("[AExperimentServiceMonitor::SpawnAndPossessPredator()] Spawn ACharacterPredator Failed!")); return false; }
 	return false;
 }
 
