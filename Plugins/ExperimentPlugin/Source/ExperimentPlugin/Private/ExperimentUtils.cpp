@@ -227,7 +227,7 @@ FLocation UExperimentUtils::VrToCanonical(const FVector VectorIn, const float Ma
 	return LocationOut;
 }
 
-FVector UExperimentUtils::CanonicalToVr(const FLocation LocationIn, const float MapLengthIn, const int WorldScaleIn) {
+FVector UExperimentUtils::CanonicalToVr(const FLocation LocationIn, const float MapLengthIn, const float WorldScaleIn) {
 	FVector VectorOut;
 	VectorOut.X = (LocationIn.x * MapLengthIn * WorldScaleIn);
 	VectorOut.Y = (-LocationIn.y * MapLengthIn * WorldScaleIn);

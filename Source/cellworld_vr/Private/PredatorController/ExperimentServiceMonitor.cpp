@@ -79,15 +79,15 @@ bool AExperimentServiceMonitor::StartExperiment(const FString ExperimentNameIn) 
 	if (!ExperimentServiceClient->IsConnected()) { UE_LOG(LogTemp, Error, TEXT("Can't start experiment, Experiment Service client not connected.")); return false; }
 
 	/* set up world info (defaults to hexagonal and canonical) */
-	FWorldInfo WorldInfo; 
-	WorldInfo.occlusions = "21_05"; 
+	FWorldInfo WorldInfo;
+	WorldInfo.occlusions = "21_05";
 
 	/* set up request body */
 	FStartExperimentRequest StartExperimentRequestBody;
 	StartExperimentRequestBody.duration = 30;
 	StartExperimentRequestBody.subject_name = ExperimentNameIn;
-	StartExperimentRequestBody.world = WorldInfo; 
-	
+	StartExperimentRequestBody.world = WorldInfo;
+
 	const FString StartExperimentRequestBodyString = UExperimentUtils::StartExperimentRequestToJsonString(StartExperimentRequestBody);
 	StartExperimentRequest = ExperimentServiceClient->SendRequest("start_experiment", StartExperimentRequestBodyString, 5.0f);
 
@@ -96,6 +96,7 @@ bool AExperimentServiceMonitor::StartExperiment(const FString ExperimentNameIn) 
 	StartExperimentRequest->ResponseReceived.AddDynamic(this, &AExperimentServiceMonitor::HandleStartExperimentResponse);
 	StartExperimentRequest->TimedOut.AddDynamic(this, &AExperimentServiceMonitor::HandleStartExperimentTimedOut);
 
+	
 	return true; 
 }
 
@@ -220,8 +221,6 @@ bool AExperimentServiceMonitor::StopEpisode()
 	if (!request) { return false; }
 	request->ResponseReceived.AddDynamic(this, &AExperimentServiceMonitor::HandleEpisodeRequestResponse);
 	request->TimedOut.AddDynamic(this, &AExperimentServiceMonitor::HandleEpisodeRequestTimedOut);
-	
-
 
 	return true;
 }
@@ -236,7 +235,7 @@ void AExperimentServiceMonitor::HandleEpisodeRequestResponse(const FString respo
 		UE_DEBUG_BREAK();
 		return;
 	}
-	this->SendGetCellLocationsRequest();
+	this->SendGetOcclusionLocationsRequest();
 	bInEpisode = true; // todo: fix, HandelEpisodeRequest both starts and stops, need unique functions 
 }
 
@@ -261,14 +260,19 @@ void AExperimentServiceMonitor::HandleStartExperimentResponse(const FString Resp
 	UE_LOG(LogTemp, Warning, TEXT("[AExperimentServiceMonitor::HandleStartExperimentResponse] Experiment name: %s"), *ExperimentNameActive);
 	
 	bInExperiment = true;
+	
+	/* todo: change, this is just for debugging while I add dynamic doors to Maze Level*/
+	FString MapName = GetWorld()->GetMapName();
+	MapName.RemoveFromStart(GetWorld()->StreamingLevelsPrefix);
+	UE_LOG(LogTemp, Warning, TEXT("map name: %s"), *MapName);
 
-	this->StartEpisode();
+	if (MapName == "L_Maze") {
 
-	//if (!bInExperiment || !this->StartEpisode()){
-	////if (!this->StartEpisode(ExperimentNameActive)){
-	//	this->SelfDestruct(FString("Start episode failed"));
-	//	return;
-	//}
+		if (!this->StartEpisode()) { 
+			return; 
+		}
+	}
+
 }
 
 void AExperimentServiceMonitor::HandleStartExperimentTimedOut()
@@ -299,6 +303,7 @@ URequest* AExperimentServiceMonitor::SendStartEpisodeRequest(const FString Exper
 /* create and send simple experiment service request */
 URequest* AExperimentServiceMonitor::SendStopEpisodeRequest(const FString ExperimentNameIn, const FString header)
 {
+	UE_LOG(LogTemp, Warning, TEXT("[AExperimentServiceMonitor::SendStopEpisodeRequest]"))
 	FFinishEpisodeRequest request_body;
 	request_body.experiment_name = ExperimentNameIn;
 
@@ -626,21 +631,29 @@ URequest* AExperimentServiceMonitor::SendGetOcclusionsRequest()
 }
 
 void AExperimentServiceMonitor::SpawnOcclusions(const TArray<int32> OcclusionIDsIn, const TArray<FLocation> Locations) {
-	FRotator Rotation(0.0f, 0.0f, 0.0f); // Desired spawn rotation
-	FVector Location(0.0f, 0.0f, 0.0f); // Desired spawn location
+	
+	//OcclusionsStruct.SetAllLocations(Locations);
+	//
+	//if (!OcclusionsStruct.SpawnAll(true,false)) {
+	//	UE_LOG(LogTemp, Error, TEXT("SpawnAll failed"));
+	//	return; 
+	//}
 
-	FActorSpawnParameters SpawnParams;
+	//FRotator Rotation(0.0f, 0.0f, 0.0f); // Desired spawn rotation
+	//FVector Location(0.0f, 0.0f, 0.0f); // Desired spawn location
 
-	for (int i = 0; i < Locations.Num(); i++) {
-		AOcclusion* MyMeshActor = GetWorld()->SpawnActor<AOcclusion>(
-			AOcclusion::StaticClass(), 
-			UExperimentUtils::CanonicalToVr(Locations[i], 250, 15), 
-			Rotation, 
-			SpawnParams);
+	//FActorSpawnParameters SpawnParams;
+	//for (int i = 0; i < Locations.Num(); i++) {
+	//	AOcclusion* MyMeshActor = GetWorld()->SpawnActor<AOcclusion>(
+	//		AOcclusion::StaticClass(), 
+	//		UExperimentUtils::CanonicalToVr(Locations[i], 250, 15), 
+	//		Rotation, 
+	//		SpawnParams);
 
-		MyMeshActor->SetActorScale3D(FVector(WorldScale,WorldScale, WorldScale));
-		UE_LOG(LogTemp, Warning, TEXT("Spawned ! "));
-	}
+	//	MyMeshActor->SetActorScale3D(FVector(WorldScale,WorldScale, WorldScale));
+
+	//	UE_LOG(LogTemp, Warning, TEXT("Spawned occlusion (%i/%i)."),i,Locations.Num());
+	//}
 }
 
 /* gets location of all possible occlusions in our given experiment/world configuration */
@@ -650,7 +663,7 @@ void AExperimentServiceMonitor::HandleGetOcclusionsResponse(const FString Respon
 	
 	/* start empty */
 	OcclusionIDsIntArr.Empty(); 
-
+	TArray<int32> OcclusionIDsTemp; 
 	/* process the array before using */
 	TArray<FString> OcclusionIDsStringArr; 
 	FString OcclusionIDs_temp = ResponseIn.Replace(TEXT("["), TEXT("")).Replace(TEXT("]"), TEXT(""));
@@ -661,25 +674,39 @@ void AExperimentServiceMonitor::HandleGetOcclusionsResponse(const FString Respon
 	/* convert to integer array */
 	int32 SamplesLost = 0; 
 	for (FString value : OcclusionIDsStringArr) {
-		if (FCString::IsNumeric(*value)) OcclusionIDsIntArr.Add(FCString::Atoi(*value));
+		if (FCString::IsNumeric(*value)) OcclusionIDsTemp.Add(FCString::Atoi(*value));
 		else SamplesLost++;
 	}
 
 	UE_LOG(LogTemp, Warning, TEXT("[AExperimentServiceMonitor::HandleGetOcclusionsResponse] Number of occlusions lost druing AtoI: %i"),SamplesLost);
 	// todo: pass this information to game state 
-	SpawnOcclusions(OcclusionIDsIntArr, OcclusionLocationsAll);
+	OcclusionsStruct.SetCurrentLocationsByIndex(OcclusionIDsTemp);
+	OcclusionsStruct.SpawnAll(GetWorld(), true, false, FVector(15.0f, 15.0f, 15.0f));
+	OcclusionsStruct.SetVisibilityArr(OcclusionIDsTemp);
+	//OcclusionsStruct.SetAllLocations()
+	//SpawnOcclusions(OcclusionIDsIntArr, OcclusionLocationsAll);
 	return;
 }
-
 
 void AExperimentServiceMonitor::HandleGetOcclusionsTimedOut() {
 	UE_LOG(LogTemp, Warning, TEXT("Get occlussion request timed out!"));
 	return;
 }
 
-URequest* AExperimentServiceMonitor::SendGetCellLocationsRequest()
+bool AExperimentServiceMonitor::SetOcclusionVisibility(TArray<int32> VisibleOcclusionIDsIn)
 {
-	UE_LOG(LogTemp, Log, TEXT("[AExperimentServiceMonitor::SendGetCellLocationsRequest()] Starting request."));
+	if (!bIsOcclusionLoaded) { UE_LOG(LogTemp, Fatal, TEXT("[AExperimentServiceMonitor::SetOcclusionVisibility] Failed to change visibility. Occlusions not pre-loaded.")); return false; }
+	
+	for (int i = 0; VisibleOcclusionIDsIn.Num(); i++) {
+		
+	}
+	
+	return true;
+}
+
+URequest* AExperimentServiceMonitor::SendGetOcclusionLocationsRequest()
+{
+	UE_LOG(LogTemp, Log, TEXT("[AExperimentServiceMonitor::SendGetOcclusionLocationsRequest()] Starting request."));
 	if (!ExperimentServiceClient) { UE_LOG(LogTemp, Error, TEXT("Cant send get occlusion request, Experiment service client not valid.")); return false; }
 	
 	const FString BodyOut   = "bodyout";
@@ -688,21 +715,23 @@ URequest* AExperimentServiceMonitor::SendGetCellLocationsRequest()
 
 	if (!Request) { return false; }
 
-	Request->ResponseReceived.AddDynamic(this, &AExperimentServiceMonitor::HandleGetCellLocationsResponse);
-	Request->TimedOut.AddDynamic(this, &AExperimentServiceMonitor::HandleGetCellLocationsTimedOut);
+	Request->ResponseReceived.AddDynamic(this, &AExperimentServiceMonitor::HandleGetOcclusionLocationsResponse);
+	Request->TimedOut.AddDynamic(this, &AExperimentServiceMonitor::HandleGetOcclusionLocationsTimedOut);
 
 	return Request;
 }
 
 /* gets location of all possible occlusions in our given experiment/world configuration */
-void AExperimentServiceMonitor::HandleGetCellLocationsResponse(const FString ResponseIn) {
+void AExperimentServiceMonitor::HandleGetOcclusionLocationsResponse(const FString ResponseIn) {
 	UE_LOG(LogTemp, Log, TEXT("%s"), *ResponseIn);
 	OcclusionLocationsAll = UExperimentUtils::OcclusionsParseAllLocations(ResponseIn);
+
+	OcclusionsStruct.SetAllLocations(OcclusionLocationsAll); 
 	this->SendGetOcclusionsRequest();
 	return;
 }
 
-void AExperimentServiceMonitor::HandleGetCellLocationsTimedOut() {
+void AExperimentServiceMonitor::HandleGetOcclusionLocationsTimedOut() {
 	UE_LOG(LogTemp, Warning, TEXT("Get cell location request timed out!"));
 	return;
 }

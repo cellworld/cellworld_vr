@@ -87,7 +87,7 @@ public:
 	UFUNCTION(BlueprintCallable, Category = Experiment)
 		static FLocation VrToCanonical(const FVector VectorIn, const float MapLengthIn, const int WorldScaleIn);
 	UFUNCTION(BlueprintCallable, Category = Experiment)
-		static FVector CanonicalToVr(const FLocation LocationIn, const float MapLengthIn, const int WorldScaleIn);
+		static FVector CanonicalToVr(const FLocation LocationIn, const float MapLengthIn, const float WorldScaleIn);
 	UFUNCTION(BlueprintCallable, Category = Experiment)
 		static int updateFrame(int Frame);
 	UFUNCTION(BlueprintCallable, Category = Experiment)

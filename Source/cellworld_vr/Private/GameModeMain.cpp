@@ -148,7 +148,7 @@ void AGameModeMain::StartPlay()
 void AGameModeMain::EndPlay(const EEndPlayReason::Type EndPlayReason)
 {
 	Super::EndPlay(EndPlayReason);
-	this->ExperimentStopEpisode();
+	//this->ExperimentStopEpisode();
 }
 
 void AGameModeMain::Tick(float DeltaTime)
@@ -163,6 +163,13 @@ bool AGameModeMain::ExperimentStartEpisode() {
 
 bool AGameModeMain::ExperimentStopEpisode() {
 	if (!ExperimentServiceMonitor) { return false; }
+	
+	// make sure the actor isn't already in queue for being destroyed 
+	if (ExperimentServiceMonitor->IsPendingKill()) 
+	{ 
+		UE_LOG(LogTemp, Warning, TEXT("[AGameModeMain::ExperimentStopEpisode()] Failed to destroy, Already pending kill.")); 
+		return false; 
+	}
 	return ExperimentServiceMonitor->StopEpisode(); 
 }
 
