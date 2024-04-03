@@ -24,7 +24,6 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Custom Category")
 	bool bInDebugMode = false;
 	
-protected:
 	AGameModeMain();
 	
 	/* debug */
