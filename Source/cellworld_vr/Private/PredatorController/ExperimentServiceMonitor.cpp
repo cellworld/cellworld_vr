@@ -741,54 +741,85 @@ void AExperimentServiceMonitor::HandleOcclusionLocation(const FMessage MessageIn
 	UE_LOG(LogTemp, Warning, TEXT("OcclusionLocation: %s"), *MessageIn.body);
 }
 
+bool AExperimentServiceMonitor::test() {
+	UMessageClient* Client = UMessageClient::NewMessageClient();
+
+	if (!Client) { return false; }
+
+	/* connect tracking client to server */
+	int att_max = 5;
+	int att = 0;
+	UE_LOG(LogTemp, Log, TEXT("[AExperimentServiceMonitor::TrackingServiceSetRoute()] Connecting to Tracking Service."));
+	while (att < att_max) {
+		if (Client->Connect("127.0.0.1", 4566)) {
+			UE_LOG(LogTemp, Warning, TEXT("[AExperimentServiceMonitor::TrackingServiceSetRoute()] Connecting Tracking Service SUCCESS."));
+			break;
+		}
+		att += 1;
+	}
+	if (!Client->IsConnected()) {
+		UE_LOG(LogTemp, Error, TEXT("[AExperimentServiceMonitor::TrackingServiceSetRoute()] Connecting to Tracking Service FAILED!"));
+		return false;
+	}
+
+	const FString header = "get_occlusions";
+	const FString body = "21_04";
+	URequest* request = Client->SendRequest("get_cell_locations", "21_04", 10.0f);
+	request->ResponseReceived.AddDynamic(this, &AExperimentServiceMonitor::HandleGetOcclusionLocationsResponse);
+
+	return true;
+}
+
 /* main stuff happens here */
 void AExperimentServiceMonitor::BeginPlay()
 {
 	Super::BeginPlay();
 
-	/* connect tracking service */
-	bSubscribedToTrackingService = this->SubscribeToTrackingService();
-	if (!bSubscribedToTrackingService) { 
-		this->SelfDestruct(FString("Subscribe to TS failed."));
-		return;
-	}
+	test(); 
 
-	/* route tracking messages */
-	bRoutedMessagesTrackingService = this->TrackingServiceRouteMessages();
-	if (!bRoutedMessagesTrackingService) { 
-		this->SelfDestruct(FString("Create routes for TS failed."));
-		return;
-	}
-	/* subscribe to ES */
-	if (!this->SubscribeToExperimentServiceServer(header_tracking_service)) { 
-		this->SelfDestruct(FString("Subscribe to ES failed."));
-		return;
-	}
+	///* connect tracking service */
+	//bSubscribedToTrackingService = this->SubscribeToTrackingService();
+	//if (!bSubscribedToTrackingService) { 
+	//	this->SelfDestruct(FString("Subscribe to TS failed."));
+	//	return;
+	//}
 
-	/* start experiment */
-	if (!this->StartExperiment(SubjectName)) {
-		this->SelfDestruct(FString("StartExperiment failed."));
-		return; 
-	}
+	///* route tracking messages */
+	//bRoutedMessagesTrackingService = this->TrackingServiceRouteMessages();
+	//if (!bRoutedMessagesTrackingService) { 
+	//	this->SelfDestruct(FString("Create routes for TS failed."));
+	//	return;
+	//}
+	///* subscribe to ES */
+	//if (!this->SubscribeToExperimentServiceServer(header_tracking_service)) { 
+	//	this->SelfDestruct(FString("Subscribe to ES failed."));
+	//	return;
+	//}
 
-	if (!this->SpawnAndPossessPredator()) {
-		this->SelfDestruct(FString("spawn and possess predator failed."));
-		return;
-	}
+	///* start experiment */
+	//if (!this->StartExperiment(SubjectName)) {
+	//	this->SelfDestruct(FString("StartExperiment failed."));
+	//	return; 
+	//}
 
-	if (!this->GetPlayerPawn()) {
-		this->SelfDestruct(FString("GetPlayerPawn() failed.."));
-		return;
-	}
+	//if (!this->SpawnAndPossessPredator()) {
+	//	this->SelfDestruct(FString("spawn and possess predator failed."));
+	//	return;
+	//}
 
-	if (TrackingServiceClient->IsConnected() && GEngine) {
-		GEngine->AddOnScreenDebugMessage(1, 5.0f, FColor::Green, TEXT("Tracking service connected"));
-	}
+	//if (!this->GetPlayerPawn()) {
+	//	this->SelfDestruct(FString("GetPlayerPawn() failed.."));
+	//	return;
+	//}
 
-	/* not subscribing correctly */
-	if (ExperimentServiceClient->IsConnected() && GEngine) {
-		GEngine->AddOnScreenDebugMessage(1, 5.0f, FColor::Green, TEXT("experiment service connected"));
-	}
+	//if (TrackingServiceClient->IsConnected() && GEngine) {
+	//	GEngine->AddOnScreenDebugMessage(1, 5.0f, FColor::Green, TEXT("Tracking service connected"));
+	//}
+
+	///* not subscribing correctly */
+	//if (ExperimentServiceClient->IsConnected() && GEngine) {
+	//	GEngine->AddOnScreenDebugMessage(1, 5.0f, FColor::Green, TEXT("experiment service connected"));
+	//}
 	
 }
 
