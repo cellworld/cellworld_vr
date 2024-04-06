@@ -14,4 +14,7 @@ class CELLWORLD_VR_API UPawnMainMovementComponent : public UPawnMovementComponen
 public:
 	UPawnMainMovementComponent();
 	virtual void TickComponent(float DeltaTime, enum ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
+	class APawnMain* PawnOwner;
+	void SetComponentOwner(class APawnMain* Owner);
+	virtual void OnMovementUpdated(float DeltaSeconds, const FVector& OldLocation, const FVector& OldVelocity);
 };

@@ -19,14 +19,9 @@ public class cellworld_vr : ModuleRules
 
         PublicIncludePaths.AddRange(new string[] {
             "cellworld_vr/PredatorController",
+            "cellworld_vr/Public",
             "AsyncLoadingScreen/AsyncLoadingScreenLibrary.h"
         });
-        // Uncomment if you are using Slate UI
-        // PrivateDependencyModuleNames.AddRange(new string[] { "Slate", "SlateCore" });
-
-        // Uncomment if you are using online features
-        // PrivateDependencyModuleNames.Add("OnlineSubsystem");
-
         // To include OnlineSubsystemSteam, add it to the plugins section in your uproject file with the Enabled attribute set to true
     }
 }

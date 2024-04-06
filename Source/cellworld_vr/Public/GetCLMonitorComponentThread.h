@@ -28,7 +28,6 @@ public:
 	bool ConnectToDevice();
 	void Disconnect();
 
-
 	// FRunnable functions 
 	virtual uint32 Run() override;
 	virtual void Stop() override;
@@ -39,12 +38,12 @@ public:
 	const FString accessKey;
 	const ELicensingModel requestedLicense = ELicensingModel::CORE;
 
-
 	FEyeTracking EyeData;
 	bool GetEyeTracking(FEyeTracking& OutEyeTracking);
 
 	bool bStopThread = false;
 	AGetCLMonitorComponentActor* CurrentThreadActor;
+
 private:
 	FXRHMDData HMDData;
 	UWorld* World = nullptr;
@@ -57,8 +56,7 @@ protected:
 	bool SaveToString(FEyeTracking HPEye);
 	bool PushDataToParentActor(FEyeTracking HPEye);
 	FString ProjectDirectory;
-	FString filename;;
-
+	FString filename;
 
 	// to save data 
 	int32 DataCount = 0;

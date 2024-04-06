@@ -62,7 +62,7 @@ void AMouseKeyboardPlayerController::ResetOrigin()
 void AMouseKeyboardPlayerController::Jump()
 {
 	if (GEngine) {
-		GEngine->AddOnScreenDebugMessage(-1, 1.0f, FColor::Red, FString::Printf(TEXT("Jump!")));
+		//GEngine->AddOnScreenDebugMessage(-1, 1.0f, FColor::Red, FString::Printf(TEXT("Jump!")));
 	}
 }
 

@@ -115,7 +115,40 @@ FStartEpisodeRequest UExperimentUtils::JsonStringToStartEpisodeRequest(FString j
 	return structOutput;
 }
 
+FString UExperimentUtils::StartExperimentRequestToJsonString(FStartExperimentRequest structInput) {
+	FString jsonString;
+	FJsonObjectConverter::UStructToJsonObjectString(structInput, jsonString, 0, 0, 0);
+	return jsonString;
+}
+
+FString UExperimentUtils::FinishExperimentRequestToJsonString(FFinishExperimentRequest structInput) {
+	FString jsonString;
+	FJsonObjectConverter::UStructToJsonObjectString(structInput, jsonString, 0, 0, 0);
+	return jsonString;
+}
+
+FStartExperimentResponse UExperimentUtils::JsonStringToStartExperimentResponse(FString jsonString)
+{
+	FStartExperimentResponse structOutput;
+	FJsonObjectConverter::JsonObjectStringToUStruct(jsonString, &structOutput, 0, 0);
+	return structOutput;
+}
+
 FString UExperimentUtils::StartEpisodeRequestToJsonString(FStartEpisodeRequest structInput) {
+	FString jsonString;
+	FJsonObjectConverter::UStructToJsonObjectString(structInput, jsonString, 0, 0, 0);
+	return jsonString;
+}
+
+
+FString UExperimentUtils::WorldInfoToJsonString(FWorldInfo structInput) {
+	FString jsonString;
+	FJsonObjectConverter::UStructToJsonObjectString(structInput, jsonString, 0, 0, 0);
+	return jsonString;
+}
+
+FString UExperimentUtils::GetExperimentRequestToJsonString(FGetExperimentRequest structInput)
+{
 	FString jsonString;
 	FJsonObjectConverter::UStructToJsonObjectString(structInput, jsonString, 0, 0, 0);
 	return jsonString;
@@ -181,57 +214,34 @@ FCellGroup UExperimentUtils::JsonStringToCellGroup(FString jsonString) {
 	return structOutput;
 }
 
-/// <summary>
-///		Reads in a filePath, which contains the indices of the occlusions to spawn.
-///		Requires reading the cell_locations from hexagonal.canonical
-/// </summary>
-/// <param name="filePath"></param>
-/// <param name="readStatus"></param>
-/// <returns></returns>
-FLocation UExperimentUtils::vrToCanonical(FVector vrCoordinates, float mapLength) {
-	FLocation canonical;
-	float halfMap = 0.5 * mapLength;
-	canonical.x = ( vrCoordinates.X + halfMap )  / mapLength;
-	canonical.y = ( halfMap - vrCoordinates.Y  ) / mapLength;
-	return canonical;
+FString UExperimentUtils::StepToJsonString(FStep Step) {
+	FString jsonString; 
+	FJsonObjectConverter::UStructToJsonObjectString(Step, jsonString, 0, 0, 0);
+	return jsonString;
 }
 
-/// <summary>
-///		Reads in a filePath, which contains the indices of the occlusions to spawn.
-///		Requires reading the cell_locations from hexagonal.canonical
-/// </summary>
-/// <param name="filePath"></param>
-/// <param name="readStatus"></param>
-/// <returns></returns>
-FVector UExperimentUtils::canonicalToVr(FLocation canonicalCoordinates, float mapLength) {
-	FVector vr;
-	float halfMap = 0.5 * mapLength;
-	vr.X = ( mapLength * canonicalCoordinates.x ) -  halfMap;
-	vr.Y = halfMap - ( canonicalCoordinates.y * mapLength);
-	vr.Z = 260.0;
-	return vr;
+FLocation UExperimentUtils::VrToCanonical(const FVector VectorIn, const float MapLengthIn, const int WorldScaleIn) {
+	FLocation LocationOut;
+	LocationOut.x = ((VectorIn.X) / (MapLengthIn * WorldScaleIn));
+	LocationOut.y = VectorIn.Y / (-MapLengthIn * WorldScaleIn);
+	return LocationOut;
 }
 
-/// <summary>
-///		Reads in a filePath, which contains the indices of the occlusions to spawn.
-///		Requires reading the cell_locations from hexagonal.canonical
-/// </summary>
-/// <param name="filePath"></param>
-/// <param name="readStatus"></param>
-/// <returns></returns>
+FVector UExperimentUtils::CanonicalToVr(const FLocation LocationIn, const float MapLengthIn, const float WorldScaleIn) {
+	FVector VectorOut;
+	VectorOut.X = (LocationIn.x * MapLengthIn * WorldScaleIn);
+	VectorOut.Y = (-LocationIn.y * MapLengthIn * WorldScaleIn);
+	VectorOut.Z = 0; // will need to be changed 
+	return VectorOut;
+}
+
+
 int UExperimentUtils::updateFrame(int Frame)
 {
 	Frame++;
 	return Frame;
 }
 
-/// <summary>
-///		Reads in a filePath, which contains the indices of the occlusions to spawn.
-///		Requires reading the cell_locations from hexagonal.canonical
-/// </summary>
-/// <param name="filePath"></param>
-/// <param name="readStatus"></param>
-/// <returns></returns>
 float UExperimentUtils::updateTimeStamp(FDateTime episodeStart)
 {	
 	FTimespan now = FDateTime::UtcNow() - episodeStart;
@@ -260,78 +270,48 @@ FString UExperimentUtils::LoadWorldImplementation(FString filePath)
 	return jsonString;
 }
 
-/// <summary>
-///		Reads in a filePath, which contains the indices of the occlusions to spawn.
-///		Requires reading the cell_locations from hexagonal.canonical
-///		Values are HARDCODED at the moment. Can be optimized later.
-/// </summary>
-/// <param name="filePath"> The File Path to the World with Specified Entropy</param>
-/// <param name="readStatus"></param>
-/// <returns></returns>
-TArray<FLocation> UExperimentUtils::LoadOcclusions(FString filePath, bool& readStatus, float mapLength)
+FWorldInfo UExperimentUtils::GenerateWorldInfo(const FString WorldConfigurationIn, const FString WorldImplementationIn, const FString OcclusionsIn)
 {
-	// Get cell_locations from world_implementation
-		// 1. Get world_implementation as jsonString
-		// 2. Convert to world_implementation
-		// 3. Convert to vr locations
-	FString jsonString = LoadWorldImplementation("C:/Research/hexagonal.canonical"); // todo: fix hard path 
-	FWorldImplementation world_impl = JsonStringToWorldImplementation(jsonString);
+	FWorldInfo WorldInfo; 
+	WorldInfo.occlusions		   = OcclusionsIn; 
+	WorldInfo.world_configuration  = WorldConfigurationIn; 
+	WorldInfo.world_implementation = WorldImplementationIn;
+	return WorldInfo;
+}
 
-	// Properly loads the file with cell_locations
-	// UE_LOG(LogTemp, Warning, TEXT("%s"), *jsonString);
-	TArray<FLocation> vr_cell_locs;
+TArray<FLocation> UExperimentUtils::OcclusionsParseAllLocations(const FString OcclusionLocationsIn)
+{
+	TArray<FLocation> LocationList;
 
-	//UE_LOG(LogTemp, Warning, TEXT("Loaded Canonical World"));
+	// Create a JSON Reader from the JSON string
+	TSharedRef<TJsonReader<>> Reader = TJsonReaderFactory<>::Create(OcclusionLocationsIn);
 
-	// See if file exists
-	if (!FPlatformFileManager::Get().GetPlatformFile().FileExists(*filePath))
+	// This will hold the parsed JSON array
+	TArray<TSharedPtr<FJsonValue>> JsonArray;
+
+	// Deserialize the JSON string into a JSON array
+	if (!FJsonSerializer::Deserialize(Reader, JsonArray))
+	{ 
+		UE_LOG(LogTemp, Fatal, TEXT("[UExperimentUtils::OcclusionsParseAllLocations] Failed to parse deserialize JsonArray"))
+		return LocationList;
+	}
+	// Iterate over the array
+	for (TSharedPtr<FJsonValue> Value : JsonArray)
 	{
-		// FWorldImplementation world_info
-		readStatus = false;
-		UE_LOG(LogTemp, Warning, TEXT("Can't Find Cell Group File"));
-		return vr_cell_locs;
+		// Get the JSON object
+		TSharedPtr<FJsonObject> JsonObject = Value->AsObject();
+		if (JsonObject.IsValid())
+		{
+			FLocation Location;
+			Location.x = JsonObject->GetNumberField("x");
+			Location.y = JsonObject->GetNumberField("y");
+			LocationList.Add(Location);
+		}
+		else {
+			return LocationList;
+		}
 	}
 
-	FString retString = "";
-
-	// Attempt a file read, output stored in retString
-	if (!FFileHelper::LoadFileToString(retString, *filePath))
-	{
-		readStatus = false;
-		UE_LOG(LogTemp, Warning, TEXT("Can't Load Cell Group File"));
-		return vr_cell_locs;
-	}
-
-	//UE_LOG(LogTemp, Warning, TEXT("%s"), *retString);
-	
-	const TCHAR* delims[] = { TEXT(","), TEXT("["), TEXT("]") };
-	TArray<FString> parsed;
-	retString.ParseIntoArray(parsed, delims, 3);
-	TArray<int> indices;
-
-	for (int i = 0; i < parsed.Num(); i++)
-	{
-		// Add parsed index into array
-		indices.Add(UKismetStringLibrary::Conv_StringToInt(parsed[i]) );
-		FString idx_str = parsed[i];
-	}
-
-	// retString has a string version of all of the indices we need
-	FLocation vr_converted;
-	FVector vr_vector;
-	for (int i = 0; i < indices.Num(); i++) // For idx in FString loaded from file...
-	{
-		//UE_LOG(LogTemp, Warning, TEXT("Index: %d"), indices[i]);
-		//UE_LOG(LogTemp, Warning, TEXT("%f,%f"), world_impl.cell_locations[indices[i]].x, world_impl.cell_locations[indices[i]].y)
-		vr_vector = canonicalToVr(world_impl.cell_locations[indices[i]], mapLength);
-		vr_converted.x = vr_vector.X;
-		vr_converted.y = vr_vector.Y;
-		//UE_LOG(LogTemp, Warning, TEXT("%f,%f"), vr_converted.x, vr_converted.y);
-		vr_cell_locs.Add(vr_converted);
-	}
-
-	UE_LOG(LogTemp, Warning, TEXT("Finished Converting Indices to Canonical"));
-	readStatus = true;
-	return vr_cell_locs;	
+	return LocationList;
 }
 

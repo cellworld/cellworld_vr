@@ -26,7 +26,6 @@ public:
 	AGetCLMonitorComponentActor();
 	bool Calibrate();
 
-private:
 	FString SaveDataDirectory;
 
 protected:

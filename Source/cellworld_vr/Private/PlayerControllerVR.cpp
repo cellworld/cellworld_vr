@@ -1,6 +1,7 @@
 #pragma once
 #include "PlayerControllerVR.h"
-#include "GameModeMain.h"
+
+class AGameModeMain; 
 
 APlayerControllerVR::APlayerControllerVR()
 {
@@ -12,9 +13,9 @@ void APlayerControllerVR::BeginPlay()
 {
 	Super::BeginPlay();
 	UE_LOG(LogTemp, Warning, TEXT("APlayerControllerVR::BeginPlay()"));
-	AGameModeMain* GameMode;
+
 	if (GetWorld()) {
-		GameMode = (AGameModeMain*)GetWorld()->GetAuthGameMode();
+		//AGameModeMain* GameMode = (AGameModeMain*)GetWorld()->GetAuthGameMode();
 		PossessedPawn = Cast<APawnMain>(GetPawn());
 	}
 	return;
@@ -49,13 +50,18 @@ void APlayerControllerVR::Tick(float DeltaTime)
 void APlayerControllerVR::ResetOrigin()
 {
 	if (PossessedPawn) {
+		//FVector TargetLocation = ...; // Set this to your desired world location
+		//FVector Direction = (TargetLocation - GetActorLocation()).GetSafeNormal();
+		//FRotator NewRotation = Direction.Rotation();
+		//SetActorRotation(NewRotation);
+
 		PossessedPawn->ResetOrigin();
 	}
 }
 
 void APlayerControllerVR::QuitGame()
 {
-	//if (PossessedPawn) {
-	//	PossessedPawn->QuitGame();
-	//}
+	/*FGenericPlatformMisc::RequestExit(false);*/
+	UKismetSystemLibrary::QuitGame(this, this, EQuitPreference::Quit,false);
+	UE_LOG(LogTemp, Warning, TEXT("APlayerControllerVR::QuitGame() Requesting Exit."));
 }

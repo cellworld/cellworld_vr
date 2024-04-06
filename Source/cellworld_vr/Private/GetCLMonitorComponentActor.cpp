@@ -188,7 +188,6 @@ bool AGetCLMonitorComponentActor::DrawEyeTraceOnPlayer(float DeltaTime)
 	trace_start_right.X = trace_start_right.X + eye_position_horizontal_offset;
 
 	/* trace params  */
-
 	const FVector trace_end_left = trace_start_left + UKismetMathLibrary::TransformDirection(CameraComponent->GetComponentTransform(), eye_left) * 1000 * 100; // 10 meters = 10*100 u.u. (1 cm = 100 u.u) // 1000 for line
 	FHitResult hit_result_left;
 	const FCollisionQueryParams collision_params_left;
@@ -233,8 +232,7 @@ bool AGetCLMonitorComponentActor::DrawEyeTraceOnPlayer(float DeltaTime)
 		thickness
 	);
 	FVector offset = hit_result_left.Location - hit_result_right.Location;
-	UE_LOG(LogTemp, Warning, TEXT("[AGetCLMonitorComponentActor::DrawEyeTraceOnPlayer] offset: %f, %f, %f"), offset.X, offset.Y, offset.Z);
-
+	//UE_LOG(LogTemp, Warning, TEXT("[AGetCLMonitorComponentActor::DrawEyeTraceOnPlayer] offset: %f, %f, %f"), offset.X, offset.Y, offset.Z);
 	//DrawDebugLine(GetWorld(), trace_start_left, trace_end_left, FColor::Red, true, draw_duration, depth_priority, thickness); // line following view direction
 	//DrawDebugLine(GetWorld(), trace_start, trace_end, FColor::Orange, true, draw_duration, depth_priority, thickness); // line following view direction
 	//DrawDebugLine(GetWorld(), trace_start_right, trace_end_right, FColor::Green, true, draw_duration, depth_priority, thickness); // line following view direction

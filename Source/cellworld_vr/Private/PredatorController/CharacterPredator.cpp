@@ -44,6 +44,7 @@ ACharacterPredator::ACharacterPredator()
         BehaviorTreeComponentChar = BehaviorTreeAssetLoad.Object;
     }
 
+
     //static ConstructorHelpers::FObjectFinder<UBlackboardData> BlackboardAssetLoad(TEXT("BlackboardData'/Game/AIPredator/Blackboard_Predator_BP.Blackboard_Predator_BP'"));
     //if (BlackboardAssetLoad.Succeeded()) {
     //    BlackboardAsset = BlackboardAssetLoad.Object;
