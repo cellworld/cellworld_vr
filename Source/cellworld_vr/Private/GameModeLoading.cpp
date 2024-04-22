@@ -3,7 +3,6 @@
 #include "GameModeLoading.h"
 #include "GameStateLoading.h"
 #include "MouseKeyboardPlayerController.h"
-#include "HPGlia.h"
 
 AGameModeLoading::AGameModeLoading()
 {

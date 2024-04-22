@@ -9,7 +9,7 @@
 #include "TCPMessages.h"
 #include "ExperimentUtils.h"
 #include "PredatorController/CharacterPredator.h"
-#include "PredatorController/ControllerTypes.h"
+//#include "PredatorController/ControllerTypes.h"
 #include "PawnMain.h"
 #include "PawnDebug.h"
 #include "ExperimentComponents/Occlusion.h"
@@ -142,6 +142,8 @@ public:
 	URequest* StartExperimentRequest;
 	URequest* stop_experiment_request;
 
+	URequest* StartEpisodeRequest;
+
 	URequest* TrackingServiceRequest; 
 
 	//const FString header_experiment_service			= "predator_step";
@@ -167,7 +169,7 @@ public:
 
 	/* connection control */
 	bool bConnectedToExperimentService  = false; 
-	bool bCOnnectedToTrackingService    = false; 
+	bool bConnectedToTrackingService    = false; 
 	
 	/* subscription control */
 	bool bSubscribedToTrackingService   = false;

@@ -6,7 +6,6 @@
 #include "GameFramework/Pawn.h"
 #include "PawnMainMovementComponent.h"
 #include "CoreMinimal.h"
-#include "HPGliaClient.h"
 #include "HeadMountedDisplay.h"
 #include "Containers/Array.h" 
 #include "Kismet/GameplayStatics.h" 

@@ -51,8 +51,8 @@ void AAIControllerPredator::OnPossess(APawn* InPawn)
 		CharacterPredator->BehaviorTreeComponentChar->BlackboardAsset = BlackboardAsset;
 		BlackboardComponent->InitializeBlackboard(*CharacterPredator->BehaviorTreeComponentChar->BlackboardAsset);
 
-		TargetKeyID    = BlackboardComponent->GetKeyID("TargetActor");
-		TargetLocation = BlackboardComponent->GetKeyID("TargetLocation");
+		/*TargetKeyID    = BlackboardComponent->GetKeyID("TargetActor");
+		TargetLocation = BlackboardComponent->GetKeyID("TargetLocation");*/
 
 		BehaviorTreeComponent->StartTree(*CharacterPredator->BehaviorTreeComponentChar);
 	}

@@ -7,7 +7,6 @@
 #include "PawnDebug.h"
 #include "PredatorController/AIControllerPredator.h"
 #include "ExperimentPlugin.h"
-#include "HPGlia.h"
 #include "AsyncLoadingScreenLibrary.h"
 #include "MouseKeyboardPlayerController.h"
 #include "PlayerControllerVR.h"
@@ -102,13 +101,13 @@ void AGameModeMain::InitGameState()
 
 void AGameModeMain::SpawnGetCLMonitorComponentActor()
 {
-	FTransform tSpawnTransform;
+	/*FTransform tSpawnTransform;
 	FVector TempLoc = { 0.0f, 0.0f, 0.0f };
 	FRotator TempRot = tSpawnTransform.GetRotation().Rotator();
 
 	FActorSpawnParameters SpawnInfo;
 	SpawnInfo.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
-	GetCLMonitorComponentActor = Cast<AGetCLMonitorComponentActor>(GetWorld()->SpawnActor(AGetCLMonitorComponentActor::StaticClass(), &TempLoc, &TempRot, SpawnInfo));
+	GetCLMonitorComponentActor = Cast<AGeCLMonitorComponentActor>(GetWorld()->SpawnActor(AGetCLMonitorComponentActor::StaticClass(), &TempLoc, &TempRot, SpawnInfo));*/
 }
 /* spawn all logging actors, some may contain threads but they handle themselves. 
 * right now, theres only one, but im gonna call this function to maintain consitency.
@@ -116,7 +115,7 @@ void AGameModeMain::SpawnGetCLMonitorComponentActor()
 void AGameModeMain::SpawnAllLoggingActor()
 {
 	/* eye-tracker */
-	AGameModeMain::SpawnGetCLMonitorComponentActor();
+	//AGameModeMain::SpawnGetCLMonitorComponentActor();
 }
 
 void AGameModeMain::StartLoadingScreen()

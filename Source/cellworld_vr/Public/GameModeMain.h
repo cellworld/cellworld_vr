@@ -2,8 +2,6 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/GameModeBase.h"
-#include "GetCLMonitorComponentActor.h"
-#include "CLMonitorComponent.h"
 #include "ConfigManager.h"
 #include "PawnMain.h"
 #include "PredatorController/ExperimentServiceMonitor.h"
@@ -44,7 +42,6 @@ public:
 	
 	/* Spawns Sensors */
 	void SpawnGetCLMonitorComponentActor();
-	AGetCLMonitorComponentActor* GetCLMonitorComponentActor = nullptr;
 
 	/* spawn everything */
 	void SpawnAllLoggingActor(); 

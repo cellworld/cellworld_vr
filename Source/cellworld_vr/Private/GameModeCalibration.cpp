@@ -4,7 +4,6 @@
 #include "GameModeCalibration.h"
 #include "PawnMain.h" 
 #include "GameStateMain.h"
-#include "HPGlia.h"
 #include "MouseKeyboardPlayerController.h"
 
 AGameModeCalibration::AGameModeCalibration()

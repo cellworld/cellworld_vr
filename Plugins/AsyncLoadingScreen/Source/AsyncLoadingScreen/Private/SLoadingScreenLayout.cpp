@@ -8,6 +8,8 @@
 
 #include "SLoadingScreenLayout.h"
 #include "Engine/UserInterfaceSettings.h"
+#include "Engine/Engine.h"
+#include "Engine/GameViewportClient.h"
 
 float SLoadingScreenLayout::PointSizeToSlateUnits(float PointSize)
 {
@@ -19,9 +21,27 @@ float SLoadingScreenLayout::PointSizeToSlateUnits(float PointSize)
 
 float SLoadingScreenLayout::GetDPIScale() const
 {
-	const FVector2D DrawSize = GetTickSpaceGeometry().ToPaintGeometry().GetLocalSize();
-	const FIntPoint Size((int32)DrawSize.X, (int32)DrawSize.Y);
-	
-	return GetDefault<UUserInterfaceSettings>()->GetDPIScaleBasedOnSize(Size);
+	FIntPoint Size;
+	if (GEngine && GEngine->GameViewport)
+	{
+		FVector2D ViewportSize;
+		GEngine->GameViewport->GetViewportSize(ViewportSize);
+		int32 X = FGenericPlatformMath::FloorToInt(ViewportSize.X);
+		int32 Y = FGenericPlatformMath::FloorToInt(ViewportSize.Y);
+		Size = FIntPoint(X, Y);	
+	}
+	else 
+	{
+		const FVector2D DrawSize = GetTickSpaceGeometry().ToPaintGeometry().GetLocalSize();
+		if (DrawSize.Equals(FVector2D::ZeroVector))
+		{
+			return 1.0f;
+		}		
+		int32 X = FGenericPlatformMath::FloorToInt(DrawSize.X);
+		int32 Y = FGenericPlatformMath::FloorToInt(DrawSize.Y);
+		Size = FIntPoint(X, Y);		
+	}
+
+	return FMath::Clamp(GetDefault<UUserInterfaceSettings>()->GetDPIScaleBasedOnSize(Size), 0.1f, 1.0f);
 }
 

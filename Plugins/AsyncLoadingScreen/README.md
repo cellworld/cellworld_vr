@@ -67,6 +67,13 @@ MoviePlayer is registered to PreLoadMap and PostLoadMapWithWorld delegates so it
 
 # Changelog
 
+### Version 1.5.0 (6/4/2023)
+- Add "PreloadBackgroundImages" option
+- Add Blueprint functions "PreloadBackgroundImages" and "RemovePreloadedBackgroundImages" to load and remove all the background images.
+
+![image](https://user-images.githubusercontent.com/1840964/230429985-6d353486-0389-448c-8e37-d4f9dd3505ae.png)
+![image](https://user-images.githubusercontent.com/1840964/230430019-fb5ab524-7f59-4201-b263-00cbc17672f0.png)
+
 ### Version 1.4.0 (25/1/2023)
 - Fixed unintialized errors
 - Add Blueprint function "SetEnableLoadingScreen" to show/hide Loading Screen. Call this function before call the "OpenLevel" node
@@ -256,11 +263,11 @@ In this tutorial, I will use a blank C++ project with UE version 4.25. But you c
 
 ![tutorial-09](https://user-images.githubusercontent.com/1840964/92518328-5cfbf180-f242-11ea-9b8b-e7452dff4454.png)
 
-- Note that to see the plugin is actually working, you need to play as Standalone Game or Launch button. Play in Editor will not work due to different level managing of Play in Editor and packaged game:
+### **Note that to see the plugin is actually working, you need to play as Standalone Game or Quick Launch. Play in Editor (PIE) will not work due to different level managing of Play in Editor and packaged game:**
 
-![tutorial-10](https://user-images.githubusercontent.com/1840964/92521633-c3cfd980-f247-11ea-984b-98f17d604387.png)
+![image](https://github.com/truong-bui/AsyncLoadingScreen/assets/1840964/ab1f4cd1-a1f5-4476-8a29-0a30da32943e)
 
-If you play Standalone Game or Launch the game you will see a black screen with a white panel shows up very quickly. We'll need a little setting up to make the loading screen looks better.
+If you play Standalone Game or Launch the game, you will see a black screen with a white panel showing up very quickly. We'll need a little setting up to make the loading screen look better.
 
 ---
 
@@ -385,6 +392,17 @@ Congratulation! We have finished the tutorial. You should try other layouts and 
 
 # Showcases
 
+- [Colors:Zero](http://www.colors-zero.com/)
+
+![Colors:Zero](https://user-images.githubusercontent.com/1840964/233838182-2c8cd8fa-dc49-41ed-b536-27a8650fe98a.jpg)
+
+---
+
+- [Elven Warmaiden](https://store.steampowered.com/app/1878000/Elven_Warmaiden/)
+
+![Elven Warmaiden](https://cdn.akamai.steamstatic.com/steam/apps/1878000/header.jpg?t=1644526061)
+
+---
 - [Logic - Keypad](https://store.steampowered.com/app/2265160/Logic__Keypad/)
 
 ![logic-keypad](https://user-images.githubusercontent.com/1840964/215274878-c6dd3aa1-6b9c-4f4a-af41-de083943c8ef.jpg)

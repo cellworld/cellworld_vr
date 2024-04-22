@@ -1,6 +1,7 @@
 // Copyright Epic Games, Inc. All Rights Reserved.
 
 using UnrealBuildTool;
+using UnrealBuildTool.Rules;
 
 public class cellworld_vr : ModuleRules
 {
@@ -10,17 +11,17 @@ public class cellworld_vr : ModuleRules
 		PCHUsage = PCHUsageMode.UseExplicitOrSharedPCHs;
 	
 		PublicDependencyModuleNames.AddRange(new string[] { 
-            "Core", "CoreUObject", "HeadMountedDisplay", "Engine", "InputCore", 
-            "EyeTracker","InputCore","UMG","NavigationSystem","HPGlia",
+            "Core", "CoreUObject", "Engine", "InputCore", 
+            "EyeTracker","InputCore","UMG","NavigationSystem",
             "TCPMessages", "ExperimentPlugin", "AIModule", "GameplayTasks",
             "Json", "JsonUtilities", "AsyncLoadingScreen"
         });
-        PrivateDependencyModuleNames.AddRange(new string[] { /*"HeadMountedDisplay",*/ "Slate", "SlateCore" });
+        PrivateDependencyModuleNames.AddRange(new string[] { "HeadMountedDisplay", "XRBase", "Slate", "SlateCore" });
 
         PublicIncludePaths.AddRange(new string[] {
             "cellworld_vr/PredatorController",
-            "cellworld_vr/Public",
-            "AsyncLoadingScreen/AsyncLoadingScreenLibrary.h"
+            "cellworld_vr/Public"
+            //"AsyncLoadingScreen/AsyncLoadingScreenLibrary.h"
         });
         // To include OnlineSubsystemSteam, add it to the plugins section in your uproject file with the Enabled attribute set to true
     }
