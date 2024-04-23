@@ -4,6 +4,11 @@
 
 //#include "GenericPlatform/GenericPlatformProcess.h"
 
+void printScreen(const FString message) {
+	if (GEngine) GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Green, FString::Printf(TEXT("%s"), *message));
+}
+
+
 // Sets default values
 AExperimentServiceMonitor::AExperimentServiceMonitor()
 {
@@ -168,7 +173,7 @@ bool AExperimentServiceMonitor::DisconnectClients() {
 void AExperimentServiceMonitor::HandleFinishExperimentResponse(const FString ResponseIn)
 {
 	UE_LOG(LogTemp, Warning, TEXT("[AExperimentServiceMonitor::HandleFinishExperimentResponse] %s"), *ResponseIn);
-	if (GEngine) if (GEngine) GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Green, FString::Printf(TEXT("Experiment response: %s"), *ResponseIn));
+	if (GEngine) GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Green, FString::Printf(TEXT("Experiment response: %s"), *ResponseIn));
 
 	/* convert to usable format */
 	FStartExperimentResponse StartExperimentResponse = UExperimentUtils::JsonStringToStartExperimentResponse(*ResponseIn);
@@ -362,6 +367,8 @@ void AExperimentServiceMonitor::HandleExperimentServiceResponseTimedOut() {
 
 /* Handle tracking service response (during subscription) */
 void AExperimentServiceMonitor::HandleTrackingServiceResponse(const FString message) {
+	const FString msg = "[AExperimentServiceMonitor::HandleTrackingServiceResponse]" + message; 
+	printScreen(msg);
 	UE_LOG(LogTemp, Warning, TEXT("[AExperimentServiceMonitor::HandleTrackingServiceResponse] ES: %s"), *message);
 	if (message != "success") {
 		UE_DEBUG_BREAK();
@@ -436,20 +443,24 @@ bool AExperimentServiceMonitor::TrackingServiceRouteMessages() {
 	return true; 
 }
 
+
 /* subscribes to server and calls UpdatePredator() when messages[header] matches input header. */
 bool AExperimentServiceMonitor::SubscribeToTrackingService()
 {
-
 	bConnectedToTrackingService = this->ConnectToTrackingService();
-
 	if (!bConnectedToTrackingService) {
+		printScreen("[AExperimentServiceMonitor::SubscribeToTrackingService()] ConnectToTrackingService() failed");
 		UE_LOG(LogTemp, Error, TEXT("[AExperimentServiceMonitor::SubscribeToTrackingService()] Retuning. Connecting to Tracking Service FAILED!"));
 		return false;
 	}
 
 	/* 3. subscribe */
 	TrackingServiceRequest = TrackingServiceClient->Subscribe();
-	if (!TrackingServiceRequest) { return false;  }
+	if (!TrackingServiceRequest) { 
+		printScreen("[AExperimentServiceMonitor::SubscribeToTrackingService()] if (!TrackingServiceRequest) .");
+		return false;  
+	}
+
 	TrackingServiceRequest->ResponseReceived.AddDynamic(this, &AExperimentServiceMonitor::HandleTrackingServiceResponse);
 	TrackingServiceRequest->TimedOut.AddDynamic(this, &AExperimentServiceMonitor::HandleTrackingServiceResponseTimedOut);
 	
@@ -602,12 +613,9 @@ bool AExperimentServiceMonitor::GetPlayerPawn()
 /* destroy this actor. This is primarily used as an abort */
 void AExperimentServiceMonitor::SelfDestruct(const FString ErrorMessageIn)
 {
-	const FString DebugMessage = TEXT("[AExperimentServiceMonitor::SelfDestruct] Tracking and Experiment ABORTED. Something happened.");
-	if (GEngine) GEngine->AddOnScreenDebugMessage(1, 30.0f, FColor::Red, DebugMessage);
-
+	if (GEngine) GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Green, FString::Printf(TEXT("[AExperimentServiceMonitor::SelfDestruct] Tracking and Experiment ABORTED. Something happened: %s"), *ErrorMessageIn));
 	UE_LOG(LogTemp, Error, TEXT("[AExperimentServiceMonitor::SelfDestruct()] Something went wrong. Destroying."));
-	UE_LOG(LogTemp, Error, TEXT("[AExperimentServiceMonitor::SelfDestruct()] Error Message: %s."), *ErrorMessageIn);
-	
+
 	// Make sure to check if the actor is valid and has not already been marked for destruction.
 	//if (!this->IsPendingKill())
 	if (!this->IsValidLowLevelFast())
