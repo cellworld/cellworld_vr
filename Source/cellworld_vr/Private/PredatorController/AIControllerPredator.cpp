@@ -1,6 +1,5 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 #include "PredatorController/AIControllerPredator.h"
-//#include "PredatorController/PatrolPath.cpp"
 #include "NavigationSystem.h"
 #include "Runtime/AIModule/Classes/Perception/AISenseConfig_Sight.h"
 

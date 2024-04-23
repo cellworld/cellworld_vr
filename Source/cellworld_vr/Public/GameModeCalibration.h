@@ -1,5 +1,5 @@
 #pragma once
-
+#include "PawnMain.h" 
 #include "CoreMinimal.h"
 #include "GameFramework/GameModeBase.h"
 //#include "ConfigManager.h"
@@ -17,8 +17,7 @@ public:
 	GENERATED_BODY()
 	virtual void EndMatch();
 
-	//UGameInstanceMain* GI = nullptr;
-	APawnMain* PawnMain   = nullptr;
+	APawnMain* PawnMain = nullptr;
 
 protected:
 	AGameModeCalibration();

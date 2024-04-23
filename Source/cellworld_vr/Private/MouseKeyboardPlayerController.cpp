@@ -1,7 +1,5 @@
-#pragma once
 #include "MouseKeyboardPlayerController.h"
 #include "GameModeMain.h"
-//#include "GameModeMain.h"
 
 AMouseKeyboardPlayerController::AMouseKeyboardPlayerController()
 {

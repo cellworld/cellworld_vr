@@ -1,4 +1,3 @@
-#pragma once
 #include "PawnMain.h"
 #include "GameModeMain.h"
 #include "Camera/CameraComponent.h"
@@ -45,7 +44,6 @@ APawnMain::APawnMain() : Super()
 	MotionControllerLeft = CreateDefaultSubobject<UMotionControllerComponent>(TEXT("MotionControllerLeft"));
 	MotionControllerLeft->CreationMethod = EComponentCreationMethod::Native;
 	MotionControllerLeft->AttachToComponent(RootComponent, FAttachmentTransformRules::KeepRelativeTransform);
-	MotionControllerLeft->bDisplayDeviceModel = true;
 	MotionControllerLeft->SetCanEverAffectNavigation(false);
 	MotionControllerLeft->bEditableWhenInherited = true;
 	MotionControllerLeft->MotionSource = FName("Left");
@@ -54,16 +52,10 @@ APawnMain::APawnMain() : Super()
 	MotionControllerRight = CreateDefaultSubobject<UMotionControllerComponent>(TEXT("MotionControllerRight"));
 	MotionControllerRight->CreationMethod = EComponentCreationMethod::Native;
 	MotionControllerRight->AttachToComponent(RootComponent, FAttachmentTransformRules::KeepRelativeTransform);
-	MotionControllerRight->bDisplayDeviceModel = true;
 	MotionControllerRight->SetCanEverAffectNavigation(false);
 	MotionControllerRight->bEditableWhenInherited = true;
 	MotionControllerRight->MotionSource = FName("Right");
 	MotionControllerRight->SetVisibility(false, false);
-
-	/* auto-possess */
-	//EAutoReceiveInput::Type::Player0;
-	EAutoReceiveInput::Player0;
-	ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButAlwaysSpawn;
 }
 
 // Called to bind functionality to input

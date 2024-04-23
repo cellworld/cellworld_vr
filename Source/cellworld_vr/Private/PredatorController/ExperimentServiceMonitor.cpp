@@ -1,4 +1,3 @@
-// Fill out your copyright notice in the Description page of Project Settings.
 #include "PredatorController/ExperimentServiceMonitor.h"
 #include "PredatorController/AIControllerPredator.h"
 #include "Kismet/GameplayStatics.h"
@@ -610,7 +609,8 @@ void AExperimentServiceMonitor::SelfDestruct(const FString ErrorMessageIn)
 	UE_LOG(LogTemp, Error, TEXT("[AExperimentServiceMonitor::SelfDestruct()] Error Message: %s."), *ErrorMessageIn);
 	
 	// Make sure to check if the actor is valid and has not already been marked for destruction.
-	if (!this->IsPendingKill())
+	//if (!this->IsPendingKill())
+	if (!this->IsValidLowLevelFast())
 	{
 		this->DisconnectAll();
 
@@ -620,16 +620,16 @@ void AExperimentServiceMonitor::SelfDestruct(const FString ErrorMessageIn)
 }
 
 /* get occlusions in our specific experiment (FWorldInfo.occlusions; default: "21_05") */
-URequest* AExperimentServiceMonitor::SendGetOcclusionsRequest()
+bool AExperimentServiceMonitor::SendGetOcclusionsRequest()
 {
-	if (!ExperimentServiceClient) { UE_LOG(LogTemp, Error, TEXT("Cant send get occlusion request, Experiment service client not valid.")); return nullptr; }
+	if (!ExperimentServiceClient) { UE_LOG(LogTemp, Error, TEXT("Cant send get occlusion request, Experiment service client not valid.")); return false; } // experiment service client not valid
 	URequest* Request = ExperimentServiceClient->SendRequest("get_occlusions", "21_05", TimeOut);
-	if (!Request) { return nullptr; }
+	if (!Request) { return false; } // failed to send request
 	FPlatformProcess::Sleep(0.5);
 	Request->ResponseReceived.AddDynamic(this, &AExperimentServiceMonitor::HandleGetOcclusionsResponse);
 	Request->TimedOut.AddDynamic(this, &AExperimentServiceMonitor::HandleGetOcclusionsTimedOut);
 
-	return Request;
+	return true;
 }
 
 void AExperimentServiceMonitor::SpawnOcclusions(const TArray<int32> OcclusionIDsIn, const TArray<FLocation> Locations) {
@@ -709,13 +709,13 @@ bool AExperimentServiceMonitor::SetOcclusionVisibility(TArray<int32> VisibleOccl
 URequest* AExperimentServiceMonitor::SendGetOcclusionLocationsRequest()
 {
 	UE_LOG(LogTemp, Log, TEXT("[AExperimentServiceMonitor::SendGetOcclusionLocationsRequest()] Starting request."));
-	if (!ExperimentServiceClient) { UE_LOG(LogTemp, Error, TEXT("Cant send get occlusion request, Experiment service client not valid.")); return false; }
+	if (!ExperimentServiceClient) { UE_LOG(LogTemp, Error, TEXT("Cant send get occlusion request, Experiment service client not valid.")); return nullptr; }
 	
 	const FString BodyOut   = "bodyout";
 	const FString HeaderOut = "get_cells_locations";
 	URequest* Request = ExperimentServiceClient->SendRequest(HeaderOut,BodyOut,TimeOut);
 
-	if (!Request) { return false; }
+	if (!Request) { return nullptr; }
 
 	Request->ResponseReceived.AddDynamic(this, &AExperimentServiceMonitor::HandleGetOcclusionLocationsResponse);
 	Request->TimedOut.AddDynamic(this, &AExperimentServiceMonitor::HandleGetOcclusionLocationsTimedOut);
@@ -729,7 +729,9 @@ void AExperimentServiceMonitor::HandleGetOcclusionLocationsResponse(const FStrin
 	OcclusionLocationsAll = UExperimentUtils::OcclusionsParseAllLocations(ResponseIn);
 
 	OcclusionsStruct.SetAllLocations(OcclusionLocationsAll); 
-	this->SendGetOcclusionsRequest();
+	if (!this->SendGetOcclusionsRequest()) {
+		UE_LOG(LogTemp, Log, TEXT("[SendGetOcclusionsRequest] send request false!"));
+	}
 	return;
 }
 

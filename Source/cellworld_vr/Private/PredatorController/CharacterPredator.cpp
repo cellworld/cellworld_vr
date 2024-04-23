@@ -1,6 +1,3 @@
-// Fill out your copyright notice in the Description page of Project Settings.
-
-
 #include "PredatorController/CharacterPredator.h"
 #include "PredatorController/AIControllerPredator.h"
 #include "GameFramework/CharacterMovementComponent.h"

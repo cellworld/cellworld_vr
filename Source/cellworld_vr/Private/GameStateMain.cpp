@@ -1,4 +1,3 @@
-#pragma once 
 #include "GameStateMain.h"
 #include "GameModeMain.h"
 //#include "MyGameInstance.h"

@@ -1,5 +1,3 @@
-// Fill out your copyright notice in the Description page of Project Settings.
-
 #include "PawnDebug.h"
 #include "GameModeMain.h"
 #include "HeadMountedDisplayFunctionLibrary.h"
@@ -41,7 +39,6 @@ APawnDebug::APawnDebug()
 	OurMovementComponentChar->UpdatedComponent = RootComponent;
 	
 	///* auto-possess */
-	EAutoReceiveInput::Type::Player0;
 
 	/* todo: add bIsInVR state */
 	this->Camera->bLockToHmd = false;

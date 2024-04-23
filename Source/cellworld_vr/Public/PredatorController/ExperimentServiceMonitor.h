@@ -292,7 +292,7 @@ public:
 	UFUNCTION()
 		void HandleGetOcclusionLocationsTimedOut();
 	UFUNCTION()
-		URequest* SendGetOcclusionsRequest();
+		bool SendGetOcclusionsRequest();
 	UFUNCTION()
 		void SpawnOcclusions(const TArray<int32> OcclusionIDsIn, const TArray<FLocation> Locations);
 	UFUNCTION()

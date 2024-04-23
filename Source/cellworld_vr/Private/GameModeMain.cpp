@@ -1,5 +1,3 @@
-// Fill out your copyright notice in the Description page of Project Settings.
-
 #include "GameModeMain.h"
 #include "GameFramework/PlayerStart.h"
 #include "PawnMain.h" 
@@ -14,7 +12,7 @@
 AGameModeMain::AGameModeMain()
 {
 	/* Get PawnMain to spawn */
-	bool DEBUG = true; 
+	bool DEBUG = false; 
 	if (DEBUG){
 		DefaultPawnClass = APawnDebug::StaticClass(); 
 		PlayerControllerClass = AMouseKeyboardPlayerController::StaticClass();
@@ -86,7 +84,7 @@ void AGameModeMain::SpawnAndPossessPlayer(FVector spawn_location, FRotator spawn
 
 		//AGameModeMain::PawnMain->ResetOrigin();
 	}
-	EAutoReceiveInput::Type::Player0;
+	//EAutoReceiveInput::Type::Player0;
 }
 
 void AGameModeMain::InitGame(const FString& MapName, const FString& Options, FString& ErrorMessage)
@@ -164,7 +162,8 @@ bool AGameModeMain::ExperimentStopEpisode() {
 	if (!ExperimentServiceMonitor) { return false; }
 	
 	// make sure the actor isn't already in queue for being destroyed 
-	if (ExperimentServiceMonitor->IsPendingKill()) 
+	//if (ExperimentServiceMonitor->IsPendingKill()) 
+	if (!IsValid(ExperimentServiceMonitor))
 	{ 
 		UE_LOG(LogTemp, Warning, TEXT("[AGameModeMain::ExperimentStopEpisode()] Failed to destroy, Already pending kill.")); 
 		return false; 

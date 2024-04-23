@@ -1,8 +1,4 @@
-// Fill out your copyright notice in the Description page of Project Settings.
-
-
 #include "GameModeCalibration.h"
-#include "PawnMain.h" 
 #include "GameStateMain.h"
 #include "MouseKeyboardPlayerController.h"
 
@@ -37,8 +33,6 @@ void AGameModeCalibration::SpawnAndPossessPlayer(FVector spawn_location, FRotato
 
 	AGameModeCalibration::PawnMain = Cast<APawnMain>(GetWorld()->SpawnActor(DefaultPawnClass, &spawn_location, &spawn_rotation, SpawnInfo));
 
-	EAutoReceiveInput::Type::Player0;
-	EAutoPossessAI::PlacedInWorldOrSpawned;
 	GetWorld()->GetFirstPlayerController()->Possess(AGameModeCalibration::PawnMain);
 }
 
