@@ -153,8 +153,9 @@ public:
 	const FString experiment_name = "test_experiment";
 
 	/* server stuff */
-	//const FString ServerIPMessage   = "127.0.0.1";
-	const FString ServerIPMessage   = "172.30.127.68";
+	//const FString ServerIPMessage   = "127.0.0.1"; // localhost
+	const FString ServerIPMessage   = "172.26.176.129"; // wsl lab
+	//const FString ServerIPMessage   = "172.30.127.68"; // wsl home 
 	const int PortTrackingService   = 4510;
 	const int PortExperimentService = 4540; 
 	bool bConnectedToServer     = false;
@@ -205,7 +206,7 @@ public:
 	bool GetPlayerPawn();
 
 	/* abort if anything goes wrong */
-	void SelfDestruct(const FString ErrorMessageIn);
+	void SelfDestruct(const FString InErrorMessage);
 	
 	/* ==== delegates ==== */
 

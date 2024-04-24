@@ -18,8 +18,8 @@ AGameModeMain::AGameModeMain()
 		PlayerControllerClass = AMouseKeyboardPlayerController::StaticClass();
 	}
 	else { 
-		/*DefaultPawnClass = APawnMain::StaticClass(); 
-		PlayerControllerClass = APlayerControllerVR::StaticClass();*/
+		DefaultPawnClass = APawnMain::StaticClass(); 
+		PlayerControllerClass = APlayerControllerVR::StaticClass();
 	}
 	 
 	/* Assign default game state */
@@ -28,7 +28,6 @@ AGameModeMain::AGameModeMain()
 	/* standard defaults */
 	PrimaryActorTick.bStartWithTickEnabled = true;
 	PrimaryActorTick.bCanEverTick = true;
-
 }
 
 /* to do: UFUNCTION() getexperimentservicemonitor()->StartEpisode()*/
@@ -77,6 +76,7 @@ void AGameModeMain::SpawnAndPossessPlayer(FVector spawn_location, FRotator spawn
 	if(!GetWorld() || !GetWorld()->GetFirstPlayerController()) { UE_DEBUG_BREAK(); return; }
 
 	FActorSpawnParameters SpawnParams;
+	SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButAlwaysSpawn;
 	APawnMain* SpawnedPawn = GetWorld()->SpawnActor<APawnMain>(APawnMain::StaticClass(), spawn_location, spawn_rotation, SpawnParams);
 	if (!SpawnedPawn) return;
 
@@ -135,7 +135,7 @@ void AGameModeMain::StartPlay()
 	UE_LOG(LogTemp, Warning, TEXT("[AGameModeMain::StartPlay()] Starting game!"));
 
 	/* spawn player */
-	AGameModeMain::SpawnAndPossessPlayer(FVector(380, -1790, 0), FRotator::ZeroRotator);
+	//AGameModeMain::SpawnAndPossessPlayer(FVector(380, -1790, 0), FRotator::ZeroRotator);
 
 	//AGameModeMain::SpawnAllLoggingActor();
 
@@ -148,7 +148,7 @@ void AGameModeMain::StartPlay()
 void AGameModeMain::EndPlay(const EEndPlayReason::Type EndPlayReason)
 {
 	Super::EndPlay(EndPlayReason);
-	//this->ExperimentStopEpisode();
+	this->ExperimentStopEpisode();
 }
 
 void AGameModeMain::Tick(float DeltaTime)

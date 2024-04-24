@@ -25,38 +25,42 @@ APawnMain::APawnMain() : Super()
 	PrimaryActorTick.bStartWithTickEnabled = true;
 	PrimaryActorTick.bCanEverTick = true;
 
-	/* create camera component as root so pawn moves with camera */
-	Camera = CreateDefaultSubobject<UCameraComponent>(TEXT("ActualCamera"));
-	Camera->SetMobility(EComponentMobility::Movable);
-	Camera->bUsePawnControlRotation = true;
-	Camera->Mobility = EComponentMobility::Movable;
-	RootComponent = Camera;
+	/* create origin for tracking */
+	VROrigin = CreateDefaultSubobject<USceneComponent>(TEXT("VROrigin"));
+	RootComponent = VROrigin;
 
 	/* create collision component */
 	CapsuleComponent = CreateDefaultSubobject<UCapsuleComponent>(TEXT("RootComponent"));
-	CapsuleComponent->AttachToComponent(RootComponent, FAttachmentTransformRules::KeepRelativeTransform);
 	CapsuleComponent->SetMobility(EComponentMobility::Movable);
 	CapsuleComponent->InitCapsuleSize(_capsule_radius, _capsule_half_height);
 	CapsuleComponent->SetCollisionProfileName(TEXT("Pawn"));
 	CapsuleComponent->OnComponentBeginOverlap.AddDynamic(this, &APawnMain::OnOverlapBegin); // overlap events
 	CapsuleComponent->OnComponentEndOverlap.AddDynamic(this, &APawnMain::OnOverlapEnd); // overlap events 
+	CapsuleComponent->SetupAttachment(RootComponent);
+	//RootComponent = CapsuleComponent;
+
+	/* create camera component as root so pawn moves with camera */
+	Camera = CreateDefaultSubobject<UCameraComponent>(TEXT("ActualCamera"));
+	Camera->SetMobility(EComponentMobility::Movable);
+	Camera->bUsePawnControlRotation = true;
+	Camera->SetupAttachment(RootComponent);
 
 	/*Create Motion Controllers*/
 	MotionControllerLeft = CreateDefaultSubobject<UMotionControllerComponent>(TEXT("MotionControllerLeft"));
 	MotionControllerLeft->CreationMethod = EComponentCreationMethod::Native;
-	MotionControllerLeft->AttachToComponent(RootComponent, FAttachmentTransformRules::KeepRelativeTransform);
 	MotionControllerLeft->SetCanEverAffectNavigation(false);
 	MotionControllerLeft->bEditableWhenInherited = true;
 	MotionControllerLeft->MotionSource = FName("Left");
 	MotionControllerLeft->SetVisibility(false, false);
+	MotionControllerLeft->SetupAttachment(RootComponent);
 
 	MotionControllerRight = CreateDefaultSubobject<UMotionControllerComponent>(TEXT("MotionControllerRight"));
 	MotionControllerRight->CreationMethod = EComponentCreationMethod::Native;
-	MotionControllerRight->AttachToComponent(RootComponent, FAttachmentTransformRules::KeepRelativeTransform);
 	MotionControllerRight->SetCanEverAffectNavigation(false);
 	MotionControllerRight->bEditableWhenInherited = true;
 	MotionControllerRight->MotionSource = FName("Right");
 	MotionControllerRight->SetVisibility(false, false);
+	MotionControllerRight->SetupAttachment(RootComponent);
 }
 
 // Called to bind functionality to input
@@ -72,25 +76,47 @@ UCameraComponent* APawnMain::GetCameraComponent()
 
 bool APawnMain::DetectMovement()
 {
-	/* process */
-	bool _blocation_updated = false; 
+	bool _blocation_updated = false;
 
-	_new_location = this->GetActorLocation();
+	if (!UHeadMountedDisplayFunctionLibrary::IsHeadMountedDisplayEnabled())
+	{
+		UE_LOG(LogTemp, Warning, TEXT("HMD not enabled"));
+		return false;
+	}
 
-	if (!_new_location.Equals(_old_location, 2)) {
+	FVector NewLocation;
+	FRotator NewRotation;
+	UHeadMountedDisplayFunctionLibrary::GetOrientationAndPosition(NewRotation, NewLocation);
+
+	if (!NewLocation.Equals(_old_location, 2)) {
 		_blocation_updated = true;
-		_old_location = _new_location;
+		_old_location = NewLocation;
 	}
 	else {
 		_blocation_updated = false; 
 	}
+
+
+	_new_location = NewLocation;
 	return _blocation_updated;
+}
+
+void APawnMain::UpdateRoomScaleLocation()
+{
+	FVector DeltaLocation = Camera->GetComponentLocation() - this->CapsuleComponent->GetComponentLocation();
+	DeltaLocation.Z = .0f;
+
+	AddActorWorldOffset(DeltaLocation, false, nullptr, ETeleportType::TeleportPhysics);
+	VROrigin->AddWorldOffset(-DeltaLocation, false, nullptr, ETeleportType::TeleportPhysics);
+	FVector New = GetActorLocation();
+	if (GEngine) GEngine->AddOnScreenDebugMessage(-1, 0.5f, FColor::Blue, FString::Printf(TEXT("%f, %f, %f"), New.X, New.Y, New.Z));
 }
 
 void APawnMain::OnMovementDetected()
 {
 	MovementDetectedEvent.Broadcast(_new_location);
 	UE_LOG(LogTemp, Log, TEXT("[APawnMain::OnMovementDetected()] Movement detected."));
+	this->UpdateRoomScaleLocation();
 	//if (GEngine) GEngine->AddOnScreenDebugMessage(-1, 0.5f, FColor::Blue, FString::Printf(TEXT("Movement detected")));
 }
 
@@ -98,10 +124,11 @@ void APawnMain::ResetOrigin()
 {
 	//UHeadMountedDisplayFunctionLibrary::SetTrackingOrigin(EHMDTrackingOrigin::Floor);
 	if (GEngine) GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Blue, FString::Printf(TEXT("Resetting origin.")));
-	FRotator HMDRotation;
-	FVector HMDLocation;
-	UHeadMountedDisplayFunctionLibrary::GetOrientationAndPosition(HMDRotation, HMDLocation);
+	//FRotator HMDRotation;
+	//FVector HMDLocation;
+	//UHeadMountedDisplayFunctionLibrary::GetOrientationAndPosition(HMDRotation, HMDLocation);
 	Camera->SetWorldLocation(FVector(380, -1790, 80));
+	//this->SetActorLocation(FVector(380, -1790, 80));
 	//Camera->AddRelativeRotation(HMDRotation, false); // original
 	//UHeadMountedDisplayFunctionLibrary::ResetOrientationAndPosition(0.0f, EOrientPositionSelector::OrientationAndPosition);
 	//this->SetActorLocation(FVector(500.0f, -300.0f, 0.0f), false);

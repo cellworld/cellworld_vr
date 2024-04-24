@@ -32,7 +32,7 @@ bool AExperimentServiceMonitor::SpawnAndPossessPredator() {
 	// Spawn the character
 	CharacterPredator = GetWorld()->SpawnActor<ACharacterPredator>(ACharacterPredator::StaticClass(), Location, Rotation, SpawnParams);
 
-		// Ensure the character was spawned
+	// Ensure the character was spawned
 	if (!CharacterPredator) { UE_LOG(LogTemp, Fatal, TEXT("[AExperimentServiceMonitor::SpawnAndPossessPredator()] Spawn ACharacterPredator Failed!")); return false; }
 	return false;
 }
@@ -46,18 +46,17 @@ bool AExperimentServiceMonitor::StopConnection(UMessageClient* Client)
 
 bool AExperimentServiceMonitor::DisconnectAll()
 {
-
 	if (bInEpisode) {
 		if (!this->StopEpisode()) {
 			UE_LOG(LogTemp, Warning, TEXT("[AExperimentServiceMonitor::DisconnectAll()] Stopped active episode."));
 			return false;
 		}
-	}
+	}else { UE_LOG(LogTemp, Warning, TEXT("[AExperimentServiceMonitor::DisconnectAll()] No active episode.")); }
 
 	if (!this->StopExperiment(ExperimentNameActive)) {
 		UE_LOG(LogTemp, Warning, TEXT("[AExperimentServiceMonitor::DisconnectAll()] Stopped active experiment."));
 		return false;
-	}
+	}else{ UE_LOG(LogTemp, Warning, TEXT("[AExperimentServiceMonitor::DisconnectAll()] No active experiment.")); }
 
 	///* stop connections if clients exist */
 	//if (!ExperimentServiceClient || !ExperimentServiceClient->IsConnected()) {
@@ -106,7 +105,7 @@ bool AExperimentServiceMonitor::StartExperiment(const FString ExperimentNameIn) 
 bool AExperimentServiceMonitor::StopExperiment(const FString ExperimentNameIn) {
 	if (!ExperimentServiceClient) { UE_LOG(LogTemp, Error, TEXT("Can't stop experiment, Experiment Service client not valid.")); return false; }
 	if (!ExperimentServiceClient->IsConnected()) { UE_LOG(LogTemp, Error, TEXT("Can't stop experiment, Experiment Service client not connected.")); return false; }
-	if (ExperimentNameActive.Len() < 1) { UE_LOG(LogTemp, Warning, TEXT("Can't stop experiment, experiment name not valid.")); return false; }
+	//if (ExperimentNameActive.Len() < 1) { UE_LOG(LogTemp, Warning, TEXT("Can't stop experiment, experiment name not valid.")); return false; }
 	if (!bInExperiment) { UE_LOG(LogTemp, Warning, TEXT("Can't stop experiment, not an active experiment.")); return false; }
 	
 	stop_experiment_request = this->SendFinishExperimentRequest(ExperimentNameActive); // returns true; handle if false
@@ -203,8 +202,9 @@ bool AExperimentServiceMonitor::StartEpisode() {
 	if (ExperimentNameActive.Len() < 1) { UE_LOG(LogTemp, Error, TEXT("Can't start episode, experiment name not valid.")); return false; }
 	if (!bInExperiment) { UE_LOG(LogTemp, Error, TEXT("Can't start episode, no active experiment.")); return false; }
 	
-	//start_episode_request = this->SendStartEpisodeRequest(ExperimentNameActive, "start_episode"); // returns true; handle if false
+	// send request 
 	if (!this->SendStartEpisodeRequest(ExperimentNameActive, "start_episode")) { return false; }
+	
 	return true;
 }
 
@@ -214,7 +214,7 @@ bool AExperimentServiceMonitor::StopEpisode()
 	if (!ExperimentServiceClient) { UE_LOG(LogTemp, Error, TEXT("Can't stop episode, Experiment Service client not valid.")); return false; }
 	if (ExperimentNameActive.Len() < 1) { UE_LOG(LogTemp, Warning, TEXT("Can't stop episode, experiment name not valid.")); return false; }
 	if (!bInExperiment) { UE_LOG(LogTemp, Warning, TEXT("Can't stop episode, no active experiment.")); return false; }
-	if (!bInEpisode) { UE_LOG(LogTemp,Warning,TEXT("Can't stop episode, no active episode."));  return false; }
+	//if (!bInEpisode) { UE_LOG(LogTemp,Warning,TEXT("Can't stop episode, no active episode."));  return false; }
 
 	FFinishEpisodeRequest request_body;
 	request_body.experiment_name = ExperimentNameActive;
@@ -233,15 +233,16 @@ bool AExperimentServiceMonitor::StopEpisode()
 void AExperimentServiceMonitor::HandleEpisodeRequestResponse(const FString response) {
 
 	UE_LOG(LogTemp, Warning, TEXT("[AExperimentServiceMonitor::EpisodeResponse] %s"), *response);
-	if (GEngine) if (GEngine) GEngine->AddOnScreenDebugMessage(-1, 0.5f, FColor::Magenta, FString::Printf(TEXT("Episode response: %s"), *response));
+	if (GEngine) if (GEngine) GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Magenta, FString::Printf(TEXT("Episode response: %s"), *response));
 	
 	if (response == "fail") {
+		bInEpisode = false;
 		UE_DEBUG_BREAK();
 		return;
 	}
 
-	this->SendGetOcclusionLocationsRequest();
 	bInEpisode = true; // todo: fix, HandelEpisodeRequest both starts and stops, need unique functions 
+	this->SendGetOcclusionLocationsRequest();
 }
 
 /* handle experiment service timeout */
@@ -393,12 +394,15 @@ bool AExperimentServiceMonitor::TrackingServiceCreateMessageClient() {
 bool AExperimentServiceMonitor::ConnectToTrackingService() {
 	TrackingServiceClient = UMessageClient::NewMessageClient();
 	
-	if (!TrackingServiceClient) { return false; }
+	if (!TrackingServiceClient) { 
+		UE_LOG(LogTemp, Error, TEXT("[AExperimentServiceMonitor::TrackingServiceSetRoute()] TrackingServiceClient NULL."));
+		return false; 
+	}
 
 	/* connect tracking client to server */
 	int att_max = 5;
 	int att = 0;
-	UE_LOG(LogTemp, Log, TEXT("[AExperimentServiceMonitor::TrackingServiceSetRoute()] Connecting to Tracking Service."));
+	UE_LOG(LogTemp, Log, TEXT("[AExperimentServiceMonitor::TrackingServiceSetRoute()] Starting connection with Tracking Service."));
 	while (att < att_max) {
 		if (TrackingServiceClient->Connect(ServerIPMessage, PortTrackingService)) {
 			UE_LOG(LogTemp, Warning, TEXT("[AExperimentServiceMonitor::TrackingServiceSetRoute()] Connecting Tracking Service SUCCESS. (attempt #: %i)"), att);
@@ -411,7 +415,7 @@ bool AExperimentServiceMonitor::ConnectToTrackingService() {
 		UE_LOG(LogTemp, Error, TEXT("[AExperimentServiceMonitor::TrackingServiceSetRoute()] Connecting to Tracking Service FAILED!"));
 		return false;
 	}
-
+	UE_LOG(LogTemp, Log, TEXT("[AExperimentServiceMonitor::TrackingServiceSetRoute()] Exiting with true."));
 	return true;
 }
 
@@ -573,6 +577,7 @@ void AExperimentServiceMonitor::HandleExperimentServiceUnroutedMessage(const FMe
 	if (GEngine) GEngine->AddOnScreenDebugMessage(-1, 1.0f, FColor::Red, FString::Printf(TEXT("tracking unrouted: (%s) %s"), *message.header, *message.body));
 }
 
+/* todo: finish this */
 bool AExperimentServiceMonitor::IsExperimentActive(const FString ExperimentNameIn)
 {
 	//UExperimentUtils::Start
@@ -597,14 +602,17 @@ bool AExperimentServiceMonitor::GetPlayerPawn()
 		PlayerPawn->MovementDetectedEvent.AddDynamic(this, &AExperimentServiceMonitor::UpdatePreyPosition);
 		PlayerPawn->ResetOrigin();
 	}
+
 	else if (Cast<APawnDebug>(Pawn)) {
 		APawnDebug* PlayerPawn = Cast<APawnDebug>(Pawn); // Adjust according to the actual type of PlayerPawn
 		UE_LOG(LogTemp, Log, TEXT("[AExperimentServiceMonitor::GetPlayerPawn()] APawnDebug found and assigned."));
 		PlayerPawn->MovementDetectedEvent.AddDynamic(this, &AExperimentServiceMonitor::UpdatePreyPosition);
 	}
+
 	else {
-		UE_LOG(LogTemp, Error, TEXT("[AExperimentServiceMonitor::GetPlayerPawn()] APawnDebug found and assigned."));
-		if (GEngine) GEngine->AddOnScreenDebugMessage(-1, 1.0f, FColor::Yellow, TEXT("[AExperimentServiceMonitor::GetPlayerPawn()] Pawn found, but it is neither APawnMain nor APawnDebug."));
+		const FString ErrorMessage = "[AExperimentServiceMonitor::GetPlayerPawn()] No valid pawn found nor assigned.";
+		UE_LOG(LogTemp, Error, TEXT("%s"), *ErrorMessage);
+		//if (GEngine) GEngine->AddOnScreenDebugMessage(-1, 1.0f, FColor::Yellow, TEXT("[AExperimentServiceMonitor::GetPlayerPawn()] %s"), *ErrorMessage);
 		return false;
 	}
 
@@ -612,10 +620,14 @@ bool AExperimentServiceMonitor::GetPlayerPawn()
 }
 
 /* destroy this actor. This is primarily used as an abort */
-void AExperimentServiceMonitor::SelfDestruct(const FString ErrorMessageIn)
+void AExperimentServiceMonitor::SelfDestruct(const FString InErrorMessage)
 {
-	if (GEngine) GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Green, FString::Printf(TEXT("[AExperimentServiceMonitor::SelfDestruct] Tracking and Experiment ABORTED. Something happened: %s"), *ErrorMessageIn));
-	UE_LOG(LogTemp, Error, TEXT("[AExperimentServiceMonitor::SelfDestruct()] Something went wrong. Destroying."));
+	if (GEngine) GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Green, FString::Printf(TEXT("[AExperimentServiceMonitor::SelfDestruct] Tracking and Experiment ABORTED. Something happened: %s"), *InErrorMessage));
+	UE_LOG(LogTemp, Error, TEXT("[AExperimentServiceMonitor::SelfDestruct()] Something went wrong. Destroying. Reason: %s "), *InErrorMessage);
+
+	// if in episode, finish episode
+	this->StopEpisode();
+
 
 	// Make sure to check if the actor is valid and has not already been marked for destruction.
 	//if (!this->IsPendingKill())
@@ -718,11 +730,11 @@ bool AExperimentServiceMonitor::SetOcclusionVisibility(TArray<int32> VisibleOccl
 URequest* AExperimentServiceMonitor::SendGetOcclusionLocationsRequest()
 {
 	UE_LOG(LogTemp, Log, TEXT("[AExperimentServiceMonitor::SendGetOcclusionLocationsRequest()] Starting request."));
-	if (!ExperimentServiceClient) { UE_LOG(LogTemp, Error, TEXT("Cant send get occlusion request, Experiment service client not valid.")); return nullptr; }
-	
-	const FString BodyOut   = "bodyout";
-	const FString HeaderOut = "get_cells_locations";
-	URequest* Request = ExperimentServiceClient->SendRequest(HeaderOut,BodyOut,TimeOut);
+	if (!ExperimentServiceClient) { UE_LOG(LogTemp, Error, TEXT("[AExperimentServiceMonitor::SendGetOcclusionLocationsRequest()] Cant send get occlusion request, Experiment service client not valid.")); return nullptr; }
+	if (!bInEpisode){ UE_LOG(LogTemp, Error, TEXT("[AExperimentServiceMonitor::SendGetOcclusionLocationsRequest()] Cant send get occlusion request, bInEpisode is false.")); return nullptr; }
+	const FString BodyOut   = "21_05";
+	const FString HeaderOut = "get_cell_locations";
+	URequest* Request = ExperimentServiceClient->SendRequest("get_cell_locations", "21_04", 10.0f);
 
 	if (!Request) { return nullptr; }
 
@@ -734,7 +746,7 @@ URequest* AExperimentServiceMonitor::SendGetOcclusionLocationsRequest()
 
 /* gets location of all possible occlusions in our given experiment/world configuration */
 void AExperimentServiceMonitor::HandleGetOcclusionLocationsResponse(const FString ResponseIn) {
-	UE_LOG(LogTemp, Log, TEXT("%s"), *ResponseIn);
+	UE_LOG(LogTemp, Log, TEXT("[HandleGetOcclusionLocationsResponse] %s"), *ResponseIn);
 	OcclusionLocationsAll = UExperimentUtils::OcclusionsParseAllLocations(ResponseIn);
 
 	OcclusionsStruct.SetAllLocations(OcclusionLocationsAll); 
@@ -745,7 +757,7 @@ void AExperimentServiceMonitor::HandleGetOcclusionLocationsResponse(const FStrin
 }
 
 void AExperimentServiceMonitor::HandleGetOcclusionLocationsTimedOut() {
-	UE_LOG(LogTemp, Warning, TEXT("Get cell location request timed out!"));
+	UE_LOG(LogTemp, Warning, TEXT("[HandleGetOcclusionLocationsTimedOut] Get cell location request timed out!"));
 	return;
 }
 
@@ -764,7 +776,7 @@ bool AExperimentServiceMonitor::test() {
 	int att = 0;
 	UE_LOG(LogTemp, Log, TEXT("[AExperimentServiceMonitor::TrackingServiceSetRoute()] Connecting to Tracking Service."));
 	while (att < att_max) {
-		if (Client->Connect("127.0.0.1", 4566)) {
+		if (Client->Connect("127.0.0.1", 4566)) { // cpp port 
 			UE_LOG(LogTemp, Warning, TEXT("[AExperimentServiceMonitor::TrackingServiceSetRoute()] Connecting Tracking Service SUCCESS."));
 			break;
 		}
@@ -776,8 +788,8 @@ bool AExperimentServiceMonitor::test() {
 	}
 
 	const FString header = "get_occlusions";
-	const FString body = "21_04";
-	URequest* request = Client->SendRequest("get_cell_locations", "21_04", 10.0f);
+	const FString body = "21_05";
+	URequest* request = Client->SendRequest("get_cell_locations", "21_05", 10.0f);
 	request->ResponseReceived.AddDynamic(this, &AExperimentServiceMonitor::HandleGetOcclusionLocationsResponse);
 
 	return true;
@@ -822,11 +834,6 @@ void AExperimentServiceMonitor::BeginPlay()
 		return;
 	}*/
 
-	if (!this->GetPlayerPawn()) {
-		this->SelfDestruct(FString("GetPlayerPawn() failed.."));
-		return;
-	}
-
 	if (TrackingServiceClient->IsConnected() && GEngine) {
 		GEngine->AddOnScreenDebugMessage(1, 5.0f, FColor::Green, TEXT("Tracking service connected"));
 	}
@@ -834,6 +841,11 @@ void AExperimentServiceMonitor::BeginPlay()
 	/* not subscribing correctly */
 	if (ExperimentServiceClient->IsConnected() && GEngine) {
 		GEngine->AddOnScreenDebugMessage(1, 5.0f, FColor::Green, TEXT("experiment service connected"));
+	}
+
+	if (!this->GetPlayerPawn()) {
+		this->SelfDestruct(FString("GetPlayerPawn() failed."));
+		return;
 	}
 	
 }
@@ -849,8 +861,6 @@ void AExperimentServiceMonitor::EndPlay(const EEndPlayReason::Type EndPLayReason
 {
 	Super::EndPlay(EndPLayReason);
 	//this->DisconnectAll();
-	this->SelfDestruct("EndPlay");
-
-
+	//this->SelfDestruct("EndPlay");
 }
 

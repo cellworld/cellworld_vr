@@ -52,6 +52,7 @@ public:
 	/* === properties === */
 	//UPROPERTY(VisibleDefaultsOnly, meta = (Category = "Default"))
 	class UCameraComponent* Camera;
+	USceneComponent* VROrigin; 
 	UCapsuleComponent* CapsuleComponent;
 	UCustomCharacterMovementComponent* MovementComponent; 
 	class UMotionControllerComponent* MotionControllerLeft;
@@ -88,6 +89,7 @@ private:
 
 	bool DetectMovement();
 	void OnMovementDetected();
+	void UpdateRoomScaleLocation();
 	FVector _old_location; 
 	FVector _new_location;
 	float _movement_threshold = 5; 
