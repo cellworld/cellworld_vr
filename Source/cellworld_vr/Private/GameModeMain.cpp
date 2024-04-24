@@ -18,8 +18,8 @@ AGameModeMain::AGameModeMain()
 		PlayerControllerClass = AMouseKeyboardPlayerController::StaticClass();
 	}
 	else { 
-		DefaultPawnClass = APawnMain::StaticClass(); 
-		PlayerControllerClass = APlayerControllerVR::StaticClass();
+		/*DefaultPawnClass = APawnMain::StaticClass(); 
+		PlayerControllerClass = APlayerControllerVR::StaticClass();*/
 	}
 	 
 	/* Assign default game state */
@@ -75,14 +75,17 @@ void AGameModeMain::SpawnAndPossessPlayer(FVector spawn_location, FRotator spawn
 	/* to do: remove, no need for this if player start is present in map. if it isn''t, location will be taken care of by experiment service */
 
 	if(!GetWorld() || !GetWorld()->GetFirstPlayerController()) { UE_DEBUG_BREAK(); return; }
-	AGameModeMain::PawnMain = Cast<APawnMain>(GetWorld()->GetFirstPlayerController()->GetPawn());
-	if (AGameModeMain::PawnMain) {
 
-		/*FActorSpawnParameters SpawnInfo;
-		SpawnInfo.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
-		PawnMain = Cast<APawnMain>(GetWorld()->SpawnActor(DefaultPawnClass, &spawn_location, &spawn_rotation, SpawnInfo));*/
+	FActorSpawnParameters SpawnParams;
+	APawnMain* SpawnedPawn = GetWorld()->SpawnActor<APawnMain>(APawnMain::StaticClass(), spawn_location, spawn_rotation, SpawnParams);
+	if (!SpawnedPawn) return;
 
-		//AGameModeMain::PawnMain->ResetOrigin();
+	// Find the player controller
+	APlayerControllerVR* PlayerController = Cast<APlayerControllerVR>(GetWorld()->GetFirstPlayerController());
+	if (PlayerController)
+	{
+		// Possess the spawned pawn
+		PlayerController->Possess(SpawnedPawn);
 	}
 	//EAutoReceiveInput::Type::Player0;
 }
@@ -132,7 +135,7 @@ void AGameModeMain::StartPlay()
 	UE_LOG(LogTemp, Warning, TEXT("[AGameModeMain::StartPlay()] Starting game!"));
 
 	/* spawn player */
-	AGameModeMain::SpawnAndPossessPlayer(spawn_location_player, spawn_rotation_player);
+	AGameModeMain::SpawnAndPossessPlayer(FVector(380, -1790, 0), FRotator::ZeroRotator);
 
 	//AGameModeMain::SpawnAllLoggingActor();
 

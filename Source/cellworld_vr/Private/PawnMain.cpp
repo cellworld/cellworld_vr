@@ -29,6 +29,7 @@ APawnMain::APawnMain() : Super()
 	Camera = CreateDefaultSubobject<UCameraComponent>(TEXT("ActualCamera"));
 	Camera->SetMobility(EComponentMobility::Movable);
 	Camera->bUsePawnControlRotation = true;
+	Camera->Mobility = EComponentMobility::Movable;
 	RootComponent = Camera;
 
 	/* create collision component */
@@ -100,8 +101,8 @@ void APawnMain::ResetOrigin()
 	FRotator HMDRotation;
 	FVector HMDLocation;
 	UHeadMountedDisplayFunctionLibrary::GetOrientationAndPosition(HMDRotation, HMDLocation);
-	this->TeleportTo(FVector(80, -1790, 680), HMDRotation);
-	Camera->AddRelativeRotation(HMDRotation, false);
+	Camera->SetWorldLocation(FVector(380, -1790, 80));
+	//Camera->AddRelativeRotation(HMDRotation, false); // original
 	//UHeadMountedDisplayFunctionLibrary::ResetOrientationAndPosition(0.0f, EOrientPositionSelector::OrientationAndPosition);
 	//this->SetActorLocation(FVector(500.0f, -300.0f, 0.0f), false);
 }
