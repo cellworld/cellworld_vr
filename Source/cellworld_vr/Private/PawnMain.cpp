@@ -96,10 +96,11 @@ void APawnMain::OnMovementDetected()
 void APawnMain::ResetOrigin() 
 {
 	//UHeadMountedDisplayFunctionLibrary::SetTrackingOrigin(EHMDTrackingOrigin::Floor);
-
+	if (GEngine) GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Blue, FString::Printf(TEXT("Resetting origin.")));
 	FRotator HMDRotation;
 	FVector HMDLocation;
 	UHeadMountedDisplayFunctionLibrary::GetOrientationAndPosition(HMDRotation, HMDLocation);
+	this->TeleportTo(FVector(80, -1790, 680), HMDRotation);
 	Camera->AddRelativeRotation(HMDRotation, false);
 	//UHeadMountedDisplayFunctionLibrary::ResetOrientationAndPosition(0.0f, EOrientPositionSelector::OrientationAndPosition);
 	//this->SetActorLocation(FVector(500.0f, -300.0f, 0.0f), false);
