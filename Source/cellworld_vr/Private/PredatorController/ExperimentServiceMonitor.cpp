@@ -273,8 +273,7 @@ void AExperimentServiceMonitor::HandleStartExperimentResponse(const FString Resp
 
 void AExperimentServiceMonitor::HandleStartExperimentTimedOut()
 {
-	UE_LOG(LogTemp, Error, TEXT("[AExperimentServiceMonitor::HandleStartExperimentResponse] Start experiment timed out"));
-	if (GEngine) if (GEngine) GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Red, TEXT("Start experiment timed out"));
+	printScreen("[AExperimentServiceMonitor::HandleStartExperimentTimedOut] Start Experiment TIMED OUT!");
 }
 
 /* create and send simple experiment service request */

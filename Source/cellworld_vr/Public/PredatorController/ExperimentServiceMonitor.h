@@ -153,7 +153,7 @@ public:
 	const FString experiment_name                   = "test_experiment";
 
 	/* server stuff */
-	const FString ServerIPMessage    = "127.0.0.1"; // lab pc 
+	const FString ServerIPMessage    = "192.168.137.25"; // lab pc 
 	const int PortTrackingService    = 4510;
 	const int PortExperimentService  = 4540; 
 	bool bCanUpdatePreyPosition      = false;
