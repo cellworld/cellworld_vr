@@ -12,7 +12,7 @@
 AGameModeMain::AGameModeMain()
 {
 	/* Get PawnMain to spawn */
-	if (bDebugMode){
+	if (bUseVR){
 		DefaultPawnClass = APawnDebug::StaticClass(); 
 		PlayerControllerClass = AMouseKeyboardPlayerController::StaticClass();
 	}

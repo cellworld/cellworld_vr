@@ -21,7 +21,7 @@ public:
 	virtual void EndGame();
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Debug")
-	bool bDebugMode = true;
+	bool bUseVR = false;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Debug")
 	bool bSpawnExperimentService = true;
 	
