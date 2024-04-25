@@ -150,16 +150,16 @@ public:
 	const FString header_tracking_service			= "send_step";
 	const FString header_tracking_service_prey		= "prey_step";
 	const FString header_tracking_service_predator  = "predator_step";
-	const FString experiment_name = "test_experiment";
+	const FString experiment_name                   = "test_experiment";
 
 	/* server stuff */
-	//const FString ServerIPMessage   = "127.0.0.1"; // localhost
-	const FString ServerIPMessage   = "172.26.176.129"; // wsl lab
-	//const FString ServerIPMessage   = "172.30.127.68"; // wsl home 
-	const int PortTrackingService   = 4510;
-	const int PortExperimentService = 4540; 
-	bool bConnectedToServer     = false;
-	bool bCanUpdatePreyPosition = false;
+	const FString ServerIPMessage    = "127.0.0.1"; // lab pc 
+	const int PortTrackingService    = 4510;
+	const int PortExperimentService  = 4540; 
+	bool bCanUpdatePreyPosition      = false;
+	bool bConnectedTrackingService	 = false; 
+	bool bConnectedExperimentService = false; 
+	bool bConnectedToServer			 = false;
 
 	/* world stuff */
 	float map_length                = 5100;
@@ -167,15 +167,7 @@ public:
 
 	/* coordinate system stuff */
 	const float MapLength = 235.185;
-	int WorldScale = 15; 
-
-	/* connection control */
-	bool bConnectedToExperimentService  = false; 
-	bool bConnectedToTrackingService    = false; 
-	
-	/* subscription control */
-	bool bSubscribedToTrackingService   = false;
-	bool bRoutedMessagesTrackingService = false; 
+	int WorldScale        = 15; 
 
 	/* setup */
 	const FString predator_step_header = "predator_step";

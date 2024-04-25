@@ -4,8 +4,10 @@
 
 //#include "GenericPlatform/GenericPlatformProcess.h"
 
+//TODO - add argument to include MessageType (Log, Warning, Error, Fatal)
 void printScreen(const FString message) {
 	if (GEngine) GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Green, FString::Printf(TEXT("%s"), *message));
+	UE_LOG(LogTemp, Warning, TEXT("%s"), *message);
 }
 
 
@@ -94,11 +96,11 @@ bool AExperimentServiceMonitor::StartExperiment(const FString ExperimentNameIn) 
 	const FString StartExperimentRequestBodyString = UExperimentUtils::StartExperimentRequestToJsonString(StartExperimentRequestBody);
 	StartExperimentRequest = ExperimentServiceClient->SendRequest("start_experiment", StartExperimentRequestBodyString, 5.0f);
 
-	if (!StartExperimentRequest) { return false; }
+	if (!StartExperimentRequest) { UE_LOG(LogTemp, Error, TEXT("[AExperimentServiceMonitor::StartExperiment()] StartExperimentRequest is NULL.")); return false; }
 
 	StartExperimentRequest->ResponseReceived.AddDynamic(this, &AExperimentServiceMonitor::HandleStartExperimentResponse);
 	StartExperimentRequest->TimedOut.AddDynamic(this, &AExperimentServiceMonitor::HandleStartExperimentTimedOut);
-	
+	bInExperiment = true;
 	return true; 
 }
 
@@ -266,24 +268,12 @@ void AExperimentServiceMonitor::HandleStartExperimentResponse(const FString Resp
 	UE_LOG(LogTemp, Warning, TEXT("[AExperimentServiceMonitor::HandleStartExperimentResponse] Experiment name: %s"), *ExperimentNameActive);
 	
 	bInExperiment = true;
-	
-	/* todo: change, this is just for debugging while I add dynamic doors to Maze Level*/
-	FString MapName = GetWorld()->GetMapName();
-	MapName.RemoveFromStart(GetWorld()->StreamingLevelsPrefix);
-	UE_LOG(LogTemp, Warning, TEXT("map name: %s"), *MapName);
-
-	if (MapName == "L_Maze") {
-
-		if (!this->StartEpisode()) { 
-			return; 
-		}
-	}
-
+	this->StartEpisode();
 }
 
 void AExperimentServiceMonitor::HandleStartExperimentTimedOut()
 {
-	UE_LOG(LogTemp, Warning, TEXT("[AExperimentServiceMonitor::HandleStartExperimentResponse] Start experiment timed out"));
+	UE_LOG(LogTemp, Error, TEXT("[AExperimentServiceMonitor::HandleStartExperimentResponse] Start experiment timed out"));
 	if (GEngine) if (GEngine) GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Red, TEXT("Start experiment timed out"));
 }
 
@@ -358,7 +348,9 @@ void AExperimentServiceMonitor::HandleExperimentServiceResponse(const FString me
 	UE_LOG(LogTemp, Warning, TEXT("[AExperimentServiceMonitor::HandleExperimentServiceResponse] ES response: %s"), *message);
 	if (message != "success") {
 		UE_DEBUG_BREAK();
+		return; // failed 
 	}
+	bConnectedExperimentService = true;
 }
 
 /* Handle experiment service response timeout (during subscription) */
@@ -373,8 +365,11 @@ void AExperimentServiceMonitor::HandleTrackingServiceResponse(const FString mess
 	UE_LOG(LogTemp, Warning, TEXT("[AExperimentServiceMonitor::HandleTrackingServiceResponse] ES: %s"), *message);
 	if (message != "success") {
 		UE_DEBUG_BREAK();
+		return; // failed
 	}
+	bConnectedTrackingService = true;
 }
+
 
 /* Handle tracking service response timeout (during subscription */
 void AExperimentServiceMonitor::HandleTrackingServiceResponseTimedOut() {
@@ -392,8 +387,8 @@ bool AExperimentServiceMonitor::TrackingServiceCreateMessageClient() {
 
 /* connect tro tracking service. Connection parameters are defined in header file. */
 bool AExperimentServiceMonitor::ConnectToTrackingService() {
+
 	TrackingServiceClient = UMessageClient::NewMessageClient();
-	
 	if (!TrackingServiceClient) { 
 		UE_LOG(LogTemp, Error, TEXT("[AExperimentServiceMonitor::TrackingServiceSetRoute()] TrackingServiceClient NULL."));
 		return false; 
@@ -404,8 +399,9 @@ bool AExperimentServiceMonitor::ConnectToTrackingService() {
 	int att = 0;
 	UE_LOG(LogTemp, Log, TEXT("[AExperimentServiceMonitor::TrackingServiceSetRoute()] Starting connection with Tracking Service."));
 	while (att < att_max) {
+		UE_LOG(LogTemp, Log, TEXT("[AExperimentServiceMonitor::TrackingServiceSetRoute()] Attempting to connect with TrackingService. (attempt #: %i/%i."), att+1, att_max);
 		if (TrackingServiceClient->Connect(ServerIPMessage, PortTrackingService)) {
-			UE_LOG(LogTemp, Warning, TEXT("[AExperimentServiceMonitor::TrackingServiceSetRoute()] Connecting Tracking Service SUCCESS. (attempt #: %i)"), att);
+			UE_LOG(LogTemp, Warning, TEXT("[AExperimentServiceMonitor::TrackingServiceSetRoute()] Connecting Tracking Service SUCCESS. (attempt #: %i/%i)"), att+1, att_max);
 			break;
 		}
 		att += 1;
@@ -415,6 +411,7 @@ bool AExperimentServiceMonitor::ConnectToTrackingService() {
 		UE_LOG(LogTemp, Error, TEXT("[AExperimentServiceMonitor::TrackingServiceSetRoute()] Connecting to Tracking Service FAILED!"));
 		return false;
 	}
+
 	UE_LOG(LogTemp, Log, TEXT("[AExperimentServiceMonitor::TrackingServiceSetRoute()] Exiting with true."));
 	return true;
 }
@@ -422,52 +419,41 @@ bool AExperimentServiceMonitor::ConnectToTrackingService() {
 /* route tracking service messages (steps) */
 bool AExperimentServiceMonitor::TrackingServiceRouteMessages() {
 
-	/* route to send data*/
-	//TrackingServiceRoute = TrackingServiceClient->AddRoute(header_tracking_service);
-	
 	/* handle messages received with unknown headers/routes */
 	TrackingServiceClient->UnroutedMessageEvent.AddDynamic(this, &AExperimentServiceMonitor::HandleTrackingServiceUnroutedMessage);
 
-	/* prey route */
+	/* assign prey and predator routes */
 	TrackingServiceRoutePrey = TrackingServiceClient->AddRoute(header_tracking_service_prey);
-
-	/* predator route */
 	TrackingServiceRoutePredator = TrackingServiceClient->AddRoute(header_tracking_service_predator);
 
 	/* bind only if all routes valid */
-	//if (!TrackingServiceRoute && !TrackingServiceRoutePrey && !TrackingServiceRoutePredator) {
 	if (!TrackingServiceRoutePrey && !TrackingServiceRoutePredator) {
 		return false;
 	}
 
-	//TrackingServiceRoute->MessageReceived.AddDynamic(this, &AExperimentServiceMonitor::HandleTrackingServiceMessage);
-	//TrackingServiceRoutePrey->MessageReceived.AddDynamic(this, &AExperimentServiceMonitor::HandleTrackingServiceMessagePrey);
-	//TrackingServiceRoutePredator->MessageReceived.AddDynamic(this, &AExperimentServiceMonitor::HandleTrackingServiceMessagePredator);
-
 	return true; 
 }
-
 
 /* subscribes to server and calls UpdatePredator() when messages[header] matches input header. */
 bool AExperimentServiceMonitor::SubscribeToTrackingService()
 {
-	bConnectedToTrackingService = this->ConnectToTrackingService();
-	if (!bConnectedToTrackingService) {
-		printScreen("[AExperimentServiceMonitor::SubscribeToTrackingService()] ConnectToTrackingService() failed");
-		UE_LOG(LogTemp, Error, TEXT("[AExperimentServiceMonitor::SubscribeToTrackingService()] Retuning. Connecting to Tracking Service FAILED!"));
+	if (!this->ConnectToTrackingService()) {
+		printScreen("[AExperimentServiceMonitor::SubscribeToTrackingService()] ConnectToTrackingService() FAILED!");
+		UE_LOG(LogTemp, Error, TEXT("[AExperimentServiceMonitor::SubscribeToTrackingService()] Returning. Connecting to Tracking Service FAILED!"));
 		return false;
 	}
-
-	/* 3. subscribe */
 	TrackingServiceRequest = TrackingServiceClient->Subscribe();
-	if (!TrackingServiceRequest) { 
-		printScreen("[AExperimentServiceMonitor::SubscribeToTrackingService()] if (!TrackingServiceRequest) .");
+	if (!TrackingServiceRequest) {
+		printScreen("[AExperimentServiceMonitor::SubscribeToTrackingService()] if (!TrackingServiceRequest) FAILED!");
 		return false;  
 	}
-
+	if (!TrackingServiceRequest) {
+		UE_LOG(LogTemp, Error, TEXT("[AExperimentServiceMonitor::SubscribeToTrackingService()] TrackingServiceRequest is NULL!"));
+		return false; 
+	}
 	TrackingServiceRequest->ResponseReceived.AddDynamic(this, &AExperimentServiceMonitor::HandleTrackingServiceResponse);
 	TrackingServiceRequest->TimedOut.AddDynamic(this, &AExperimentServiceMonitor::HandleTrackingServiceResponseTimedOut);
-	
+	UE_LOG(LogTemp, Warning, TEXT("[AExperimentServiceMonitor::SubscribeToTrackingService()] TrackingServiceResponses delegates bound SUCCESS!"));
 	return true;
 }
 
@@ -482,7 +468,6 @@ bool AExperimentServiceMonitor::SubscribeToExperimentServiceServer(FString heade
 	int att = 0;
 	while (att < att_max) {
 		if (ExperimentServiceClient->Connect(ServerIPMessage, PortExperimentService)) { 
-			bConnectedToExperimentService = true;
 			FPlatformProcess::Sleep(0.2);
 			break; 
 		}
@@ -517,7 +502,6 @@ void AExperimentServiceMonitor::UpdatePredator(const FMessage message)
 	
 	GEngine->AddOnScreenDebugMessage(1, 5.0f, FColor::Green, FString::Printf(TEXT("New location: %f %f %f"), new_location_ue.X, new_location_ue.Y, new_location_ue.Z));
 	
-	//AController* Controller = CharacterPredator->GetController();
 	AAIControllerPredator* AIControllerPredator = Cast<AAIControllerPredator>(CharacterPredator->GetController());
 	if (!AIControllerPredator) { return; }
 	
@@ -560,9 +544,7 @@ void AExperimentServiceMonitor::UpdatePreyPosition(const FVector vector)
 /* handle tracking service message coming to default "send_step" route */
 void AExperimentServiceMonitor::HandleTrackingServiceMessage(const FMessage message)
 {
-	if (GEngine) {
-		if (GEngine) GEngine->AddOnScreenDebugMessage(-1, 1.0f, FColor::Green, FString::Printf(TEXT("tracking message: (%s) %s"),*message.header, *message.body));
-	}
+	if (GEngine) { if (GEngine) GEngine->AddOnScreenDebugMessage(-1, 1.0f, FColor::Green, FString::Printf(TEXT("tracking message: (%s) %s"),*message.header, *message.body)); }
 }
 
 /* handles unrouted messages coming from tracking service. messages that do not have a route set up inside 
@@ -654,29 +636,6 @@ bool AExperimentServiceMonitor::SendGetOcclusionsRequest()
 }
 
 void AExperimentServiceMonitor::SpawnOcclusions(const TArray<int32> OcclusionIDsIn, const TArray<FLocation> Locations) {
-	
-	/*OcclusionsStruct.SetAllLocations(Locations);
-	*/
-	//if (!OcclusionsStruct.SpawnAll(true, false)) {
-	//	UE_LOG(LogTemp, Error, TEXT("SpawnAll failed"));
-	//	return; 
-	//}
-
-	//FRotator Rotation(0.0f, 0.0f, 0.0f); // Desired spawn rotation
-	//FVector Location(0.0f, 0.0f, 0.0f); // Desired spawn location
-
-	//FActorSpawnParameters SpawnParams;
-	//for (int i = 0; i < Locations.Num(); i++) {
-	//	AOcclusion* MyMeshActor = GetWorld()->SpawnActor<AOcclusion>(
-	//		AOcclusion::StaticClass(), 
-	//		UExperimentUtils::CanonicalToVr(Locations[i], 250, 15), 
-	//		Rotation, 
-	//		SpawnParams);
-
-	//	MyMeshActor->SetActorScale3D(FVector(WorldScale,WorldScale, WorldScale));
-
-	//	UE_LOG(LogTemp, Warning, TEXT("Spawned occlusion (%i/%i)."),i,Locations.Num());
-	//}
 }
 
 /* gets location of all possible occlusions in our given experiment/world configuration */
@@ -803,19 +762,16 @@ void AExperimentServiceMonitor::BeginPlay()
 	//test(); 
 
 	/* connect tracking service */
-	bSubscribedToTrackingService = this->SubscribeToTrackingService();
-	if (!bSubscribedToTrackingService) { 
+	if (!this->SubscribeToTrackingService()) {
 		this->SelfDestruct(FString("Subscribe to TS failed."));
 		return;
 	}
 
 	/* route tracking messages */
-	bRoutedMessagesTrackingService = this->TrackingServiceRouteMessages();
-	if (!bRoutedMessagesTrackingService) { 
+	if (!this->TrackingServiceRouteMessages()) {
 		this->SelfDestruct(FString("Create routes for TS failed."));
 		return;
 	}
-
 
 	/* subscribe to ES */
 	if (!this->SubscribeToExperimentServiceServer(header_tracking_service)) { 
@@ -829,38 +785,47 @@ void AExperimentServiceMonitor::BeginPlay()
 		return; 
 	}
 
-	/*if (!this->SpawnAndPossessPredator()) {
-		this->SelfDestruct(FString("spawn and possess predator failed."));
+	///* todo: change, this is just for debugging while I add dynamic doors to Maze Level*/
+	//
+	//if (bConnectedExperimentService && bConnectedTrackingService) {
+	//	FString MapName = GetWorld()->GetMapName();
+	//	MapName.RemoveFromStart(GetWorld()->StreamingLevelsPrefix);
+	//	UE_LOG(LogTemp, Warning, TEXT("map name: %s"), *MapName);
+
+	//	if (MapName != "L_Maze" || !this->StartEpisode()) {
+	//		UE_LOG(LogTemp, Error, TEXT("[AExperimentServiceMonitor::HandleStartExperimentResponse] Attempt to StartEpisode failed.")); 
+	//		return; 
+	//	}
+	//} else { printScreen("Map name and Start episode ran fine"); }
+
+	/* make sure connection is still good before continuing*/
+	if (TrackingServiceClient->IsConnected() && ExperimentServiceClient->IsConnected()) {
+		if (GEngine) GEngine->AddOnScreenDebugMessage(1, 5.0f, FColor::Green, TEXT("Experiment & Tracking service CONNECTION SUCCESSFUL"));
+	}
+	else {
+		if (GEngine) GEngine->AddOnScreenDebugMessage(1, 5.0f, FColor::Green, TEXT("Experiment & Tracking service CONNECTION FAILED"));
+		this->SelfDestruct(FString("Experiment & Tracking service CONNECTION FAILED"));
 		return;
-	}*/
-
-	if (TrackingServiceClient->IsConnected() && GEngine) {
-		GEngine->AddOnScreenDebugMessage(1, 5.0f, FColor::Green, TEXT("Tracking service connected"));
 	}
 
-	/* not subscribing correctly */
-	if (ExperimentServiceClient->IsConnected() && GEngine) {
-		GEngine->AddOnScreenDebugMessage(1, 5.0f, FColor::Green, TEXT("experiment service connected"));
-	}
-
+	/* get active player */
 	if (!this->GetPlayerPawn()) {
 		this->SelfDestruct(FString("GetPlayerPawn() failed."));
 		return;
 	}
-	
 }
 
 /* run a (light!) command every frame */
 void AExperimentServiceMonitor::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
-	if (!bConnectedToServer) { return; }
+	if (!TrackingServiceClient->IsConnected() || ExperimentServiceClient->IsConnected()) { return; }
 }
 
 void AExperimentServiceMonitor::EndPlay(const EEndPlayReason::Type EndPLayReason)
 {
 	Super::EndPlay(EndPLayReason);
 	//this->DisconnectAll();
-	//this->SelfDestruct("EndPlay");
+	this->SelfDestruct("EndPlay");
 }
 

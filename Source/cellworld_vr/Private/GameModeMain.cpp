@@ -12,8 +12,7 @@
 AGameModeMain::AGameModeMain()
 {
 	/* Get PawnMain to spawn */
-	bool DEBUG = false; 
-	if (DEBUG){
+	if (bDebugMode){
 		DefaultPawnClass = APawnDebug::StaticClass(); 
 		PlayerControllerClass = AMouseKeyboardPlayerController::StaticClass();
 	}
@@ -138,8 +137,8 @@ void AGameModeMain::StartPlay()
 	//AGameModeMain::SpawnAndPossessPlayer(FVector(380, -1790, 0), FRotator::ZeroRotator);
 
 	//AGameModeMain::SpawnAllLoggingActor();
-
-	AGameModeMain::SpawnExperimentServiceMonitor(); // not ready yet, need to finish passing correct trees to ai. workes well in BP
+	if (bSpawnExperimentService) { AGameModeMain::SpawnExperimentServiceMonitor(); }
+	else { UE_LOG(LogTemp, Warning, TEXT("[AGameModeMain::StartPlay()] Not spawning Experiment Service!")); }
 	
 	AGameModeMain::StopLoadingScreen();
 

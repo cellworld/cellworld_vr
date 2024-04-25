@@ -105,11 +105,12 @@ void APawnMain::UpdateRoomScaleLocation()
 {
 	FVector DeltaLocation = Camera->GetComponentLocation() - this->CapsuleComponent->GetComponentLocation();
 	DeltaLocation.Z = .0f;
-
 	AddActorWorldOffset(DeltaLocation, false, nullptr, ETeleportType::TeleportPhysics);
 	VROrigin->AddWorldOffset(-DeltaLocation, false, nullptr, ETeleportType::TeleportPhysics);
-	FVector New = GetActorLocation();
-	if (GEngine) GEngine->AddOnScreenDebugMessage(-1, 0.5f, FColor::Blue, FString::Printf(TEXT("%f, %f, %f"), New.X, New.Y, New.Z));
+	const FVector LocOrigin = VROrigin->GetComponentLocation();
+	const FVector LocCamera = Camera->GetComponentLocation();
+	if (GEngine) GEngine->AddOnScreenDebugMessage(-1, 0.5f, FColor::Red, FString::Printf(TEXT("Origin : %f, %f, %f"), LocOrigin.X, LocOrigin.Y, LocOrigin.Z));
+	if (GEngine) GEngine->AddOnScreenDebugMessage(-1, 0.5f, FColor::Blue, FString::Printf(TEXT("Camera: %f, %f, %f"), LocCamera.X, LocCamera.Y, LocCamera.Z));
 }
 
 void APawnMain::OnMovementDetected()
@@ -127,7 +128,7 @@ void APawnMain::ResetOrigin()
 	//FRotator HMDRotation;
 	//FVector HMDLocation;
 	//UHeadMountedDisplayFunctionLibrary::GetOrientationAndPosition(HMDRotation, HMDLocation);
-	Camera->SetWorldLocation(FVector(380, -1790, 80));
+	//Camera->SetWorldLocation(FVector(380, -1790, 80));
 	//this->SetActorLocation(FVector(380, -1790, 80));
 	//Camera->AddRelativeRotation(HMDRotation, false); // original
 	//UHeadMountedDisplayFunctionLibrary::ResetOrientationAndPosition(0.0f, EOrientPositionSelector::OrientationAndPosition);

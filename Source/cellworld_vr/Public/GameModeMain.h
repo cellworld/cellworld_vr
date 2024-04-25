@@ -11,18 +11,19 @@
  *
  */
 
-
 UCLASS()
 class CELLWORLD_VR_API AGameModeMain : public AGameModeBase
 {
 public:
+	AGameModeMain();
+	
 	GENERATED_BODY()
 	virtual void EndGame();
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Custom Category")
-	bool bInDebugMode = false;
-	
-	AGameModeMain();
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Debug")
+	bool bDebugMode = true;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Debug")
+	bool bSpawnExperimentService = true;
 	
 	/* debug */
 	FVector debug_vect;
