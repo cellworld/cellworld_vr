@@ -63,8 +63,8 @@ public:
 	UAIPerceptionComponent* AIPerceptionComponent; 
 
 	// blackboard key id to detect prey (or other target actor)
-	uint8 TargetKeyID;
-	uint8 TargetLocation;
+	uint8 TargetKeyID = 0;
+	uint8 TargetLocation = 0;
 
 	/* predator assets */
 	UBehaviorTree* BehaviorTreeAsset; 

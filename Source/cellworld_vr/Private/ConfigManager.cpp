@@ -1,5 +1,3 @@
-#pragma once 
-
 #include "ConfigManager.h"
 #include "TextFileManager.h"
 #include "Engine/World.h"

@@ -19,6 +19,7 @@ public:
 	static bool SaveArrayText(FString SaveDirectory, FString FileName, TArray<FString> SaveText, bool AllowOverWriting);
 	bool ReadFileToArray(FString LoadDirectory, TArray<FString>& outarr);
 	static bool SaveTxt(FString SaveText, FString Filename);
+	static bool SaveStringToFile(const FString& Line, const FString& Filepath, bool bAppend);
 	TArray<FString> GetCSVFile(FString Path);
 	static FString GetCurrentTimeString();
 	static FString GetStandardHeader( 

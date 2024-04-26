@@ -9,6 +9,7 @@
 
 #include "AsyncLoadingScreenLibrary.h"
 #include "MoviePlayer.h"
+#include "AsyncLoadingScreen.h"
 
 int32 UAsyncLoadingScreenLibrary::DisplayBackgroundIndex = -1;
 int32 UAsyncLoadingScreenLibrary::DisplayTipTextIndex = -1;
@@ -39,3 +40,25 @@ void UAsyncLoadingScreenLibrary::StopLoadingScreen()
 {
 	GetMoviePlayer()->StopMovie();
 }
+
+void UAsyncLoadingScreenLibrary::PreloadBackgroundImages()
+{
+	if (FAsyncLoadingScreenModule::IsAvailable())
+	{
+		FAsyncLoadingScreenModule& LoadingScreenModule = FAsyncLoadingScreenModule::Get();
+		if (LoadingScreenModule.IsPreloadBackgroundImagesEnabled())
+		{
+			LoadingScreenModule.LoadBackgroundImages();
+		}		
+	}
+}
+
+void UAsyncLoadingScreenLibrary::RemovePreloadedBackgroundImages()
+{
+	if (FAsyncLoadingScreenModule::IsAvailable())
+	{
+		FAsyncLoadingScreenModule& LoadingScreenModule = FAsyncLoadingScreenModule::Get();
+		LoadingScreenModule.RemoveAllBackgroundImages();
+	}
+}
+

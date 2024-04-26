@@ -1,6 +1,3 @@
-// Fill out your copyright notice in the Description page of Project Settings.
-
-
 #include "PredatorController/CharacterPredator.h"
 #include "PredatorController/AIControllerPredator.h"
 #include "GameFramework/CharacterMovementComponent.h"
@@ -43,6 +40,7 @@ ACharacterPredator::ACharacterPredator()
     if (BehaviorTreeAssetLoad.Succeeded()) {
         BehaviorTreeComponentChar = BehaviorTreeAssetLoad.Object;
     }
+
 
     //static ConstructorHelpers::FObjectFinder<UBlackboardData> BlackboardAssetLoad(TEXT("BlackboardData'/Game/AIPredator/Blackboard_Predator_BP.Blackboard_Predator_BP'"));
     //if (BlackboardAssetLoad.Succeeded()) {

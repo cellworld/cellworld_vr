@@ -1,9 +1,6 @@
-// Fill out your copyright notice in the Description page of Project Settings.
-#pragma once
 #include "GameModeLoading.h"
 #include "GameStateLoading.h"
 #include "MouseKeyboardPlayerController.h"
-#include "HPGlia.h"
 
 AGameModeLoading::AGameModeLoading()
 {
@@ -38,7 +35,7 @@ void AGameModeLoading::SpawnAndPossessPlayer(FVector spawn_location, FRotator sp
 	//	AGameModeLoading::PawnMain->ResetOrigin();
 	//}
 
-	EAutoReceiveInput::Type::Player0;
+	//EAutoReceiveInput::Type::Player0;
 }
 
 void AGameModeLoading::InitGame(const FString& MapName, const FString& Options, FString& ErrorMessage)

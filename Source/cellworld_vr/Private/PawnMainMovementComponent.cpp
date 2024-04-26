@@ -1,4 +1,5 @@
 #include "PawnMainMovementComponent.h"
+#include "PawnMain.h"
 
 UPawnMainMovementComponent::UPawnMainMovementComponent()
 {
@@ -7,6 +8,8 @@ UPawnMainMovementComponent::UPawnMainMovementComponent()
 
 void UPawnMainMovementComponent::TickComponent(float DeltaTime, enum ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
 {
+    Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
+
     // Make sure that everything is still valid, and that we are allowed to move.
     if (!PawnOwner || !UpdatedComponent || ShouldSkipUpdate(DeltaTime))
     {
@@ -26,5 +29,14 @@ void UPawnMainMovementComponent::TickComponent(float DeltaTime, enum ELevelTick 
         }
     }
 
-    Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
-};
+}
+
+void UPawnMainMovementComponent::SetComponentOwner(APawnMain* Owner)
+{
+    PawnOwner = Owner;
+}
+
+void UPawnMainMovementComponent::OnMovementUpdated(float DeltaSeconds, const FVector& OldLocation, const FVector& OldVelocity)
+{
+    UE_LOG(LogTemp, Warning, TEXT("UPawnMainMovementComponent::OnMovementUpdated"));
+}

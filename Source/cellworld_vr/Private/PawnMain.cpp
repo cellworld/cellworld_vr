@@ -1,4 +1,3 @@
-#pragma once
 #include "PawnMain.h"
 #include "GameModeMain.h"
 #include "Camera/CameraComponent.h"
@@ -17,7 +16,6 @@
 #include "Kismet/KismetStringLibrary.h" 
 #include "Kismet/KismetMathLibrary.h"
 #include "NavAreas/NavArea_Obstacle.h"
-//#include "PawnMainMovementComponent.h"
 
 // Sets default values
 AGameModeMain* GameMode; // forward declare to avoid circular dependency
@@ -27,33 +25,48 @@ APawnMain::APawnMain() : Super()
 	PrimaryActorTick.bStartWithTickEnabled = true;
 	PrimaryActorTick.bCanEverTick = true;
 
+	/* create origin for tracking */
+	VROrigin = CreateDefaultSubobject<USceneComponent>(TEXT("VROrigin"));
+	RootComponent = VROrigin;
+
+	/* create collision component */
+	CapsuleComponent = CreateDefaultSubobject<UCapsuleComponent>(TEXT("RootComponent"));
+	CapsuleComponent->SetMobility(EComponentMobility::Movable);
+	CapsuleComponent->InitCapsuleSize(_capsule_radius, _capsule_half_height);
+	CapsuleComponent->SetCollisionProfileName(TEXT("Pawn"));
+	CapsuleComponent->OnComponentBeginOverlap.AddDynamic(this, &APawnMain::OnOverlapBegin); // overlap events
+	CapsuleComponent->OnComponentEndOverlap.AddDynamic(this, &APawnMain::OnOverlapEnd); // overlap events 
+	CapsuleComponent->SetupAttachment(RootComponent);
+	//RootComponent = CapsuleComponent;
+
 	/* create camera component as root so pawn moves with camera */
 	Camera = CreateDefaultSubobject<UCameraComponent>(TEXT("ActualCamera"));
 	Camera->SetMobility(EComponentMobility::Movable);
 	Camera->bUsePawnControlRotation = true;
-	RootComponent = Camera; 
+	Camera->SetupAttachment(RootComponent);
 
-	/* create collision component */
-	CapsuleComponent = CreateDefaultSubobject<UCapsuleComponent>(TEXT("RootComponent"));
-	CapsuleComponent->AttachToComponent(RootComponent, FAttachmentTransformRules::KeepRelativeTransform);
-	CapsuleComponent->SetMobility(EComponentMobility::Movable);
-	CapsuleComponent->InitCapsuleSize(capsule_radius, capsule_half_height);
-	CapsuleComponent->SetCollisionProfileName(TEXT("Pawn"));
-	CapsuleComponent->OnComponentBeginOverlap.AddDynamic(this, &APawnMain::OnOverlapBegin); // overlap events
-	CapsuleComponent->OnComponentEndOverlap.AddDynamic(this, &APawnMain::OnOverlapEnd); // overlap events 
+	/*Create Motion Controllers*/
+	MotionControllerLeft = CreateDefaultSubobject<UMotionControllerComponent>(TEXT("MotionControllerLeft"));
+	MotionControllerLeft->CreationMethod = EComponentCreationMethod::Native;
+	MotionControllerLeft->SetCanEverAffectNavigation(false);
+	MotionControllerLeft->bEditableWhenInherited = true;
+	MotionControllerLeft->MotionSource = FName("Left");
+	MotionControllerLeft->SetVisibility(false, false);
+	MotionControllerLeft->SetupAttachment(RootComponent);
 
-	///* auto-possess */
-	EAutoReceiveInput::Type::Player0;
-	//EAutoPossessAI::PlacedInWorldOrSpawned;
+	MotionControllerRight = CreateDefaultSubobject<UMotionControllerComponent>(TEXT("MotionControllerRight"));
+	MotionControllerRight->CreationMethod = EComponentCreationMethod::Native;
+	MotionControllerRight->SetCanEverAffectNavigation(false);
+	MotionControllerRight->bEditableWhenInherited = true;
+	MotionControllerRight->MotionSource = FName("Right");
+	MotionControllerRight->SetVisibility(false, false);
+	MotionControllerRight->SetupAttachment(RootComponent);
 }
 
 // Called to bind functionality to input
 void APawnMain::SetupPlayerInputComponent(class UInputComponent* InInputComponent)
 {
 	Super::SetupPlayerInputComponent(InInputComponent);
-
-	/* map toggling stuff */
-	InInputComponent->BindAction("ResetOrigin", IE_Pressed, this, &APawnMain::ResetOrigin);
 }
 
 UCameraComponent* APawnMain::GetCameraComponent()
@@ -61,14 +74,63 @@ UCameraComponent* APawnMain::GetCameraComponent()
 	return APawnMain::Camera;
 }
 
+bool APawnMain::DetectMovement()
+{
+	bool _blocation_updated = false;
+
+	if (!UHeadMountedDisplayFunctionLibrary::IsHeadMountedDisplayEnabled())
+	{
+		UE_LOG(LogTemp, Warning, TEXT("HMD not enabled"));
+		return false;
+	}
+
+	FVector NewLocation;
+	FRotator NewRotation;
+	UHeadMountedDisplayFunctionLibrary::GetOrientationAndPosition(NewRotation, NewLocation);
+
+	if (!NewLocation.Equals(_old_location, 2)) {
+		_blocation_updated = true;
+		_old_location = NewLocation;
+	}
+	else {
+		_blocation_updated = false; 
+	}
+
+
+	_new_location = NewLocation;
+	return _blocation_updated;
+}
+
+void APawnMain::UpdateRoomScaleLocation()
+{
+	FVector DeltaLocation = Camera->GetComponentLocation() - this->CapsuleComponent->GetComponentLocation();
+	DeltaLocation.Z = .0f;
+	AddActorWorldOffset(DeltaLocation, false, nullptr, ETeleportType::TeleportPhysics);
+	VROrigin->AddWorldOffset(-DeltaLocation, false, nullptr, ETeleportType::TeleportPhysics);
+	const FVector LocOrigin = VROrigin->GetComponentLocation();
+	const FVector LocCamera = Camera->GetComponentLocation();
+	if (GEngine) GEngine->AddOnScreenDebugMessage(-1, 0.5f, FColor::Red, FString::Printf(TEXT("Origin : %f, %f, %f"), LocOrigin.X, LocOrigin.Y, LocOrigin.Z));
+	if (GEngine) GEngine->AddOnScreenDebugMessage(-1, 0.5f, FColor::Blue, FString::Printf(TEXT("Camera: %f, %f, %f"), LocCamera.X, LocCamera.Y, LocCamera.Z));
+}
+
+void APawnMain::OnMovementDetected()
+{
+	MovementDetectedEvent.Broadcast(_new_location);
+	UE_LOG(LogTemp, Log, TEXT("[APawnMain::OnMovementDetected()] Movement detected."));
+	this->UpdateRoomScaleLocation();
+	//if (GEngine) GEngine->AddOnScreenDebugMessage(-1, 0.5f, FColor::Blue, FString::Printf(TEXT("Movement detected")));
+}
+
 void APawnMain::ResetOrigin() 
 {
 	//UHeadMountedDisplayFunctionLibrary::SetTrackingOrigin(EHMDTrackingOrigin::Floor);
-
-	FRotator HMDRotation;
-	FVector HMDLocation;
-	UHeadMountedDisplayFunctionLibrary::GetOrientationAndPosition(HMDRotation, HMDLocation);
-	Camera->AddRelativeRotation(HMDRotation, false);
+	if (GEngine) GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Blue, FString::Printf(TEXT("Resetting origin.")));
+	//FRotator HMDRotation;
+	//FVector HMDLocation;
+	//UHeadMountedDisplayFunctionLibrary::GetOrientationAndPosition(HMDRotation, HMDLocation);
+	//Camera->SetWorldLocation(FVector(380, -1790, 80));
+	//this->SetActorLocation(FVector(380, -1790, 80));
+	//Camera->AddRelativeRotation(HMDRotation, false); // original
 	//UHeadMountedDisplayFunctionLibrary::ResetOrientationAndPosition(0.0f, EOrientPositionSelector::OrientationAndPosition);
 	//this->SetActorLocation(FVector(500.0f, -300.0f, 0.0f), false);
 }
@@ -82,11 +144,8 @@ void APawnMain::RestartGame() {
 void APawnMain::QuitGame()
 {
 	if (GEngine) {
-		GEngine->AddOnScreenDebugMessage(-1, 0.5f, FColor::Red, FString::Printf(TEXT("Quit game.")));
+		GEngine->AddOnScreenDebugMessage(-1, 0.5f, FColor::Red, FString::Printf(TEXT("[APawnMain::QuitGame()] Quit game.")));
 	}
-
-	GameMode = (AGameModeMain*)GetWorld()->GetAuthGameMode();
-	GameMode->EndGame();
 }
 
 // Called when the game starts or when spawned
@@ -102,10 +161,17 @@ float IPDtoUU() {
 }
 
 // Called every frame
+
+/* todo: implement elsewhere */
 void APawnMain::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 	
+	/* check if we moved */
+	if (this->DetectMovement()) {
+		this->OnMovementDetected();
+	}
+
 }
 
 void APawnMain::EndPlay(const EEndPlayReason::Type EndPlayReason)
@@ -118,6 +184,8 @@ void APawnMain::Reset()
 {
 	Super::Reset();
 }
+
+
 
 void APawnMain::OnOverlapBegin(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 {

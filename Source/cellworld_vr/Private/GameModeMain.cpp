@@ -1,5 +1,3 @@
-// Fill out your copyright notice in the Description page of Project Settings.
-
 #include "GameModeMain.h"
 #include "GameFramework/PlayerStart.h"
 #include "PawnMain.h" 
@@ -7,7 +5,6 @@
 #include "PawnDebug.h"
 #include "PredatorController/AIControllerPredator.h"
 #include "ExperimentPlugin.h"
-#include "HPGlia.h"
 #include "AsyncLoadingScreenLibrary.h"
 #include "MouseKeyboardPlayerController.h"
 #include "PlayerControllerVR.h"
@@ -15,8 +12,7 @@
 AGameModeMain::AGameModeMain()
 {
 	/* Get PawnMain to spawn */
-	bool DEBUG = true; 
-	if (DEBUG){
+	if (bUseVR){
 		DefaultPawnClass = APawnDebug::StaticClass(); 
 		PlayerControllerClass = AMouseKeyboardPlayerController::StaticClass();
 	}
@@ -24,15 +20,17 @@ AGameModeMain::AGameModeMain()
 		DefaultPawnClass = APawnMain::StaticClass(); 
 		PlayerControllerClass = APlayerControllerVR::StaticClass();
 	}
-
+	 
 	/* Assign default game state */
 	GameStateClass = AGameStateMain::StaticClass();
 
 	/* standard defaults */
 	PrimaryActorTick.bStartWithTickEnabled = true;
 	PrimaryActorTick.bCanEverTick = true;
-
 }
+
+/* to do: UFUNCTION() getexperimentservicemonitor()->StartEpisode()*/
+/* to do: UFUNCTION() getexperimentservicemonitor()->StopEpisode()*/
 
 void AGameModeMain::SpawnExperimentServiceMonitor()
 {
@@ -47,7 +45,7 @@ void AGameModeMain::SpawnExperimentServiceMonitor()
 		FRotator Rotation(0.0f, 0.0f, 0.0f); // Change to desired spawn rotation
 
 		// Spawn the character
-		//ExperimentServiceMonitor = GetWorld()->SpawnActor<AExperimentServiceMonitor>(AExperimentServiceMonitor::StaticClass(), Location, Rotation, SpawnParams);
+		ExperimentServiceMonitor = GetWorld()->SpawnActor<AExperimentServiceMonitor>(AExperimentServiceMonitor::StaticClass(), Location, Rotation, SpawnParams);
 
 		//// Ensure the character was spawned
 		//if (!ExperimentServiceMonitor)
@@ -62,13 +60,11 @@ void AGameModeMain::EndGame()
 	UE_LOG(LogTemp, Warning, TEXT("[ AGameModeMain::EndGame()] Force quit."));
 	FGenericPlatformMisc::RequestExit(false);
 }
-
 /* 
 * Updates GameInstance with HP keys. Will use variables inside GameInstanceMain.h 
 * to find, load, and process the HP keys. 
 */
 bool AGameModeMain::InitializeHPKeys() {
-
 	return false;
 }
 
@@ -77,11 +73,20 @@ void AGameModeMain::SpawnAndPossessPlayer(FVector spawn_location, FRotator spawn
 	/* to do: remove, no need for this if player start is present in map. if it isn''t, location will be taken care of by experiment service */
 
 	if(!GetWorld() || !GetWorld()->GetFirstPlayerController()) { UE_DEBUG_BREAK(); return; }
-	AGameModeMain::PawnMain = Cast<APawnMain>(GetWorld()->GetFirstPlayerController()->GetPawn());
-	if (AGameModeMain::PawnMain) {
-		//AGameModeMain::PawnMain->ResetOrigin();
+
+	FActorSpawnParameters SpawnParams;
+	SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButAlwaysSpawn;
+	APawnMain* SpawnedPawn = GetWorld()->SpawnActor<APawnMain>(APawnMain::StaticClass(), spawn_location, spawn_rotation, SpawnParams);
+	if (!SpawnedPawn) return;
+
+	// Find the player controller
+	APlayerControllerVR* PlayerController = Cast<APlayerControllerVR>(GetWorld()->GetFirstPlayerController());
+	if (PlayerController)
+	{
+		// Possess the spawned pawn
+		PlayerController->Possess(SpawnedPawn);
 	}
-	EAutoReceiveInput::Type::Player0;
+	//EAutoReceiveInput::Type::Player0;
 }
 
 void AGameModeMain::InitGame(const FString& MapName, const FString& Options, FString& ErrorMessage)
@@ -96,25 +101,21 @@ void AGameModeMain::InitGameState()
 
 void AGameModeMain::SpawnGetCLMonitorComponentActor()
 {
-	FTransform tSpawnTransform;
+	/*FTransform tSpawnTransform;
 	FVector TempLoc = { 0.0f, 0.0f, 0.0f };
 	FRotator TempRot = tSpawnTransform.GetRotation().Rotator();
 
 	FActorSpawnParameters SpawnInfo;
 	SpawnInfo.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
-	GetCLMonitorComponentActor = Cast<AGetCLMonitorComponentActor>(GetWorld()->SpawnActor(AGetCLMonitorComponentActor::StaticClass(), &TempLoc, &TempRot, SpawnInfo));
+	GetCLMonitorComponentActor = Cast<AGeCLMonitorComponentActor>(GetWorld()->SpawnActor(AGetCLMonitorComponentActor::StaticClass(), &TempLoc, &TempRot, SpawnInfo));*/
 }
-
 /* spawn all logging actors, some may contain threads but they handle themselves. 
 * right now, theres only one, but im gonna call this function to maintain consitency.
 */
 void AGameModeMain::SpawnAllLoggingActor()
 {
 	/* eye-tracker */
-	AGameModeMain::SpawnGetCLMonitorComponentActor();
-
-	/* spawn predator into middle of world */
-	AGameModeMain::SpawnExperimentServiceMonitor(); // not ready yet, need to finish passing correct trees to ai. workes well in BP
+	//AGameModeMain::SpawnGetCLMonitorComponentActor();
 }
 
 void AGameModeMain::StartLoadingScreen()
@@ -133,20 +134,47 @@ void AGameModeMain::StartPlay()
 	UE_LOG(LogTemp, Warning, TEXT("[AGameModeMain::StartPlay()] Starting game!"));
 
 	/* spawn player */
-	AGameModeMain::SpawnAndPossessPlayer(spawn_location_player, spawn_rotation_player);
+	//AGameModeMain::SpawnAndPossessPlayer(FVector(380, -1790, 0), FRotator::ZeroRotator);
 
-	AGameModeMain::SpawnAllLoggingActor();
-
+	//AGameModeMain::SpawnAllLoggingActor();
+	if (bSpawnExperimentService) { AGameModeMain::SpawnExperimentServiceMonitor(); }
+	else { UE_LOG(LogTemp, Warning, TEXT("[AGameModeMain::StartPlay()] Not spawning Experiment Service!")); }
+	
 	AGameModeMain::StopLoadingScreen();
-}
 
+}
 
 void AGameModeMain::EndPlay(const EEndPlayReason::Type EndPlayReason)
 {
 	Super::EndPlay(EndPlayReason);
+	this->ExperimentStopEpisode();
 }
 
 void AGameModeMain::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
+}
+
+bool AGameModeMain::ExperimentStartEpisode() { 
+	if (!ExperimentServiceMonitor) { return false; }
+	return ExperimentServiceMonitor->StartEpisode();  
+}
+
+bool AGameModeMain::ExperimentStopEpisode() {
+	if (!ExperimentServiceMonitor) { return false; }
+	
+	// make sure the actor isn't already in queue for being destroyed 
+	//if (ExperimentServiceMonitor->IsPendingKill()) 
+	if (!IsValid(ExperimentServiceMonitor))
+	{ 
+		UE_LOG(LogTemp, Warning, TEXT("[AGameModeMain::ExperimentStopEpisode()] Failed to destroy, Already pending kill.")); 
+		return false; 
+	}
+	return ExperimentServiceMonitor->StopEpisode(); 
+}
+
+bool AGameModeMain::ExperimentStopExperiment(FString ExperimentName)
+{
+	if (!ExperimentServiceMonitor) { return false; }
+	return false;
 }

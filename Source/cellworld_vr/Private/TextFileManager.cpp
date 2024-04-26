@@ -1,6 +1,3 @@
-// Fill out your copyright notice in the Description page of Project Settings.
-
-#pragma once
 #include "TextFileManager.h"
 #include "Misc/FileHelper.h"
 #include "HAL/PlatformFilemanager.h"
@@ -62,10 +59,10 @@ TArray<FString> UTextFileManager::GetCSVFile(FString Path)
 FString UTextFileManager::GetCurrentTimeString()
 {
 	FDateTime TimeNow = FDateTime::Now();
-	return FString::Printf(TEXT("%i%i%i_%i_%i_%i.%i"),
+	return FString::Printf(TEXT("%i%i%i_%i_%i_%i.%s"),
 		TimeNow.GetYear(), TimeNow.GetMonth(), TimeNow.GetDay(),
 		TimeNow.GetHour(), TimeNow.GetMinute(), TimeNow.GetSecond(),
-		TimeNow.GetMillisecond());
+		*FString::Printf(TEXT("%03d"), TimeNow.GetMillisecond()) );
 }
 
 FString UTextFileManager::GetStandardHeader(
@@ -114,9 +111,13 @@ bool UTextFileManager::SaveTxt(FString SaveText, FString Filename)
 	IPlatformFile& file = FPlatformFileManager::Get().GetPlatformFile();
 	if (FPlatformFileManager::Get().GetPlatformFile().FileExists(*path)) 
 	{
-		IFileHandle* handle = file.OpenWrite(*path, true, true); // true -> append
+		IFileHandle* handle = file.OpenWrite(*path, false, true); // true -> append
+		if (!handle) {
+			UE_LOG(LogTemp, Error, TEXT("[UTextFileManager::SaveTxt()] Handle == nullptr;"));
+			return false;
+		}
 		res = handle->Write((const uint8*)TCHAR_TO_ANSI(*SaveText), SaveText.Len());
-		delete handle; 
+		//delete handle;
 	}
 	else {
 		IFileHandle* handle = file.OpenWrite(*path, false, true); // true -> append
@@ -129,4 +130,21 @@ bool UTextFileManager::SaveTxt(FString SaveText, FString Filename)
 	}
 	return res; 
 	//return FFileHelper::SaveStringToFile(SaveText, *path);
+}
+
+bool UTextFileManager::SaveStringToFile(const FString& Line, const FString& Filepath, bool bAppend)
+{
+	// Now attempt to save the string to the file.
+
+	if (FFileHelper::SaveStringToFile(Line, *Filepath, FFileHelper::EEncodingOptions::ForceUTF8WithoutBOM, &IFileManager::Get(), bAppend ? FILEWRITE_Append : 0))
+	{
+		// If we successfully save the file, return true.
+		return true;
+	}
+	else
+	{
+		// If the save fails, log an error or handle it as needed.
+		UE_LOG(LogTemp, Error, TEXT("Failed to save file %s."), *Filepath);
+		return false; // Return false as the save operation failed.
+	}
 }

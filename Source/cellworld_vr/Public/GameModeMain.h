@@ -2,8 +2,6 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/GameModeBase.h"
-#include "GetCLMonitorComponentActor.h"
-#include "CLMonitorComponent.h"
 #include "ConfigManager.h"
 #include "PawnMain.h"
 #include "PredatorController/ExperimentServiceMonitor.h"
@@ -13,23 +11,20 @@
  *
  */
 
-
 UCLASS()
 class CELLWORLD_VR_API AGameModeMain : public AGameModeBase
 {
 public:
+	AGameModeMain();
+	
 	GENERATED_BODY()
 	virtual void EndGame();
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Custom Category")
-	bool bInDebugMode = false;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Debug")
+	bool bUseVR = false;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Debug")
+	bool bSpawnExperimentService = true;
 	
-protected:
-	AGameModeMain();
-
-	AExperimentServiceMonitor* ExperimentServiceMonitor;
-	void SpawnExperimentServiceMonitor();
-
 	/* debug */
 	FVector debug_vect;
 
@@ -42,13 +37,12 @@ protected:
 	bool InitializeHPKeys();
 
 	/* spawning player */
-	FVector spawn_location_player  = { 180.000000,-30.000000,30.000000 };
+	FVector spawn_location_player  = { -1700.0,1500.000000,30.000000 };
 	FRotator spawn_rotation_player = { 0.0,0.0, 0.0 };
 	void SpawnAndPossessPlayer(FVector spawn_location, FRotator spawn_rotation);
 	
 	/* Spawns Sensors */
 	void SpawnGetCLMonitorComponentActor();
-	AGetCLMonitorComponentActor* GetCLMonitorComponentActor = nullptr;
 
 	/* spawn everything */
 	void SpawnAllLoggingActor(); 
@@ -64,5 +58,17 @@ protected:
 	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 	virtual void Tick(float DeltaTime) override;
 
+	/* functions for door and experiment control */
+	UPROPERTY(BlueprintReadWrite)
+		AExperimentServiceMonitor* ExperimentServiceMonitor;
+	UFUNCTION(BlueprintCallable, Category = Experiment)
+		void SpawnExperimentServiceMonitor();
+	UFUNCTION(BlueprintCallable, Category = Experiment)
+		bool ExperimentStartEpisode(); 
 	
+	UFUNCTION(BlueprintCallable, Category = Experiment)
+		bool ExperimentStopEpisode();
+
+	UFUNCTION(BlueprintCallable, Category = Experiment)
+		bool ExperimentStopExperiment(FString ExperimentName);
 };
