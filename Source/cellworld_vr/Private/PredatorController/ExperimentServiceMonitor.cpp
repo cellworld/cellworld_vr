@@ -649,7 +649,7 @@ void AExperimentServiceMonitor::HandleGetOcclusionsResponse(const FString Respon
 	// todo: pass this information to game state 
 	OcclusionsStruct.SetCurrentLocationsByIndex(OcclusionIDsTemp);
 	OcclusionsStruct.SpawnAll(GetWorld(), true, false, FVector(15.0f, 15.0f, 15.0f));
-	OcclusionsStruct.SetVisibilityArr(OcclusionIDsTemp);
+	//OcclusionsStruct.SetVisibilityArr(OcclusionIDsTemp, true, true); 
 	//OcclusionsStruct.SetAllLocations()
 	//SpawnOcclusions(OcclusionIDsIntArr, OcclusionLocationsAll);
 	return;
