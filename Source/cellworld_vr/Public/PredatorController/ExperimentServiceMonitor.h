@@ -55,26 +55,6 @@ public:
 		const float MapLength = 235.185290;
 		FActorSpawnParameters SpawnParams;
 		for (int i = 0; i < OcclusionAllLocationsArr.Num(); i++) {
-			//const float draw_duration = 10000; // same as tick, update per frame
-			//const uint8 depth = 10; // to do: make this vary with pupil dilation and openess
-			//const float radius = 1.0f;
-			//const int segments = 5;
-			//const uint8 depth_priority = 1;
-			//const float thickness = 12.0f;
-
-			//FVector temp = UExperimentUtils::CanonicalToVr(OcclusionAllLocationsArr[i], MapLength, 15);
-			//DrawDebugSphere
-			//(
-			//	WorldRefIn,
-			//	temp,
-			//	2.0f,
-			//	5,
-			//	FColor::Red,
-			//	false,
-			//	0.1f,
-			//	depth_priority,
-			//	thickness
-			//);
 			AOcclusion* MyMeshActor = WorldRefIn->SpawnActor<AOcclusion>(
 				AOcclusion::StaticClass(),
 				UExperimentUtils::CanonicalToVr(OcclusionAllLocationsArr[i], MapLength, 15*ScaleOffset), // todo: make scale dynamic
@@ -122,7 +102,7 @@ class CELLWORLD_VR_API AExperimentServiceMonitor : public AActor
 	GENERATED_BODY()
 	
 public:	
-	// Sets default values for this actor's properties
+	bool ValidateLevel(UWorld* InWorld, const FString InLevelName);
 	AExperimentServiceMonitor();
 
 	UMessageClient* TrackingServiceClient;
@@ -153,7 +133,8 @@ public:
 	const FString experiment_name                   = "test_experiment";
 
 	/* server stuff */
-	const FString ServerIPMessage    = "192.168.137.25"; // lab pc 
+	//const FString ServerIPMessage    = "192.168.137.25"; // lab pc 
+	const FString ServerIPMessage    = "10.0.0.77"; // lab pc 
 	const int PortTrackingService    = 4510;
 	const int PortExperimentService  = 4540; 
 	bool bCanUpdatePreyPosition      = false;

@@ -5,11 +5,26 @@
 //#include "GenericPlatform/GenericPlatformProcess.h"
 
 //TODO - add argument to include MessageType (Log, Warning, Error, Fatal)
-void printScreen(const FString message) {
-	if (GEngine) GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Green, FString::Printf(TEXT("%s"), *message));
-	UE_LOG(LogTemp, Warning, TEXT("%s"), *message);
+void printScreen(const FString InMessage) {
+	if (GEngine) GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Green, FString::Printf(TEXT("%s"), *InMessage));
+	UE_LOG(LogTemp, Warning, TEXT("%s"), *InMessage);
 }
 
+bool AExperimentServiceMonitor::ValidateLevel(UWorld* InWorld, const FString InLevelName) {
+	
+	if (!InWorld->IsValidLowLevelFast()) { printScreen("[AExperimentServiceMonitor::ValidateLevel] World is not valid."); return false; }
+	
+	if (!InLevelName.IsEmpty()) { UE_LOG(LogTemp, Warning, TEXT("LevelName: %s"), *InLevelName); }
+	else { printScreen("[AExperimentServiceMonitor::ValidateLevel] LevelName is empty!"); return false; }
+
+	FString MapName = InWorld->GetMapName();
+	MapName.RemoveFromStart(InWorld->StreamingLevelsPrefix);
+	UE_LOG(LogTemp, Warning, TEXT("map name: %s"), *MapName);
+
+	if (MapName != "L_Maze" || !this->StartEpisode()) { printScreen("[AExperimentServiceMonitor::HandleStartExperimentResponse] Attempt to StartEpisode failed."); return false; }
+	else { printScreen("Map name and Start episode ran fine"); }
+	return true;
+}
 
 // Sets default values
 AExperimentServiceMonitor::AExperimentServiceMonitor()
@@ -60,20 +75,6 @@ bool AExperimentServiceMonitor::DisconnectAll()
 		return false;
 	}else{ UE_LOG(LogTemp, Warning, TEXT("[AExperimentServiceMonitor::DisconnectAll()] No active experiment.")); }
 
-	///* stop connections if clients exist */
-	//if (!ExperimentServiceClient || !ExperimentServiceClient->IsConnected()) {
-	//	UE_LOG(LogTemp, Warning, TEXT("[AExperimentServiceMonitor::DisconnectAll()] Disconnected from Tracking service."));
-	//	return false;
-	//}
-
-	//if (!TrackingServiceClient || !TrackingServiceClient->IsConnected()) {
-	//	UE_LOG(LogTemp, Warning, TEXT("[AExperimentServiceMonitor::DisconnectAll()] Disconnected from Tracking service."));
-	//	return false;
-	//}
-
-	//ExperimentServiceClient->Disconnect();
-	//TrackingServiceClient->Disconnect();
-
 	return true;
 }
 
@@ -100,7 +101,6 @@ bool AExperimentServiceMonitor::StartExperiment(const FString ExperimentNameIn) 
 
 	StartExperimentRequest->ResponseReceived.AddDynamic(this, &AExperimentServiceMonitor::HandleStartExperimentResponse);
 	StartExperimentRequest->TimedOut.AddDynamic(this, &AExperimentServiceMonitor::HandleStartExperimentTimedOut);
-	bInExperiment = true;
 	return true; 
 }
 
@@ -121,20 +121,6 @@ bool AExperimentServiceMonitor::StopExperiment(const FString ExperimentNameIn) {
 URequest* AExperimentServiceMonitor::SendStartExperimentRequest(const FString ExperimentNameIn)
 {
 	return nullptr; 
-
-	//if (!ExperimentServiceClient) { return nullptr; }
-	//FStartEpisodeRequest request_body;
-	//request_body.experiment_name = ExperimentNameIn;
-
-	//FString request_string = UExperimentUtils::StartEpisodeRequestToJsonString(request_body);
-	//URequest* request = ExperimentServiceClient->SendRequest("start_experiment", request_string, 5.0f);
-
-	//if (!request) { return nullptr; }
-
-	//request->ResponseReceived.AddDynamic(this, &AExperimentServiceMonitor::HandleStartExperimentResponse); // uses same one as start/stop
-	//request->TimedOut.AddDynamic(this, &AExperimentServiceMonitor::HandleStartExperimentTimedOut);
-
-	//return request;
 }
 
 URequest* AExperimentServiceMonitor::SendFinishExperimentRequest(const FString ExperimentNameIn)
@@ -254,8 +240,8 @@ void AExperimentServiceMonitor::HandleEpisodeRequestTimedOut() {
 
 void AExperimentServiceMonitor::HandleStartExperimentResponse(const FString ResponseIn)
 {
-	UE_LOG(LogTemp, Warning, TEXT("[AExperimentServiceMonitor::HandleStartExperimentResponse] %s"), *ResponseIn);
-	if (GEngine) if (GEngine) GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Green, FString::Printf(TEXT("Experiment response: %s"), *ResponseIn));
+	const FString msg = "[AExperimentServiceMonitor::HandleStartExperimentResponse] " + ResponseIn;
+	printScreen(msg);
 	
 	/* convert to usable format */
 	FStartExperimentResponse StartExperimentResponse = UExperimentUtils::JsonStringToStartExperimentResponse(*ResponseIn);
@@ -753,6 +739,7 @@ bool AExperimentServiceMonitor::test() {
 	return true;
 }
 
+
 /* main stuff happens here */
 void AExperimentServiceMonitor::BeginPlay()
 {
@@ -784,18 +771,7 @@ void AExperimentServiceMonitor::BeginPlay()
 		return; 
 	}
 
-	///* todo: change, this is just for debugging while I add dynamic doors to Maze Level*/
-	//
-	//if (bConnectedExperimentService && bConnectedTrackingService) {
-	//	FString MapName = GetWorld()->GetMapName();
-	//	MapName.RemoveFromStart(GetWorld()->StreamingLevelsPrefix);
-	//	UE_LOG(LogTemp, Warning, TEXT("map name: %s"), *MapName);
 
-	//	if (MapName != "L_Maze" || !this->StartEpisode()) {
-	//		UE_LOG(LogTemp, Error, TEXT("[AExperimentServiceMonitor::HandleStartExperimentResponse] Attempt to StartEpisode failed.")); 
-	//		return; 
-	//	}
-	//} else { printScreen("Map name and Start episode ran fine"); }
 
 	/* make sure connection is still good before continuing*/
 	if (TrackingServiceClient->IsConnected() && ExperimentServiceClient->IsConnected()) {
