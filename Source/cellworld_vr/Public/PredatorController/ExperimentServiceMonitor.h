@@ -1,5 +1,3 @@
-// Fill out your copyright notice in the Description page of Project Settings.
-
 #pragma once
 
 #include "CoreMinimal.h"
@@ -13,9 +11,7 @@
 #include "PawnMain.h"
 #include "PawnDebug.h"
 #include "ExperimentComponents/Occlusion.h"
-
 #include "DrawDebugHelpers.h"
-
 #include "ExperimentServiceMonitor.generated.h"
 
 //DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnMessageReceived, FMessage, message);
@@ -134,7 +130,8 @@ public:
 
 	/* server stuff */
 	//const FString ServerIPMessage    = "192.168.137.25"; // lab pc 
-	const FString ServerIPMessage    = "10.0.0.77"; // lab pc 
+	const FString ServerIPMessage    = "127.0.0.1"; // localhost
+	//const FString ServerIPMessage    = "129.105.90.64"; // lab pc - ethernet
 	const int PortTrackingService    = 4510;
 	const int PortExperimentService  = 4540; 
 	bool bCanUpdatePreyPosition      = false;
