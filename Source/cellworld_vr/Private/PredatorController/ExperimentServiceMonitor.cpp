@@ -333,7 +333,6 @@ void AExperimentServiceMonitor::HandleTrackingServiceMessagePrey(FMessage messag
 void AExperimentServiceMonitor::HandleExperimentServiceResponse(const FString message) {
 	UE_LOG(LogTemp, Warning, TEXT("[AExperimentServiceMonitor::HandleExperimentServiceResponse] ES response: %s"), *message);
 	if (message != "success") {
-		UE_DEBUG_BREAK();
 		return; // failed 
 	}
 	bConnectedExperimentService = true;
@@ -348,9 +347,8 @@ void AExperimentServiceMonitor::HandleExperimentServiceResponseTimedOut() {
 void AExperimentServiceMonitor::HandleTrackingServiceResponse(const FString message) {
 	const FString msg = "[AExperimentServiceMonitor::HandleTrackingServiceResponse]" + message; 
 	printScreen(msg);
-	UE_LOG(LogTemp, Warning, TEXT("[AExperimentServiceMonitor::HandleTrackingServiceResponse] ES: %s"), *message);
+	UE_LOG(LogTemp, Warning, TEXT("[AExperimentServiceMonitor::HandleTrackingServiceResponse] TS: %s"), *message);
 	if (message != "success") {
-		UE_DEBUG_BREAK();
 		return; // failed
 	}
 	bConnectedTrackingService = true;
@@ -454,7 +452,8 @@ bool AExperimentServiceMonitor::SubscribeToExperimentServiceServer(FString heade
 	int att_max = 5;
 	int att = 0;
 	while (att < att_max) {
-		if (ExperimentServiceClient->Connect(ServerIPMessage, PortExperimentService)) { 
+		//if (ExperimentServiceClient->Connect(ServerIPMessage, PortExperimentService)) { 
+		if (ExperimentServiceClient->Connect(ServerIPMessage, 4540)) { 
 			FPlatformProcess::Sleep(0.2);
 			break; 
 		}
@@ -718,31 +717,62 @@ void AExperimentServiceMonitor::HandleOcclusionLocation(const FMessage MessageIn
 }
 
 bool AExperimentServiceMonitor::test() {
-	UMessageClient* Client = UMessageClient::NewMessageClient();
 
-	if (!Client) { return false; }
+	///* connect tracking service */
+	TrackingServiceClient = UMessageClient::NewMessageClient();
+	if (!TrackingServiceClient) {
+		UE_LOG(LogTemp, Error, TEXT("[AExperimentServiceMonitor::TrackingServiceSetRoute()] TrackingServiceClient NULL."));
+		return false;
+	}
 
 	/* connect tracking client to server */
 	int att_max = 5;
 	int att = 0;
-	UE_LOG(LogTemp, Log, TEXT("[AExperimentServiceMonitor::TrackingServiceSetRoute()] Connecting to Tracking Service."));
+	UE_LOG(LogTemp, Log, TEXT("[AExperimentServiceMonitor::TrackingServiceSetRoute()] Starting connection with Tracking Service."));
 	while (att < att_max) {
-		//if (Client->Connect("127.0.0.1", 4566)) { // cpp port 
-		if (Client->Connect("127.0.0.1", PortTrackingService)) { // cpp port 
-			UE_LOG(LogTemp, Warning, TEXT("[AExperimentServiceMonitor::TrackingServiceSetRoute()] Connecting Tracking Service SUCCESS."));
+		UE_LOG(LogTemp, Log, TEXT("[AExperimentServiceMonitor::TrackingServiceSetRoute()] Attempting to connect with TrackingService. (attempt #: %i/%i."), att + 1, att_max);
+		if (TrackingServiceClient->Connect(ServerIPMessage, 4510)) {
+			UE_LOG(LogTemp, Warning, TEXT("[AExperimentServiceMonitor::TrackingServiceSetRoute()] Connecting Tracking Service SUCCESS. (attempt #: %i/%i)"), att + 1, att_max);
 			break;
 		}
 		att += 1;
 	}
-	if (!Client->IsConnected()) {
+
+	if (!TrackingServiceClient->IsConnected()) {
 		UE_LOG(LogTemp, Error, TEXT("[AExperimentServiceMonitor::TrackingServiceSetRoute()] Connecting to Tracking Service FAILED!"));
 		return false;
 	}
 
-	const FString header = "get_occlusions";
+	UE_LOG(LogTemp, Log, TEXT("[AExperimentServiceMonitor::Test()] Tracking OK."));
+
+	TrackingServiceRequest = TrackingServiceClient->Subscribe();
+	if (!TrackingServiceRequest) {
+		printScreen("[AExperimentServiceMonitor::SubscribeToTrackingService()] if (!TrackingServiceRequest) FAILED!");
+		return false;
+	}
+
+	if (!TrackingServiceRequest) {
+		UE_LOG(LogTemp, Error, TEXT("[AExperimentServiceMonitor::SubscribeToTrackingService()] TrackingServiceRequest is NULL!"));
+		return false;
+	}
+	TrackingServiceRequest->ResponseReceived.AddDynamic(this, &AExperimentServiceMonitor::HandleTrackingServiceResponse);
+	TrackingServiceRequest->TimedOut.AddDynamic(this, &AExperimentServiceMonitor::HandleTrackingServiceResponseTimedOut);
+
+	if (!this->SubscribeToExperimentServiceServer(header_tracking_service)) { 
+		this->SelfDestruct(FString("Subscribe to ES failed."));
+		return false;
+	}
+
+	UMessageClient* Client = UMessageClient::NewMessageClient();
+
+
+	//this->SubscribeToExperimentServiceServer(header_tracking_service);
+	this->StartExperiment("Alexander");
+
+	/*const FString header = "get_occlusions";
 	const FString body = "21_05";
-	URequest* request = Client->SendRequest("get_cell_locations", "21_05", 10.0f);
-	request->ResponseReceived.AddDynamic(this, &AExperimentServiceMonitor::HandleGetOcclusionLocationsResponse);
+	URequest* request = ExperimentServiceClient->SendRequest("get_cell_locations", "21_05", 10.0f);
+	request->ResponseReceived.AddDynamic(this, &AExperimentServiceMonitor::HandleGetOcclusionLocationsResponse);*/
 
 	return true;
 }
