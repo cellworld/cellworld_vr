@@ -1,4 +1,5 @@
 #pragma once
+
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
 #include "ExperimentPlugin.h"
@@ -6,6 +7,7 @@
 #include "TCPMessages.h"
 #include "ExperimentUtils.h"
 #include "PredatorController/CharacterPredator.h"
+//#include "PredatorController/ControllerTypes.h"
 #include "PawnMain.h"
 #include "PawnDebug.h"
 #include "ExperimentComponents/Occlusion.h"
@@ -24,51 +26,48 @@ public:
 
 	bool bLocationsLoaded = false; 
 	bool bCurrentLocationsLoaded = false; 
-	
 	TArray<AOcclusion*> OcclusionAllArr;
 	TArray<AOcclusion*> CurrentVisibleArr; 
 
 	TArray<FLocation> OcclusionAllLocationsArr;
 	TArray<int32> OcclusionIDsIntArr;
 
-	const float ScaleOffset = 0.99157164105; // todo - verify where i got this from 
-	const float MapLength = 235.185290; // actual length in cm of habitat 
-
-	bool SpawnAll(UWorld* WorldRefIn, const bool bVisibilityIn, const bool bEnableCollisonIn, const FVector WorldScaleVecIn) {
-		if (OcclusionAllLocationsArr.Num() < 1) { UE_LOG(LogTemp, Error, TEXT("FOcclusions.SpawnAll() Failed. OcclusionAllLocationsArr is empty."));  return false; }
-		if (!WorldRefIn) { UE_LOG(LogTemp, Error, TEXT("[FOcclusions.SpawnAll()] Failed due to invalid UWorld object.")); return false; }
-		
-		FActorSpawnParameters SpawnParams;
-		for (int i = 0; i < OcclusionAllLocationsArr.Num(); i++) {
-			AOcclusion* MeshActor = WorldRefIn->SpawnActor<AOcclusion>(
-				AOcclusion::StaticClass(),
-				UExperimentUtils::CanonicalToVr(OcclusionAllLocationsArr[i], MapLength, 15*ScaleOffset), // todo: make scale dynamic
-				FRotator::ZeroRotator,
-				SpawnParams);
-			 
-			MeshActor->SetActorScale3D(FVector(15* ScaleOffset,15*ScaleOffset, 15)); // todo: change to WorldScaleVecIn
-			MeshActor->SetActorHiddenInGame(bVisibilityIn);
-			MeshActor->SetActorEnableCollision(bEnableCollisonIn);
-
-			OcclusionAllArr.Add(MeshActor);
-			UE_LOG(LogTemp, Warning, TEXT("[FOcclusions.SpawnAll] Spawned occlusion (%i/%i)."), i, 50);
-		}
-		return true;
-	}
-
-	/* set locations to use for spawning (using canonical coordinates) */
+	/* canonical */
 	void SetAllLocations(const TArray<FLocation> LocationsIn) {
 		OcclusionAllLocationsArr = LocationsIn; 
 		bLocationsLoaded = true;
 	}
 
-	/* set which occlusions to spawn by index */
 	void SetCurrentLocationsByIndex(TArray<int32> OcclusionIndexIn) {
 		OcclusionIDsIntArr = OcclusionIndexIn; 
 		bCurrentLocationsLoaded = true;
 	}
 
-	/* change visibility of ALL occlusions (primarily used for debugging) */
+	bool SpawnAll(UWorld* WorldRefIn, const bool bVisibilityIn, const bool bEnableCollisonIn, const FVector WorldScaleVecIn) {
+		if (OcclusionAllLocationsArr.Num() < 1) { UE_LOG(LogTemp, Error, TEXT("FOcclusions.SpawnAll() Failed. OcclusionAllLocationsArr is empty."));  return false; }
+		if (!WorldRefIn) { UE_LOG(LogTemp, Error, TEXT("[FOcclusions.SpawnAll()] Failed due to invalid UWorld object.")); return false; }
+		FRotator Rotation(0.0f, 0.0f, 0.0f); // Desired spawn rotation
+		const float ScaleOffset = 0.99157164105; 
+		const float MapLength = 235.185290;
+		FActorSpawnParameters SpawnParams;
+		for (int i = 0; i < OcclusionAllLocationsArr.Num(); i++) {
+			AOcclusion* MyMeshActor = WorldRefIn->SpawnActor<AOcclusion>(
+				AOcclusion::StaticClass(),
+				UExperimentUtils::CanonicalToVr(OcclusionAllLocationsArr[i], MapLength, 15*ScaleOffset), // todo: make scale dynamic
+				Rotation,
+				SpawnParams);
+			 
+			MyMeshActor->SetActorScale3D(FVector(15* ScaleOffset,15*ScaleOffset, 15)); // todo: change to WorldScaleVecIn
+			MyMeshActor->SetActorHiddenInGame(bVisibilityIn);
+			MyMeshActor->SetActorEnableCollision(bEnableCollisonIn);
+
+			OcclusionAllArr.Add(MyMeshActor);
+			UE_LOG(LogTemp, Warning, TEXT("Spawned occlusion (%i/%i)."), i, 50);
+		}
+
+		return true;
+	}
+
 	void SetVisibilityAll(const bool bVisibilityIn) {
 		for (AOcclusion* Occlusion : OcclusionAllArr) {
 			Occlusion->SetActorHiddenInGame(true);
@@ -76,20 +75,19 @@ public:
 		}
 	}
 
-	/* set visibility and collisions of current occlusions inside IndexArrayIn */
-	void SetVisibilityArr(const TArray<int32> IndexArrayIn, const bool bIsVisibleIn, const bool bCanCollideIn) {
-		for (int i = 0; i < IndexArrayIn.Num(); i++) {
-			OcclusionAllArr[IndexArrayIn[i]]->SetActorHiddenInGame(bIsVisibleIn);
-			OcclusionAllArr[IndexArrayIn[i]]->SetActorEnableCollision(bCanCollideIn);
-			UE_LOG(LogTemp, Log, TEXT("[FOcclusions.SetVisibilityArr] (%i)"), i+1);
+	void SetVisibilityArr(const TArray<int32> IndexArray) {
+		for (int i = 0; i < IndexArray.Num(); i++) {
+			OcclusionAllArr[IndexArray[i]]->SetActorHiddenInGame(false);
+			OcclusionAllArr[IndexArray[i]]->SetActorEnableCollision(true);
+			UE_LOG(LogTemp, Log, TEXT("SetVisibilityArr (%i)"), i);
 		}
 	}
 
 	void SetCurrentVisibility(const bool bVisibilityIn, const bool bEnableCollisonIn) {
 		for (int i = 0; i < OcclusionIDsIntArr.Num(); i++) {
-			OcclusionAllArr[OcclusionIDsIntArr[i]]->SetActorHiddenInGame(false);
-			OcclusionAllArr[OcclusionIDsIntArr[i]]->SetActorEnableCollision(true);
-			UE_LOG(LogTemp, Log, TEXT("[FOcclusions.SetCirrentVisibility] (%i)"), i);
+			OcclusionAllArr[OcclusionIDsIntArr[i]]->SetActorHiddenInGame(bVisibilityIn);
+			OcclusionAllArr[OcclusionIDsIntArr[i]]->SetActorEnableCollision(bEnableCollisonIn);
+			UE_LOG(LogTemp, Log, TEXT("SetCirrentVisibility (%i)"), i);
 		}
 	}
 };
@@ -129,12 +127,11 @@ public:
 	const FString header_tracking_service_prey		= "prey_step";
 	const FString header_tracking_service_predator  = "predator_step";
 	const FString experiment_name                   = "test_experiment";
-	const FString header_start_experiment			= "start_experiment";
-	const FString header_finish_experiment			= "finish_experiment";
 
 	/* server stuff */
-	const FString ServerIPMessage    = "192.168.137.25"; // lab pc 
-	//const FString ServerIPMessage    = "10.0.0.77"; // crib
+	//const FString ServerIPMessage    = "192.168.137.25"; // lab pc 
+	const FString ServerIPMessage    = "127.0.0.1"; // localhost
+	//const FString ServerIPMessage    = "129.105.90.64"; // lab pc - ethernet
 	const int PortTrackingService    = 4510;
 	const int PortExperimentService  = 4540; 
 	bool bCanUpdatePreyPosition      = false;
