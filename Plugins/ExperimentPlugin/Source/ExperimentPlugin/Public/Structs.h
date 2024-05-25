@@ -17,6 +17,7 @@ static FString TYPE ##ToJsonString (F##TYPE structInput) { \
 	return jsonString; \
 } 
 
+
 USTRUCT(Blueprintable)
 struct FExperimentsActive
 {
