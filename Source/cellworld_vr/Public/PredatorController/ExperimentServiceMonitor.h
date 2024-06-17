@@ -7,7 +7,6 @@
 #include "TCPMessages.h"
 #include "ExperimentUtils.h"
 #include "PredatorController/CharacterPredator.h"
-//#include "PredatorController/ControllerTypes.h"
 #include "PawnMain.h"
 #include "PawnDebug.h"
 #include "ExperimentComponents/Occlusion.h"
@@ -75,7 +74,8 @@ public:
 		}
 	}
 
-	void SetVisibilityArr(const TArray<int32> IndexArray) {
+	/* set visibility and collisions given an array of occlusion index/IDs */
+	void SetVisibilityArr(const TArray<int32> IndexArray, const bool bActorHiddenInGame, const bool bEnableCollision) {
 		for (int i = 0; i < IndexArray.Num(); i++) {
 			OcclusionAllArr[IndexArray[i]]->SetActorHiddenInGame(false);
 			OcclusionAllArr[IndexArray[i]]->SetActorEnableCollision(true);
@@ -83,6 +83,7 @@ public:
 		}
 	}
 
+	/* Set visibility of ALREADY SPAWNED OCCLUSIONS */
 	void SetCurrentVisibility(const bool bVisibilityIn, const bool bEnableCollisonIn) {
 		for (int i = 0; i < OcclusionIDsIntArr.Num(); i++) {
 			OcclusionAllArr[OcclusionIDsIntArr[i]]->SetActorHiddenInGame(bVisibilityIn);
@@ -101,11 +102,10 @@ public:
 	bool ValidateLevel(UWorld* InWorld, const FString InLevelName);
 	AExperimentServiceMonitor();
 
-	UMessageClient* TrackingServiceClient;
-	UMessageClient* ExperimentServiceClient;
+	UMessageClient* Client;
 	
-	UMessageRoute* ExperimentServiceClientRoute;
-	UMessageRoute* ExperimentServicePreyRoute;
+	UMessageRoute* MessageRoutePrey;
+	UMessageRoute* MessageRoutePredator;
 
 	UMessageRoute* MessageRoute; 
 	UMessageRoute* TrackingServiceRoute; 
@@ -119,21 +119,18 @@ public:
 	URequest* stop_experiment_request;
 
 	URequest* StartEpisodeRequest;
-
 	URequest* TrackingServiceRequest; 
 
 	//const FString header_experiment_service			= "predator_step";
-	const FString header_tracking_service			= "send_step";
-	const FString header_tracking_service_prey		= "prey_step";
-	const FString header_tracking_service_predator  = "predator_step";
-	const FString experiment_name                   = "test_experiment";
+	const FString header_prey_location		    = "prey_step";
+	const FString header_predator_location		= "predator_step";
+	const FString experiment_name               = "test_experiment";
 
 	/* server stuff */
-	//const FString ServerIPMessage    = "192.168.137.25"; // lab pc 
-	const FString ServerIPMessage    = "127.0.0.1"; // localhost
-	//const FString ServerIPMessage    = "129.105.90.64"; // lab pc - ethernet
-	const int PortTrackingService    = 4510;
-	const int PortExperimentService  = 4540; 
+	// const FString ServerIPMessage = "172.26.176.129"; // works locally 
+	const FString ServerIPMessage = "192.168.137.25"; // testing now 
+	const int ServerPort	      = 4970;
+
 	bool bCanUpdatePreyPosition      = false;
 	bool bConnectedTrackingService	 = false; 
 	bool bConnectedExperimentService = false; 
@@ -150,12 +147,6 @@ public:
 	/* setup */
 	const FString predator_step_header = "predator_step";
 
-	bool SubscribeToTrackingService();
-	bool ConnectToTrackingService(); 
-	bool TrackingServiceRouteMessages(); 
-
-	bool SubscribeToExperimentServiceServer(FString header);
-
 	ACharacterPredator* CharacterPredator;
 	bool SpawnAndPossessPredator();
 
@@ -167,7 +158,7 @@ public:
 	bool DisconnectClients(); 
 	/* will be used in BP to called by door opening (start episode)*/
 	UFUNCTION(BlueprintCallable, Category = Experiment)
-		bool StartEpisode();
+		bool StartEpisode(UMessageClient* ClientIn);
 	UFUNCTION(BlueprintCallable, Category = Experiment)
 		bool StopEpisode();
 	
@@ -193,6 +184,7 @@ public:
 		void HandleExperimentServiceResponse(const FString message);
 	UFUNCTION()
 		void HandleExperimentServiceResponseTimedOut();
+	
 	/* tracking service */
 	UFUNCTION()
 		void HandleTrackingServiceResponse(const FString message);
@@ -201,7 +193,7 @@ public:
 
 	/* Episode */
 	UFUNCTION()
-		URequest* SendStartEpisodeRequest(const FString ExperimentNameIn, const FString header);
+		URequest* SendStartEpisodeRequest(UMessageClient* ClientIn, const FString ExperimentNameIn);
 	UFUNCTION()
 		URequest* SendStopEpisodeRequest(const FString ExperimentNameIn, const FString header);
 	UFUNCTION()
@@ -215,7 +207,7 @@ public:
 	UFUNCTION()
 		void HandleStartExperimentTimedOut();
 	UFUNCTION()
-		URequest* SendStartExperimentRequest(const FString ExperimentNameIn);
+		URequest* SendStartExperimentRequest(UMessageClient* ClientIn, FString ExperimentNameIn);
 	UFUNCTION()
 		URequest* SendFinishExperimentRequest(const FString ExperimentNameIn);
 	UFUNCTION()
@@ -273,8 +265,10 @@ public:
 		void HandleGetOcclusionsTimedOut();
 	UFUNCTION()
 		void HandleOcclusionLocation(const FMessage MessageIn);
+	
+	bool ConnectToServer(UMessageClient* ClientIn, int MaxAttemptsIn, int PortIn);
 
-		bool test();
+	bool test();
 
 protected:
 	// Called when the game starts or when spawned

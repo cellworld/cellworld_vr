@@ -7,10 +7,6 @@
 #include "PredatorController/ExperimentServiceMonitor.h"
 #include "GameModeMain.generated.h"
 
-/**
- *
- */
-
 UCLASS()
 class CELLWORLD_VR_API AGameModeMain : public AGameModeBase
 {
@@ -21,13 +17,11 @@ public:
 	virtual void EndGame();
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Debug")
-	bool bUseVR = false;
+	bool bUseVR = true;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Debug")
 	bool bSpawnExperimentService = true;
 	
 	/* debug */
-	FVector debug_vect;
-
 	APawnMain* PawnMain   = nullptr;
 	APlayerController* PlayerControllerClassCast = nullptr;
 	FVector InitialPlayerLocation;

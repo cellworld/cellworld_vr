@@ -2,7 +2,12 @@
 #include "PredatorController/AIControllerPredator.h"
 #include "Kismet/GameplayStatics.h"
 
-//#include "GenericPlatform/GenericPlatformProcess.h"
+// Sets default values
+AExperimentServiceMonitor::AExperimentServiceMonitor()
+{
+	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
+	PrimaryActorTick.bCanEverTick = true;
+}
 
 //TODO - add argument to include MessageType (Log, Warning, Error, Fatal)
 void printScreen(const FString InMessage) {
@@ -21,16 +26,9 @@ bool AExperimentServiceMonitor::ValidateLevel(UWorld* InWorld, const FString InL
 	MapName.RemoveFromStart(InWorld->StreamingLevelsPrefix);
 	UE_LOG(LogTemp, Warning, TEXT("map name: %s"), *MapName);
 
-	if (MapName != "L_Maze" || !this->StartEpisode()) { printScreen("[AExperimentServiceMonitor::HandleStartExperimentResponse] Attempt to StartEpisode failed."); return false; }
-	else { printScreen("Map name and Start episode ran fine"); }
+	// if (MapName != "L_Maze" || !this->StartEpisode(TODO)) { printScreen("[AExperimentServiceMonitor::HandleStartExperimentResponse] Attempt to StartEpisode failed."); return false; }
+	// else { printScreen("Map name and Start episode ran fine"); }
 	return true;
-}
-
-// Sets default values
-AExperimentServiceMonitor::AExperimentServiceMonitor()
-{
- 	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
-	PrimaryActorTick.bCanEverTick = false;
 }
 
 /* todo: make this take input ACharacter and spawn that one*/
@@ -55,10 +53,10 @@ bool AExperimentServiceMonitor::SpawnAndPossessPredator() {
 }
 
 /* stop connection for ClientIn */
-bool AExperimentServiceMonitor::StopConnection(UMessageClient* Client)
+bool AExperimentServiceMonitor::StopConnection(UMessageClient* ClientIn)
 {
 	UE_LOG(LogTemp, Warning, TEXT("[AExperimentServiceMonitor::StopConnection] Disconecting."));
-	return Client->Disconnect();
+	return ClientIn->Disconnect();
 }
 
 bool AExperimentServiceMonitor::DisconnectAll()
@@ -81,8 +79,8 @@ bool AExperimentServiceMonitor::DisconnectAll()
 /* sends request to experiment service to start experiment */
 bool AExperimentServiceMonitor::StartExperiment(const FString ExperimentNameIn) {
 
-	if (!ExperimentServiceClient) { UE_LOG(LogTemp, Error, TEXT("Can't start experiment, Experiment Service client not valid.")); return false; }
-	if (!ExperimentServiceClient->IsConnected()) { UE_LOG(LogTemp, Error, TEXT("Can't start experiment, Experiment Service client not connected.")); return false; }
+	if (!Client) { UE_LOG(LogTemp, Error, TEXT("Can't start experiment, Experiment Service client not valid.")); return false; }
+	if (!Client->IsConnected()) { UE_LOG(LogTemp, Error, TEXT("Can't start experiment, Experiment Service client not connected.")); return false; }
 
 	/* set up world info (defaults to hexagonal and canonical) */
 	FWorldInfo WorldInfo;
@@ -96,9 +94,9 @@ bool AExperimentServiceMonitor::StartExperiment(const FString ExperimentNameIn) 
 
 	const FString StartExperimentRequestBodyString = UExperimentUtils::StartExperimentRequestToJsonString(StartExperimentRequestBody);
 	printScreen(StartExperimentRequestBodyString);
-	StartExperimentRequest = ExperimentServiceClient->SendRequest("start_experiment", StartExperimentRequestBodyString, 5.0f);
+	StartExperimentRequest = Client->SendRequest("start_experiment", StartExperimentRequestBodyString, 5.0f);
 
-	if (!StartExperimentRequest) { UE_LOG(LogTemp, Error, TEXT("[AExperimentServiceMonitor::StartExperiment()] StartExperimentRequest is NULL.")); return false; }
+	if (StartExperimentRequest != nullptr) { UE_LOG(LogTemp, Error, TEXT("[AExperimentServiceMonitor::StartExperiment()] StartExperimentRequest is NULL.")); return false; }
 
 	StartExperimentRequest->ResponseReceived.AddDynamic(this, &AExperimentServiceMonitor::HandleStartExperimentResponse);
 	StartExperimentRequest->TimedOut.AddDynamic(this, &AExperimentServiceMonitor::HandleStartExperimentTimedOut);
@@ -106,8 +104,8 @@ bool AExperimentServiceMonitor::StartExperiment(const FString ExperimentNameIn) 
 }
 
 bool AExperimentServiceMonitor::StopExperiment(const FString ExperimentNameIn) {
-	if (!ExperimentServiceClient) { UE_LOG(LogTemp, Error, TEXT("Can't stop experiment, Experiment Service client not valid.")); return false; }
-	if (!ExperimentServiceClient->IsConnected()) { UE_LOG(LogTemp, Error, TEXT("Can't stop experiment, Experiment Service client not connected.")); return false; }
+	if (!Client) { UE_LOG(LogTemp, Error, TEXT("Can't stop experiment, Experiment Service client not valid.")); return false; }
+	if (!Client->IsConnected()) { UE_LOG(LogTemp, Error, TEXT("Can't stop experiment, Experiment Service client not connected.")); return false; }
 	//if (ExperimentNameActive.Len() < 1) { UE_LOG(LogTemp, Warning, TEXT("Can't stop experiment, experiment name not valid.")); return false; }
 	if (!bInExperiment) { UE_LOG(LogTemp, Warning, TEXT("Can't stop experiment, not an active experiment.")); return false; }
 	
@@ -118,20 +116,38 @@ bool AExperimentServiceMonitor::StopExperiment(const FString ExperimentNameIn) {
 	return true; 
 }
 
-/* DEPRECATED */
-URequest* AExperimentServiceMonitor::SendStartExperimentRequest(const FString ExperimentNameIn)
+URequest* AExperimentServiceMonitor::SendStartExperimentRequest(UMessageClient* ClientIn, FString ExperimentNameIn)
 {
-	return nullptr; 
+	/* set up world info (defaults to hexagonal and canonical) */
+	FWorldInfo WorldInfo;
+	WorldInfo.occlusions = "21_05";
+
+	/* set up request body */
+	FStartExperimentRequest StartExperimentRequestBody;
+	StartExperimentRequestBody.duration = 30;
+	StartExperimentRequestBody.subject_name = "ExperimentNameIn";
+	StartExperimentRequestBody.world = WorldInfo;
+
+	const FString StartExperimentRequestBodyString = UExperimentUtils::StartExperimentRequestToJsonString(StartExperimentRequestBody);
+	printScreen(StartExperimentRequestBodyString);
+	URequest* Request = ClientIn->SendRequest("start_experiment", StartExperimentRequestBodyString, 5.0f);
+
+	if (!Request) { UE_LOG(LogTemp, Error, TEXT("[AExperimentServiceMonitor::StartExperiment()] StartExperimentRequest is NULL.")); return nullptr; }
+
+	Request->ResponseReceived.AddDynamic(this, &AExperimentServiceMonitor::HandleStartExperimentResponse);
+	Request->TimedOut.AddDynamic(this, &AExperimentServiceMonitor::HandleStartExperimentTimedOut);
+
+	return Request;
 }
 
 URequest* AExperimentServiceMonitor::SendFinishExperimentRequest(const FString ExperimentNameIn)
 {
-	if (!ExperimentServiceClient) { return nullptr; }
+	if (!Client) { return nullptr; }
 	FFinishExperimentRequest request_body;
 	request_body.experiment_name = ExperimentNameIn;
 
 	FString request_string = UExperimentUtils::FinishExperimentRequestToJsonString(request_body);
-	URequest* request = ExperimentServiceClient->SendRequest("finish_experiment", request_string, 5.0f);
+	URequest* request = Client->SendRequest("finish_experiment", request_string, 5.0f);
 
 	if (!request) { return nullptr; }
 
@@ -143,18 +159,12 @@ URequest* AExperimentServiceMonitor::SendFinishExperimentRequest(const FString E
 
 bool AExperimentServiceMonitor::DisconnectClients() {
 	/* stop connections if clients exist */
-	if (!ExperimentServiceClient || !ExperimentServiceClient->IsConnected()) {
+	if (!Client || !Client->IsConnected()) {
 		UE_LOG(LogTemp, Warning, TEXT("[AExperimentServiceMonitor::DisconnectClients()] Disconnected from Tracking service."));
 		return false;
 	}
 
-	if (!TrackingServiceClient || !TrackingServiceClient->IsConnected()) {
-		UE_LOG(LogTemp, Warning, TEXT("[AExperimentServiceMonitor::DisconnectClients()] Disconnected from Tracking service."));
-		return false;
-	}
-
-	if (!ExperimentServiceClient->Disconnect()) { UE_LOG(LogTemp, Warning, TEXT("[AExperimentServiceMonitor::DisconnectClients()] Disconnected from Tracking service.")); return false; }
-	if (!TrackingServiceClient->Disconnect()) { UE_LOG(LogTemp, Warning, TEXT("[AExperimentServiceMonitor::DisconnectClients()] Disconnected from Tracking service.")); return false; }
+	if (!Client->Disconnect()) { UE_LOG(LogTemp, Warning, TEXT("[AExperimentServiceMonitor::DisconnectClients()] Disconnected from Tracking service.")); return false; }
 	return true;
 }
 
@@ -186,13 +196,14 @@ void AExperimentServiceMonitor::HandleFinishExperimentTimedOut()
 }
 
 /* start experiment service episode stream */
-bool AExperimentServiceMonitor::StartEpisode() {
-	if (!ExperimentServiceClient) { UE_LOG(LogTemp, Error, TEXT("Can't start episode, Experiment Service client not valid.")); return false; }
+bool AExperimentServiceMonitor::StartEpisode(UMessageClient* ClientIn) {
+	if (!ClientIn) { UE_LOG(LogTemp, Error, TEXT("Can't start episode, client not valid.")); return false; }
 	if (ExperimentNameActive.Len() < 1) { UE_LOG(LogTemp, Error, TEXT("Can't start episode, experiment name not valid.")); return false; }
 	if (!bInExperiment) { UE_LOG(LogTemp, Error, TEXT("Can't start episode, no active experiment.")); return false; }
 	
 	// send request 
-	if (!this->SendStartEpisodeRequest(ExperimentNameActive, "start_episode")) { return false; }
+	printScreen("[StartEpisode()] Sending request!");
+	if (!this->SendStartEpisodeRequest(ClientIn, ExperimentNameActive)) { return false; }
 	
 	return true;
 }
@@ -200,7 +211,7 @@ bool AExperimentServiceMonitor::StartEpisode() {
 /* stop experiment service episode stream */
 bool AExperimentServiceMonitor::StopEpisode() 
 {
-	if (!ExperimentServiceClient) { UE_LOG(LogTemp, Error, TEXT("Can't stop episode, Experiment Service client not valid.")); return false; }
+	if (!Client) { UE_LOG(LogTemp, Error, TEXT("Can't stop episode, Experiment Service client not valid.")); return false; }
 	if (ExperimentNameActive.Len() < 1) { UE_LOG(LogTemp, Warning, TEXT("Can't stop episode, experiment name not valid.")); return false; }
 	if (!bInExperiment) { UE_LOG(LogTemp, Warning, TEXT("Can't stop episode, no active experiment.")); return false; }
 	//if (!bInEpisode) { UE_LOG(LogTemp,Warning,TEXT("Can't stop episode, no active episode."));  return false; }
@@ -209,7 +220,7 @@ bool AExperimentServiceMonitor::StopEpisode()
 	request_body.experiment_name = ExperimentNameActive;
 
 	FString request_string = UExperimentUtils::FinishEpisodeRequestToJsonString(request_body);
-	URequest* request = ExperimentServiceClient->SendRequest("finish_episode", request_string, 5.0f);
+	URequest* request = Client->SendRequest("finish_episode", request_string, 5.0f);
 
 	if (!request) { return false; }
 	request->ResponseReceived.AddDynamic(this, &AExperimentServiceMonitor::HandleEpisodeRequestResponse);
@@ -230,7 +241,8 @@ void AExperimentServiceMonitor::HandleEpisodeRequestResponse(const FString respo
 		return;
 	}
 
-	bInEpisode = true; // todo: fix, HandelEpisodeRequest both starts and stops, need unique functions 
+	bInEpisode = true; // todo: fix, HandleEpisodeRequest both starts and stops, need unique functions
+	printScreen(FString("Exiting HandleStartEpisodeRequest"));
 	this->SendGetOcclusionLocationsRequest();
 }
 
@@ -255,7 +267,7 @@ void AExperimentServiceMonitor::HandleStartExperimentResponse(const FString Resp
 	UE_LOG(LogTemp, Warning, TEXT("[AExperimentServiceMonitor::HandleStartExperimentResponse] Experiment name: %s"), *ExperimentNameActive);
 	
 	bInExperiment = true;
-	this->StartEpisode();
+	this->SendStartEpisodeRequest(Client, ExperimentNameActive);
 }
 
 void AExperimentServiceMonitor::HandleStartExperimentTimedOut()
@@ -264,15 +276,14 @@ void AExperimentServiceMonitor::HandleStartExperimentTimedOut()
 }
 
 /* create and send simple experiment service request */
-URequest* AExperimentServiceMonitor::SendStartEpisodeRequest(const FString ExperimentNameIn, const FString header)
+URequest* AExperimentServiceMonitor::SendStartEpisodeRequest(UMessageClient* ClientIn,const FString ExperimentNameIn)
 {
-	if (!ExperimentServiceClient) { return nullptr; }
-
 	FStartEpisodeRequest request_body;
 	request_body.experiment_name = ExperimentNameIn;
 	
 	FString request_string = UExperimentUtils::StartEpisodeRequestToJsonString(request_body);
-	StartEpisodeRequest = ExperimentServiceClient->SendRequest("start_episode", request_string, 5.0f);
+	printScreen("[SendStartEpisodeRequest()] Sending request!");
+	StartEpisodeRequest = ClientIn->SendRequest("start_episode", request_string, 5.0f);
 	
 	if (!StartEpisodeRequest) { return nullptr; }
 
@@ -290,7 +301,7 @@ URequest* AExperimentServiceMonitor::SendStopEpisodeRequest(const FString Experi
 	request_body.experiment_name = ExperimentNameIn;
 
 	FString request_string = UExperimentUtils::FinishEpisodeRequestToJsonString(request_body);
-	URequest* request = ExperimentServiceClient->SendRequest(header, request_string, 5.0f);
+	URequest* request = Client->SendRequest(header, request_string, 5.0f);
 
 	if (!request) { return nullptr; }
 	request->ResponseReceived.AddDynamic(this, &AExperimentServiceMonitor::HandleEpisodeRequestResponse);
@@ -345,135 +356,17 @@ void AExperimentServiceMonitor::HandleExperimentServiceResponseTimedOut() {
 
 /* Handle tracking service response (during subscription) */
 void AExperimentServiceMonitor::HandleTrackingServiceResponse(const FString message) {
-	const FString msg = "[AExperimentServiceMonitor::HandleTrackingServiceResponse]" + message; 
+	const FString msg = "[AExperimentServiceMonitor::HandleTrackingServiceResponse] " + message; 
 	printScreen(msg);
-	UE_LOG(LogTemp, Warning, TEXT("[AExperimentServiceMonitor::HandleTrackingServiceResponse] TS: %s"), *message);
 	if (message != "success") {
 		return; // failed
 	}
 	bConnectedTrackingService = true;
 }
 
-
 /* Handle tracking service response timeout (during subscription */
 void AExperimentServiceMonitor::HandleTrackingServiceResponseTimedOut() {
 	UE_LOG(LogTemp, Warning, TEXT("[AExperimentServiceMonitor::HandleTrackingServiceResponseTimedOut] Timed out!"));
-}
-
-/* create tracking service client */
-bool AExperimentServiceMonitor::TrackingServiceCreateMessageClient() {
-	TrackingServiceClient = UMessageClient::NewMessageClient();
-	if (!TrackingServiceClient) {
-		return false;  
-	}
-	return true;
-}
-
-/* connect tro tracking service. Connection parameters are defined in header file. */
-bool AExperimentServiceMonitor::ConnectToTrackingService() {
-
-	TrackingServiceClient = UMessageClient::NewMessageClient();
-	if (!TrackingServiceClient) { 
-		UE_LOG(LogTemp, Error, TEXT("[AExperimentServiceMonitor::TrackingServiceSetRoute()] TrackingServiceClient NULL."));
-		return false; 
-	}
-
-	/* connect tracking client to server */
-	int att_max = 5;
-	int att = 0;
-	UE_LOG(LogTemp, Log, TEXT("[AExperimentServiceMonitor::TrackingServiceSetRoute()] Starting connection with Tracking Service."));
-	while (att < att_max) {
-		UE_LOG(LogTemp, Log, TEXT("[AExperimentServiceMonitor::TrackingServiceSetRoute()] Attempting to connect with TrackingService. (attempt #: %i/%i."), att+1, att_max);
-		if (TrackingServiceClient->Connect(ServerIPMessage, PortTrackingService)) {
-			UE_LOG(LogTemp, Warning, TEXT("[AExperimentServiceMonitor::TrackingServiceSetRoute()] Connecting Tracking Service SUCCESS. (attempt #: %i/%i)"), att+1, att_max);
-			break;
-		}
-		att += 1;
-	}
-
-	if (!TrackingServiceClient->IsConnected()) {
-		UE_LOG(LogTemp, Error, TEXT("[AExperimentServiceMonitor::TrackingServiceSetRoute()] Connecting to Tracking Service FAILED!"));
-		return false;
-	}
-
-	UE_LOG(LogTemp, Log, TEXT("[AExperimentServiceMonitor::TrackingServiceSetRoute()] Exiting with true."));
-	return true;
-}
-
-/* route tracking service messages (steps) */
-bool AExperimentServiceMonitor::TrackingServiceRouteMessages() {
-
-	/* handle messages received with unknown headers/routes */
-	TrackingServiceClient->UnroutedMessageEvent.AddDynamic(this, &AExperimentServiceMonitor::HandleTrackingServiceUnroutedMessage);
-	//ExperimentServiceClient->UnroutedMessageEvent.AddDynamic(this, &AExperimentServiceMonitor::HandleTrackingServiceUnroutedMessage);
-	/* assign prey and predator routes */
-	TrackingServiceRoutePrey = TrackingServiceClient->AddRoute(header_tracking_service_prey);
-	TrackingServiceRoutePredator = TrackingServiceClient->AddRoute(header_tracking_service_predator);
-
-	/* bind only if all routes valid */
-	if (!TrackingServiceRoutePrey && !TrackingServiceRoutePredator) {
-		return false;
-	}
-
-	return true; 
-}
-
-/* subscribes to server and calls UpdatePredator() when messages[header] matches input header. */
-bool AExperimentServiceMonitor::SubscribeToTrackingService()
-{
-	if (!this->ConnectToTrackingService()) {
-		printScreen("[AExperimentServiceMonitor::SubscribeToTrackingService()] ConnectToTrackingService() FAILED!");
-		UE_LOG(LogTemp, Error, TEXT("[AExperimentServiceMonitor::SubscribeToTrackingService()] Returning. Connecting to Tracking Service FAILED!"));
-		return false;
-	}
-
-	TrackingServiceRequest = TrackingServiceClient->Subscribe();
-	if (!TrackingServiceRequest) {
-		printScreen("[AExperimentServiceMonitor::SubscribeToTrackingService()] if (!TrackingServiceRequest) FAILED!");
-		return false;  
-	}
-
-	if (!TrackingServiceRequest) {
-		UE_LOG(LogTemp, Error, TEXT("[AExperimentServiceMonitor::SubscribeToTrackingService()] TrackingServiceRequest is NULL!"));
-		return false; 
-	}
-	TrackingServiceRequest->ResponseReceived.AddDynamic(this, &AExperimentServiceMonitor::HandleTrackingServiceResponse);
-	TrackingServiceRequest->TimedOut.AddDynamic(this, &AExperimentServiceMonitor::HandleTrackingServiceResponseTimedOut);
-	return true;
-}
-
-/* subscribe to experiment service monitor */
-bool AExperimentServiceMonitor::SubscribeToExperimentServiceServer(FString header)
-{	
-	ExperimentServiceClient = UMessageClient::NewMessageClient();
-
-	if (!ExperimentServiceClient) { return false; }
-	ExperimentServiceClient->UnroutedMessageEvent.AddDynamic(this, &AExperimentServiceMonitor::HandleExperimentServiceUnroutedMessage);
-	int att_max = 5;
-	int att = 0;
-	while (att < att_max) {
-		//if (ExperimentServiceClient->Connect(ServerIPMessage, PortExperimentService)) { 
-		if (ExperimentServiceClient->Connect(ServerIPMessage, 4540)) { 
-			FPlatformProcess::Sleep(0.2);
-			break; 
-		}
-		att += 1;
-	}
-
-	URequest* ExperimentServiceRequestSubscribe = ExperimentServiceClient->Subscribe();
-	if (!ExperimentServiceRequestSubscribe) {
-		return false; 
-	}
-
-	ExperimentServiceRequestSubscribe->ResponseReceived.AddDynamic(this, &AExperimentServiceMonitor::HandleExperimentServiceResponse);
-	ExperimentServiceRequestSubscribe->TimedOut.AddDynamic(this, &AExperimentServiceMonitor::HandleExperimentServiceResponseTimedOut);
-
-	/* Update prey route */
-	ExperimentServicePreyRoute = ExperimentServiceClient->AddRoute(header);
-	if (!ExperimentServicePreyRoute) { return false;  }
-	ExperimentServicePreyRoute->MessageReceived.AddDynamic(this, &AExperimentServiceMonitor::UpdatePredator);
-	
-	return true;
 }
 
 /* update predator ai's goal location using step message from tracking service */
@@ -481,7 +374,7 @@ void AExperimentServiceMonitor::UpdatePredator(const FMessage message)
 {
 	UE_LOG(LogTemp, Error, TEXT("[AExperimentServiceMonitor::UpdatePredator] message.body:\n%s"), *message.body);
 
-	if (TrackingServiceClient == nullptr) { return; }
+	if (Client == nullptr) { return; }
 	frame_count++;
 	FStep step = UExperimentUtils::JsonStringToStep(message.body); 
 	FVector new_location_ue = UExperimentUtils::CanonicalToVr(step.location,MapLength, WorldScale); // ue --> unreal engine units 
@@ -498,33 +391,30 @@ void AExperimentServiceMonitor::UpdatePredator(const FMessage message)
 /* get updated player position and send to prey route via tracking service client */
 void AExperimentServiceMonitor::UpdatePreyPosition(const FVector vector)
 {
-/*
-	self.time_stamp = time_stamp 
-	self.rotation = rotation 
-*/
+	if (Client == nullptr) { printScreen("Cannot send step. Client not valid."); return; }
+
 	FLocation Location = UExperimentUtils::VrToCanonical(vector, MapLength, WorldScale);
 
 	/* prepare Step */
-	//FString header_prey = "send_step";
 	FStep send_step; 
 	send_step.agent_name = "prey";
 	send_step.frame = frame_count;
 	send_step.location = Location; 
-	send_step.rotation = 0.0f; // todo: change! 
-	send_step.time_stamp = frame_count; // todo: change to querycounterelapsedtime!
+	send_step.rotation = 0.0f; // todo: get actual rotation of player  
+	send_step.time_stamp = frame_count; // todo: change to timer, not frame 
 
 	/* convert FStep to JsonString */
 	FString body = UExperimentUtils::StepToJsonString(send_step); 
 
 	/* send message to ES */
-	FMessage message = UMessageClient::NewMessage(header_tracking_service, body);
-	UE_LOG(LogTemp, Log, TEXT("sending prey step: (route: %s; body: %s"),*header_tracking_service,*message.body);
-	if (TrackingServiceClient->IsConnected()) {
-		TrackingServiceClient->SendMessage(message);
+	FMessage message = UMessageClient::NewMessage(header_prey_location, body);
+	UE_LOG(LogTemp, Log, TEXT("sending prey step: (route: %s; body: %s"),*header_prey_location,*message.body);
+	if (Client->IsConnected()) {
+		Client->SendMessage(message);
 	}
 
-	/* don't overload server with messages before its done processing previous prey update. */
-	//bCanUpdatePreyPosition = false;
+	/* don't overload server with messages before it is done processing previous prey update. */
+	bCanUpdatePreyPosition = true; // todo: TRUE ONLY FOR DEBUGGING PURPOSES 
 }
 
 /* handle tracking service message coming to default "send_step" route */
@@ -598,35 +488,23 @@ void AExperimentServiceMonitor::SelfDestruct(const FString InErrorMessage)
 	if (GEngine) GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Green, FString::Printf(TEXT("[AExperimentServiceMonitor::SelfDestruct] Tracking and Experiment ABORTED. Something happened: %s"), *InErrorMessage));
 	UE_LOG(LogTemp, Error, TEXT("[AExperimentServiceMonitor::SelfDestruct()] Something went wrong. Destroying. Reason: %s "), *InErrorMessage);
 
-	// if in episode, finish episode
 	this->StopEpisode();
-
-
-	// Make sure to check if the actor is valid and has not already been marked for destruction.
-	//if (!this->IsPendingKill())
 	if (!this->IsValidLowLevelFast())
 	{
 		this->DisconnectAll();
-
-		// Destroy the actor.
-		//this->Destroy();
 	}
 }
 
 /* get occlusions in our specific experiment (FWorldInfo.occlusions; default: "21_05") */
 bool AExperimentServiceMonitor::SendGetOcclusionsRequest()
 {
-	if (!ExperimentServiceClient) { UE_LOG(LogTemp, Error, TEXT("Cant send get occlusion request, Experiment service client not valid.")); return false; } // experiment service client not valid
-	URequest* Request = ExperimentServiceClient->SendRequest("get_occlusions", "21_05", TimeOut);
+	if (!Client) { UE_LOG(LogTemp, Error, TEXT("Cant send get occlusion request, Experiment service client not valid.")); return false; } // experiment service client not valid
+	URequest* Request = Client->SendRequest("get_occlusions", "21_05", TimeOut);
 	if (!Request) { return false; } // failed to send request
-	FPlatformProcess::Sleep(0.5);
 	Request->ResponseReceived.AddDynamic(this, &AExperimentServiceMonitor::HandleGetOcclusionsResponse);
 	Request->TimedOut.AddDynamic(this, &AExperimentServiceMonitor::HandleGetOcclusionsTimedOut);
-
+	
 	return true;
-}
-
-void AExperimentServiceMonitor::SpawnOcclusions(const TArray<int32> OcclusionIDsIn, const TArray<FLocation> Locations) {
 }
 
 /* gets location of all possible occlusions in our given experiment/world configuration */
@@ -655,14 +533,15 @@ void AExperimentServiceMonitor::HandleGetOcclusionsResponse(const FString Respon
 	// todo: pass this information to game state 
 	OcclusionsStruct.SetCurrentLocationsByIndex(OcclusionIDsTemp);
 	OcclusionsStruct.SpawnAll(GetWorld(), true, false, FVector(15.0f, 15.0f, 15.0f));
-	//OcclusionsStruct.SetVisibilityArr(OcclusionIDsTemp, true, true); 
-	//OcclusionsStruct.SetAllLocations()
-	//SpawnOcclusions(OcclusionIDsIntArr, OcclusionLocationsAll);
-	return;
+	OcclusionsStruct.SetVisibilityArr(OcclusionIDsTemp, false, true); 
 }
 
 void AExperimentServiceMonitor::HandleGetOcclusionsTimedOut() {
 	UE_LOG(LogTemp, Warning, TEXT("Get occlussion request timed out!"));
+	return;
+}
+
+void AExperimentServiceMonitor::SpawnOcclusions(const TArray<int32> OcclusionIDsIn, const TArray<FLocation> Locations) {
 	return;
 }
 
@@ -680,11 +559,11 @@ bool AExperimentServiceMonitor::SetOcclusionVisibility(TArray<int32> VisibleOccl
 URequest* AExperimentServiceMonitor::SendGetOcclusionLocationsRequest()
 {
 	UE_LOG(LogTemp, Log, TEXT("[AExperimentServiceMonitor::SendGetOcclusionLocationsRequest()] Starting request."));
-	if (!ExperimentServiceClient) { UE_LOG(LogTemp, Error, TEXT("[AExperimentServiceMonitor::SendGetOcclusionLocationsRequest()] Cant send get occlusion request, Experiment service client not valid.")); return nullptr; }
+	if (!Client) { UE_LOG(LogTemp, Error, TEXT("[AExperimentServiceMonitor::SendGetOcclusionLocationsRequest()] Cant send get occlusion request, Experiment service client not valid.")); return nullptr; }
 	if (!bInEpisode){ UE_LOG(LogTemp, Error, TEXT("[AExperimentServiceMonitor::SendGetOcclusionLocationsRequest()] Cant send get occlusion request, bInEpisode is false.")); return nullptr; }
 	const FString BodyOut   = "21_05";
 	const FString HeaderOut = "get_cell_locations";
-	URequest* Request = ExperimentServiceClient->SendRequest("get_cell_locations", "21_04", 10.0f);
+	URequest* Request = Client->SendRequest("get_cell_locations", "21_05", 10.0f);
 
 	if (!Request) { return nullptr; }
 
@@ -716,124 +595,63 @@ void AExperimentServiceMonitor::HandleOcclusionLocation(const FMessage MessageIn
 	UE_LOG(LogTemp, Warning, TEXT("OcclusionLocation: %s"), *MessageIn.body);
 }
 
-bool AExperimentServiceMonitor::test() {
+bool AExperimentServiceMonitor::ConnectToServer(UMessageClient* ClientIn, const int MaxAttemptsIn, const int PortIn)
+{
+	printScreen("[AExperimentServiceMonitor::ConnectToServer()] ConnectToServer() A");
+	if (!ClientIn) { printScreen("[AExperimentServiceMonitor::ConnectToServer()] ClientIn is false!"); return false;  }
+	int AttemptCurr = 0;
 
-	///* connect tracking service */
-	TrackingServiceClient = UMessageClient::NewMessageClient();
-	if (!TrackingServiceClient) {
-		UE_LOG(LogTemp, Error, TEXT("[AExperimentServiceMonitor::TrackingServiceSetRoute()] TrackingServiceClient NULL."));
-		return false;
-	}
-
-	/* connect tracking client to server */
-	int att_max = 5;
-	int att = 0;
-	UE_LOG(LogTemp, Log, TEXT("[AExperimentServiceMonitor::TrackingServiceSetRoute()] Starting connection with Tracking Service."));
-	while (att < att_max) {
-		UE_LOG(LogTemp, Log, TEXT("[AExperimentServiceMonitor::TrackingServiceSetRoute()] Attempting to connect with TrackingService. (attempt #: %i/%i."), att + 1, att_max);
-		if (TrackingServiceClient->Connect(ServerIPMessage, 4510)) {
-			UE_LOG(LogTemp, Warning, TEXT("[AExperimentServiceMonitor::TrackingServiceSetRoute()] Connecting Tracking Service SUCCESS. (attempt #: %i/%i)"), att + 1, att_max);
+	while (AttemptCurr < MaxAttemptsIn) {
+		printScreen("[AExperimentServiceMonitor::ConnectToServer()] ConnectToServer() Attempting");
+		if (ClientIn->Connect(ServerIPMessage, 4970)) {
+			UE_LOG(LogTemp, Warning, TEXT("[AExperimentServiceMonitor::ConnectToServer()] Connecting Tracking Service SUCCESS. (attempt #: %i/%i)"), AttemptCurr + 1, MaxAttemptsIn);
 			break;
 		}
-		att += 1;
+		AttemptCurr += 1;
 	}
 
-	if (!TrackingServiceClient->IsConnected()) {
-		UE_LOG(LogTemp, Error, TEXT("[AExperimentServiceMonitor::TrackingServiceSetRoute()] Connecting to Tracking Service FAILED!"));
-		return false;
-	}
+	if (!ClientIn->IsConnected()) { printScreen("[AExperimentServiceMonitor::ConnectToServer()] Failed to connect to server!"); return false; }
 
-	UE_LOG(LogTemp, Log, TEXT("[AExperimentServiceMonitor::Test()] Tracking OK."));
+	return true;
+}
 
-	TrackingServiceRequest = TrackingServiceClient->Subscribe();
-	if (!TrackingServiceRequest) {
-		printScreen("[AExperimentServiceMonitor::SubscribeToTrackingService()] if (!TrackingServiceRequest) FAILED!");
-		return false;
-	}
+bool AExperimentServiceMonitor::test() {
 
-	if (!TrackingServiceRequest) {
-		UE_LOG(LogTemp, Error, TEXT("[AExperimentServiceMonitor::SubscribeToTrackingService()] TrackingServiceRequest is NULL!"));
-		return false;
-	}
-	TrackingServiceRequest->ResponseReceived.AddDynamic(this, &AExperimentServiceMonitor::HandleTrackingServiceResponse);
-	TrackingServiceRequest->TimedOut.AddDynamic(this, &AExperimentServiceMonitor::HandleTrackingServiceResponseTimedOut);
+	/* connect tracking service */
+	Client = UMessageClient::NewMessageClient();
+	constexpr int AttemptsMax = 5; 
+	if (!this->ConnectToServer(Client, AttemptsMax, ServerPort)) { printScreen("ConnectToServer() failed."); return false; }
 
-	if (!this->SubscribeToExperimentServiceServer(header_tracking_service)) { 
-		this->SelfDestruct(FString("Subscribe to ES failed."));
-		return false;
-	}
-
-	UMessageClient* Client = UMessageClient::NewMessageClient();
-
-
-	//this->SubscribeToExperimentServiceServer(header_tracking_service);
-	this->StartExperiment("Alexander");
-
-	/*const FString header = "get_occlusions";
-	const FString body = "21_05";
-	URequest* request = ExperimentServiceClient->SendRequest("get_cell_locations", "21_05", 10.0f);
-	request->ResponseReceived.AddDynamic(this, &AExperimentServiceMonitor::HandleGetOcclusionLocationsResponse);*/
-
+	/* Bind to Pawn's OnMovementDetected() */
+	if (!this->GetPlayerPawn()) { printScreen("Player Pawn found!"); return false; }
+	
+	/* Set up message routes */
+	// if (!this->SubscribeToExperimentServiceServer(header_prey_location)) { printScreen("Subscribe to message server FAILED!"); return false; }
+	
+	/* start experiment  */
+	StartExperimentRequest = this->SendStartExperimentRequest(Client, "ExperimentNameIn");
+	if (!StartExperimentRequest) { return false; }
+	
 	return true;
 }
 
 /* main stuff happens here */
 void AExperimentServiceMonitor::BeginPlay()
 {
-
 	Super::BeginPlay();
+	printScreen("[AExperimentServiceMonitor::BeginPlay()] BeginPlay()");
 	test(); 
-	///* connect tracking service */
-	//if (!this->SubscribeToTrackingService()) {
-	//	this->SelfDestruct(FString("Subscribe to TS failed."));
-	//	return;
-	//}
-
-	///* route tracking messages */
-	//if (!this->TrackingServiceRouteMessages()) {
-	//	this->SelfDestruct(FString("Create routes for TS failed."));
-	//	return;
-	//}
-
-	///* subscribe to ES */
-	//if (!this->SubscribeToExperimentServiceServer(header_tracking_service)) { 
-	//	this->SelfDestruct(FString("Subscribe to ES failed."));
-	//	return;
-	//}
-
-	///* make sure connection is still good before continuing*/
-	//if (TrackingServiceClient->IsConnected() && ExperimentServiceClient->IsConnected()) {
-	//	if (GEngine) GEngine->AddOnScreenDebugMessage(1, 5.0f, FColor::Green, TEXT("Experiment & Tracking service CONNECTION SUCCESSFUL"));
-	//}
-	//else {
-	//	if (GEngine) GEngine->AddOnScreenDebugMessage(1, 5.0f, FColor::Green, TEXT("Experiment & Tracking service CONNECTION FAILED"));
-	//	this->SelfDestruct(FString("Experiment & Tracking service CONNECTION FAILED"));
-	//	return;
-	//}
-
-	///* get active player */
-	//if (!this->GetPlayerPawn()) {
-	//	this->SelfDestruct(FString("GetPlayerPawn() failed."));
-	//	return;
-	//}
-
-
-	////printScreen("Sleeping...hung shoo...");
-	////FPlatformProcess::Sleep(10.0f);
-	////printScreen("Sleeping...DONE...");
-
-	///* todo start experiment */
-	//if (!this->StartExperiment(SubjectName)) {
-	//	this->SelfDestruct(FString("StartExperiment failed."));
-	//	return;
-	//}
+	// if(this->SendGetOcclusionLocationsRequest())
+	// {
+	// 	printScreen("Sent: SendGetOcclusionLocationsRequest() ");
+	// } else { printScreen("Failed"); }
 }
 
 /* run a (light!) command every frame */
 void AExperimentServiceMonitor::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
-	if (!TrackingServiceClient->IsConnected() || ExperimentServiceClient->IsConnected()) { return; }
+	// if (Client->IsConnected()){ this->UpdatePreyPosition(FVector(0.0f, 1.0f, 2.0f)); }
 }
 
 void AExperimentServiceMonitor::EndPlay(const EEndPlayReason::Type EndPLayReason)

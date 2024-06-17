@@ -76,6 +76,8 @@ public:
 
 	/* helpers for camera stuff */
 	UCameraComponent* GetCameraComponent();
+	void StartExperiment();
+	void StartEpisode();
 
 private: 
 	const float _capsule_radius      = 30.0f;

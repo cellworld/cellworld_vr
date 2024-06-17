@@ -37,11 +37,11 @@ APawnMain::APawnMain() : Super()
 	CapsuleComponent->OnComponentBeginOverlap.AddDynamic(this, &APawnMain::OnOverlapBegin); // overlap events
 	CapsuleComponent->OnComponentEndOverlap.AddDynamic(this, &APawnMain::OnOverlapEnd); // overlap events 
 	CapsuleComponent->SetupAttachment(RootComponent);
-	//RootComponent = CapsuleComponent;
 
 	/* create camera component as root so pawn moves with camera */
 	Camera = CreateDefaultSubobject<UCameraComponent>(TEXT("ActualCamera"));
 	Camera->SetMobility(EComponentMobility::Movable);
+	Camera->SetRelativeLocation(FVector(0.0f,0.0f,_capsule_half_height*-2)); // todo: make sure this is OK
 	Camera->bUsePawnControlRotation = true;
 	Camera->SetupAttachment(RootComponent);
 
@@ -74,6 +74,18 @@ UCameraComponent* APawnMain::GetCameraComponent()
 	return APawnMain::Camera;
 }
 
+void APawnMain::StartExperiment()
+{
+	if (GEngine) GEngine->AddOnScreenDebugMessage(-1, 0.5f, FColor::Red, FString::Printf(TEXT("[APawnMain::StartExperiment()]")));
+	return;
+}
+
+void APawnMain::StartEpisode()
+{
+	if (GEngine) GEngine->AddOnScreenDebugMessage(-1, 0.5f, FColor::Red, FString::Printf(TEXT("[APawnMain::StartEpisode()]")));
+	return; 
+}
+
 bool APawnMain::DetectMovement()
 {
 	bool _blocation_updated = false;
@@ -95,7 +107,6 @@ bool APawnMain::DetectMovement()
 	else {
 		_blocation_updated = false; 
 	}
-
 
 	_new_location = NewLocation;
 	return _blocation_updated;
@@ -155,11 +166,6 @@ void APawnMain::BeginPlay()
 	//UHeadMountedDisplayFunctionLibrary::ResetOrientationAndPosition(0.0f, EOrientPositionSelector::OrientationAndPosition);
 }
 
-float IPDtoUU() {
-	const float IPD_cm = 6.50f; // interpupillary distance 
-	return IPD_cm * 100;
-}
-
 // Called every frame
 
 /* todo: implement elsewhere */
@@ -184,8 +190,6 @@ void APawnMain::Reset()
 {
 	Super::Reset();
 }
-
-
 
 void APawnMain::OnOverlapBegin(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 {

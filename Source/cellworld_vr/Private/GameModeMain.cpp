@@ -134,9 +134,9 @@ void AGameModeMain::StartPlay()
 	UE_LOG(LogTemp, Warning, TEXT("[AGameModeMain::StartPlay()] Starting game!"));
 
 	/* spawn player */
-	//AGameModeMain::SpawnAndPossessPlayer(FVector(380, -1790, 0), FRotator::ZeroRotator);
-
-	//AGameModeMain::SpawnAllLoggingActor();
+	// todo: make sure I don;t need this before deleting. Currently I don't think its necessary
+	//AGameModeMain::SpawnAndPossessPlayer(FVector(380, -1790, 0), FRotator::ZeroRotator); 
+	
 	if (bSpawnExperimentService) { AGameModeMain::SpawnExperimentServiceMonitor(); }
 	else { UE_LOG(LogTemp, Warning, TEXT("[AGameModeMain::StartPlay()] Not spawning Experiment Service!")); }
 	
@@ -157,7 +157,8 @@ void AGameModeMain::Tick(float DeltaTime)
 
 bool AGameModeMain::ExperimentStartEpisode() { 
 	if (!ExperimentServiceMonitor) { return false; }
-	return ExperimentServiceMonitor->StartEpisode();  
+	// return ExperimentServiceMonitor->StartEpisode(TODO);  
+	return false;
 }
 
 bool AGameModeMain::ExperimentStopEpisode() {

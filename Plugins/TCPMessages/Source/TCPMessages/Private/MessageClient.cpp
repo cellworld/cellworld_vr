@@ -8,6 +8,7 @@ bool UMessageClient::SendMessage(const FMessage& message) {
 		UE_LOG(LogTemp, Error, TEXT("[UMessageClient::SendMessage] Client disconnected. Returning FALSE."));
 		return false;
 	}
+	
 	auto parts = FMessageParts(message);
 	for (auto& part : parts.Parts) {
 		FString Buffer;
