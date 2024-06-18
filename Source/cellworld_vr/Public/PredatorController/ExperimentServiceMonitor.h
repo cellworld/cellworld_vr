@@ -2,6 +2,7 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
+#include "UObject/ObjectPtr.h" 
 #include "ExperimentPlugin.h"
 #include "MessageClient.h"
 #include "TCPMessages.h"
@@ -93,33 +94,51 @@ public:
 	}
 };
 
+UENUM()
+enum class EExperimentStatus : uint8
+{
+	// client is in an active experiment/episode (can be both - maybe ill change to no) 
+	InExperiment,
+	InEpisode,
+
+	// 'waiting room' flags - waiting for XYZ to start 
+	WaitingExperiment,
+	WaitingEpisode,
+	
+	// completion flags
+	FinishedExperiment,
+	FinishedEpisode,
+
+	// is the client done? Yes? Ok lets disconnect and tell subject thanks for coming
+	WaitingFinishSuccess,
+	WaitingFinishError,
+	
+	// there's always stuff we don't expect, right? 
+	Unknown,
+};
+
 UCLASS()
 class CELLWORLD_VR_API AExperimentServiceMonitor : public AActor
 { 
 	GENERATED_BODY()
 	
 public:	
-	bool ValidateLevel(UWorld* InWorld, const FString InLevelName);
 	AExperimentServiceMonitor();
 
-	UMessageClient* Client;
-	
-	UMessageRoute* MessageRoutePrey;
-	UMessageRoute* MessageRoutePredator;
+	TObjectPtr<UMessageClient> Client;
 
-	UMessageRoute* MessageRoute; 
-	UMessageRoute* TrackingServiceRoute; 
-	UMessageRoute* TrackingServiceRoutePrey; 
-	UMessageRoute* TrackingServiceRoutePredator; 
+	TObjectPtr<UMessageRoute> MessageRoutePredator;
+	TObjectPtr<UMessageRoute> MessageRoutePrey;
+	TObjectPtr<UMessageRoute> MessageRoute;
+	TObjectPtr<UMessageRoute> TrackingServiceRoute;
+	TObjectPtr<UMessageRoute> TrackingServiceRoutePrey; 
+	TObjectPtr<UMessageRoute> TrackingServiceRoutePredator; 
 
-	URequest* start_episode_request;
-	URequest* stop_episode_request;
+	TObjectPtr<URequest> StartExperimentRequest;
+	TObjectPtr<URequest> StopExperimentRequest;
 
-	URequest* StartExperimentRequest;
-	URequest* stop_experiment_request;
-
-	URequest* StartEpisodeRequest;
-	URequest* TrackingServiceRequest; 
+	TObjectPtr<URequest> StartEpisodeRequest;
+	TObjectPtr<URequest> TrackingServiceRequest; 
 
 	//const FString header_experiment_service			= "predator_step";
 	const FString header_prey_location		    = "prey_step";
@@ -147,23 +166,24 @@ public:
 	/* setup */
 	const FString predator_step_header = "predator_step";
 
-	ACharacterPredator* CharacterPredator;
 	bool SpawnAndPossessPredator();
+	ACharacter* CharacterPredator = nullptr; 
 
-	//bool SubscribeToExperimentService(FString header);
+	/* functions called by GameMode */
+	static UMessageClient* CreateNewClient();
 	bool StartExperiment(const FString ExperimentNameIn);
 	bool StopExperiment(const FString ExperimentNameIn);
 	bool StopConnection(UMessageClient* Client);
 	bool DisconnectAll();
-	bool DisconnectClients(); 
+	bool DisconnectClients();
+	
 	/* will be used in BP to called by door opening (start episode)*/
 	UFUNCTION(BlueprintCallable, Category = Experiment)
 		bool StartEpisode(UMessageClient* ClientIn);
 	UFUNCTION(BlueprintCallable, Category = Experiment)
 		bool StopEpisode();
-	
-		
-	bool TrackingServiceCreateMessageClient();
+
+	bool ValidateLevel(UWorld* InWorld, const FString InLevelName);
 	bool GetPlayerPawn();
 
 	/* abort if anything goes wrong */
@@ -176,15 +196,15 @@ public:
 		void HandleTrackingServiceMessagePredator(FMessage message);
 	UFUNCTION()
 		void HandleTrackingServiceMessagePrey(FMessage message);
-	UFUNCTION()
-		void HandleExperimentServiceMessage(FMessage message);
-	UFUNCTION()
-		void HandleExperimentServiceMessageTimedOut(FMessage message);
+	// UFUNCTION()
+	// 	void HandleExperimentServiceMessage(FMessage message);
+	// UFUNCTION()
+	// 	void HandleExperimentServiceMessageTimedOut(FMessage message);
 	UFUNCTION()
 		void HandleExperimentServiceResponse(const FString message);
 	UFUNCTION()
 		void HandleExperimentServiceResponseTimedOut();
-	
+
 	/* tracking service */
 	UFUNCTION()
 		void HandleTrackingServiceResponse(const FString message);
@@ -209,11 +229,11 @@ public:
 	UFUNCTION()
 		URequest* SendStartExperimentRequest(UMessageClient* ClientIn, FString ExperimentNameIn);
 	UFUNCTION()
-		URequest* SendFinishExperimentRequest(const FString ExperimentNameIn);
+		URequest* SendFinishExperimentRequest(const FString& ExperimentNameIn);
 	UFUNCTION()
-		void HandleFinishExperimentResponse(const FString ResponseIn);
+		void HandleStopExperimentResponse(const FString ResponseIn);
 	UFUNCTION()
-		void HandleFinishExperimentTimedOut();
+		void HandleStopExperimentTimedOut();
 	
 	/* update players */
 	UFUNCTION()
@@ -235,19 +255,15 @@ public:
 	UPROPERTY(BlueprintReadWrite)
 		FString ExperimentNameActive;
 	
-	/* episode controll */
-	UPROPERTY(BlueprintReadWrite)
-		bool bInExperiment = false;
-	UPROPERTY(BlueprintReadWrite)
-		bool bInEpisode = false;
+	/* episode control */
+	bool bInExperiment = false;
+	bool bInEpisode = false;
 
 	/* occlusion control */
 	FOcclusions OcclusionsStruct; 
 	TArray<FLocation> OcclusionLocationsAll;
 	TArray<int32> OcclusionIDsIntArr;
-	TArray<AOcclusion*> OcclusionActorArr; 
 	bool bIsOcclusionLoaded = false;
-	bool SetOcclusionVisibility(TArray<int32> VisibleOcclusionIDsIn);
 
 	UFUNCTION()
 		URequest* SendGetOcclusionLocationsRequest();
@@ -258,17 +274,15 @@ public:
 	UFUNCTION()
 		bool SendGetOcclusionsRequest();
 	UFUNCTION()
-		void SpawnOcclusions(const TArray<int32> OcclusionIDsIn, const TArray<FLocation> Locations);
-	UFUNCTION()
 		void HandleGetOcclusionsResponse(const FString ResponseIn);
 	UFUNCTION()
 		void HandleGetOcclusionsTimedOut();
 	UFUNCTION()
 		void HandleOcclusionLocation(const FMessage MessageIn);
 	
-	bool ConnectToServer(UMessageClient* ClientIn, int MaxAttemptsIn, int PortIn);
+	static bool ConnectToServer(UMessageClient* ClientIn, const int MaxAttemptsIn, const FString& IPAddressIn, const int PortIn);
 
-	bool test();
+	bool Test();
 
 protected:
 	// Called when the game starts or when spawned

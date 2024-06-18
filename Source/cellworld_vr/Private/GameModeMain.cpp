@@ -148,6 +148,7 @@ void AGameModeMain::EndPlay(const EEndPlayReason::Type EndPlayReason)
 {
 	Super::EndPlay(EndPlayReason);
 	this->ExperimentStopEpisode();
+	this->ExperimentStopExperiment(ExperimentServiceMonitor->ExperimentNameActive);
 }
 
 void AGameModeMain::Tick(float DeltaTime)
@@ -174,8 +175,9 @@ bool AGameModeMain::ExperimentStopEpisode() {
 	return ExperimentServiceMonitor->StopEpisode(); 
 }
 
-bool AGameModeMain::ExperimentStopExperiment(FString ExperimentName)
+bool AGameModeMain::ExperimentStopExperiment(const FString ExperimentNameIn)
 {
 	if (!ExperimentServiceMonitor) { return false; }
+	ExperimentServiceMonitor->StopExperiment(ExperimentNameIn);
 	return false;
 }

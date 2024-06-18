@@ -8,22 +8,10 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="62ce67fc-2527-4704-a5d7-32bd0403ea36" name="Changes" comment="">
-      <change beforePath="$PROJECT_DIR$/Config/DefaultEditor.ini" beforeDir="false" afterPath="$PROJECT_DIR$/Config/DefaultEditor.ini" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Config/DefaultEngine.ini" beforeDir="false" afterPath="$PROJECT_DIR$/Config/DefaultEngine.ini" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Config/DefaultInput.ini" beforeDir="false" afterPath="$PROJECT_DIR$/Config/DefaultInput.ini" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Content/BP_GameModeMain.uasset" beforeDir="false" afterPath="$PROJECT_DIR$/Content/BP_GameModeMain.uasset" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Content/Levels/L_Calibration.umap" beforeDir="false" afterPath="$PROJECT_DIR$/Content/Levels/L_Calibration.umap" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Content/Levels/L_Maze.umap" beforeDir="false" afterPath="$PROJECT_DIR$/Content/Levels/L_Maze.umap" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Content/Levels/MazeNoDoors_Updated.uasset" beforeDir="false" afterPath="$PROJECT_DIR$/Content/Levels/MazeNoDoors_Updated.uasset" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Plugins/ExperimentPlugin/Source/ExperimentPlugin/Public/Structs.h" beforeDir="false" afterPath="$PROJECT_DIR$/Plugins/ExperimentPlugin/Source/ExperimentPlugin/Public/Structs.h" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Plugins/TCPMessages/Source/TCPMessages/Private/MessageClient.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/Plugins/TCPMessages/Source/TCPMessages/Private/MessageClient.cpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/.idea.cellworld_vr.dir/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/.idea.cellworld_vr.dir/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Source/cellworld_vr/Private/GameModeMain.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/Source/cellworld_vr/Private/GameModeMain.cpp" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Source/cellworld_vr/Private/PawnMain.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/Source/cellworld_vr/Private/PawnMain.cpp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Source/cellworld_vr/Private/PlayerControllerVR.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/Source/cellworld_vr/Private/PlayerControllerVR.cpp" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Source/cellworld_vr/Private/PredatorController/ExperimentServiceMonitor.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/Source/cellworld_vr/Private/PredatorController/ExperimentServiceMonitor.cpp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Source/cellworld_vr/Public/GameModeMain.h" beforeDir="false" afterPath="$PROJECT_DIR$/Source/cellworld_vr/Public/GameModeMain.h" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Source/cellworld_vr/Public/PawnMain.h" beforeDir="false" afterPath="$PROJECT_DIR$/Source/cellworld_vr/Public/PawnMain.h" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Source/cellworld_vr/Public/PlayerControllerVR.h" beforeDir="false" afterPath="$PROJECT_DIR$/Source/cellworld_vr/Public/PlayerControllerVR.h" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Source/cellworld_vr/Public/PredatorController/ExperimentServiceMonitor.h" beforeDir="false" afterPath="$PROJECT_DIR$/Source/cellworld_vr/Public/PredatorController/ExperimentServiceMonitor.h" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
@@ -34,10 +22,10 @@
   <component name="Git.Settings">
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
   </component>
-  <component name="ProjectColorInfo"><![CDATA[{
-  "customColor": "",
-  "associatedIndex": 0
-}]]></component>
+  <component name="ProjectColorInfo">{
+  &quot;customColor&quot;: &quot;&quot;,
+  &quot;associatedIndex&quot;: 0
+}</component>
   <component name="ProjectId" id="2i1AutCPVo5hfsD8KxC7FDsVP4T" />
   <component name="ProjectViewState">
     <option name="hideEmptyMiddlePackages" value="true" />
@@ -53,6 +41,7 @@
     "node.js.selected.package.eslint": "(autodetect)",
     "node.js.selected.package.tslint": "(autodetect)",
     "nodejs_package_manager_path": "npm",
+    "settings.editor.selected.configurable": "CppCodeGenerationId",
     "vue.rearranger.settings.migration": "true"
   },
   "keyToStringList": {
@@ -210,7 +199,8 @@
       <option name="number" value="Default" />
       <option name="presentableId" value="Default" />
       <updated>1718647936881</updated>
-      <workItem from="1718647938596" duration="17477000" />
+      <workItem from="1718647938596" duration="18080000" />
+      <workItem from="1718728790171" duration="15171000" />
     </task>
     <servers />
   </component>
@@ -220,5 +210,9 @@
   <component name="UnityProjectConfiguration" hasMinimizedUI="false" />
   <component name="VcsManagerConfiguration">
     <option name="CLEAR_INITIAL_COMMIT_MESSAGE" value="true" />
+  </component>
+  <component name="XSLT-Support.FileAssociations.UIState">
+    <expand />
+    <select />
   </component>
 </project>

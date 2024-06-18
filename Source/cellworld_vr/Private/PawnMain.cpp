@@ -92,7 +92,7 @@ bool APawnMain::DetectMovement()
 
 	if (!UHeadMountedDisplayFunctionLibrary::IsHeadMountedDisplayEnabled())
 	{
-		UE_LOG(LogTemp, Warning, TEXT("HMD not enabled"));
+		// UE_LOG(LogTemp, Warning, TEXT("HMD not enabled"));
 		return false;
 	}
 
