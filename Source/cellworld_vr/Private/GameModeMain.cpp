@@ -147,8 +147,11 @@ void AGameModeMain::StartPlay()
 void AGameModeMain::EndPlay(const EEndPlayReason::Type EndPlayReason)
 {
 	Super::EndPlay(EndPlayReason);
-	this->ExperimentStopEpisode();
-	this->ExperimentStopExperiment(ExperimentServiceMonitor->ExperimentNameActive);
+	if (this->ExperimentServiceMonitor->IsValidLowLevelFast())
+	{
+		this->ExperimentStopEpisode();
+		this->ExperimentStopExperiment(ExperimentServiceMonitor->ExperimentNameActive);
+	}
 }
 
 void AGameModeMain::Tick(float DeltaTime)
