@@ -33,7 +33,6 @@ void APlayerControllerVR::SetupInputComponent()
 	InputComponent->BindAction("StartEpisode", EInputEvent::IE_Pressed, this, &APlayerControllerVR::StartEpisode);
 }
 
-
 void APlayerControllerVR::StartExperiment()
 {
 	if (PossessedPawn)
@@ -43,7 +42,6 @@ void APlayerControllerVR::StartExperiment()
 	}
 }
 
-
 void APlayerControllerVR::StartEpisode()
 {
 	if (PossessedPawn)
@@ -52,7 +50,6 @@ void APlayerControllerVR::StartEpisode()
 		PossessedPawn->StartEpisode();
 	}
 }
-
 
 void APlayerControllerVR::RestartGame()
 {

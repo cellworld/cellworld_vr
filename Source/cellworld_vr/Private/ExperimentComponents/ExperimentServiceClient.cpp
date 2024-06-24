@@ -345,7 +345,7 @@ void AExperimentServiceClient::HandleGetOcclusionsResponse(const FString Respons
 	UE_LOG(LogTemp, Warning, TEXT("[AExperimentServiceClient::HandleGetOcclusionsResponse] Occlusion IDs (raw): %s"), *ResponseIn);
 	
 	/* start empty */
-	OcclusionIDsIntArr.Empty(); 
+	// OcclusionIDsIntArr.Empty(); 
 	TArray<int32> OcclusionIDsTemp; 
 	/* process the array before using */
 	TArray<FString> OcclusionIDsStringArr; 
@@ -363,9 +363,9 @@ void AExperimentServiceClient::HandleGetOcclusionsResponse(const FString Respons
 
 	UE_LOG(LogTemp, Warning, TEXT("[AExperimentServiceClient::HandleGetOcclusionsResponse] Number of occlusions lost druing AtoI: %i"),SamplesLost);
 	// todo: pass this information to game state 
-	OcclusionsStruct.SetCurrentLocationsByIndex(OcclusionIDsTemp);
-	OcclusionsStruct.SpawnAll(GetWorld(), true, false, FVector(15.0f, 15.0f, 15.0f));
-	OcclusionsStruct.SetVisibilityArr(OcclusionIDsTemp);
+	// OcclusionsStruct.SetCurrentLocationsByIndex(OcclusionIDsTemp);
+	// OcclusionsStruct.SpawnAll(GetWorld(), true, false, FVector(15.0f, 15.0f, 15.0f));
+	// OcclusionsStruct.SetVisibilityArr(OcclusionIDsTemp);
 	//OcclusionsStruct.SetAllLocations()
 	//SpawnOcclusions(OcclusionIDsIntArr, OcclusionLocationsAll);
 	return;
@@ -407,9 +407,9 @@ URequest* AExperimentServiceClient::SendGetOcclusionLocationsRequest()
 /* gets location of all possible occlusions in our given experiment/world configuration */
 void AExperimentServiceClient::HandleGetOcclusionLocationsResponse(const FString ResponseIn) {
 	UE_LOG(LogTemp, Log, TEXT("[HandleGetOcclusionLocationsResponse] %s"), *ResponseIn);
-	OcclusionLocationsAll = UExperimentUtils::OcclusionsParseAllLocations(ResponseIn);
-
-	OcclusionsStruct.SetAllLocations(OcclusionLocationsAll); 
+	// OcclusionLocationsAll = UExperimentUtils::OcclusionsParseAllLocations(ResponseIn);
+	//
+	// OcclusionsStruct.SetAllLocations(OcclusionLocationsAll); 
 	if (!this->SendGetOcclusionsRequest()) {
 		UE_LOG(LogTemp, Log, TEXT("[SendGetOcclusionsRequest] send request false!"));
 	}
