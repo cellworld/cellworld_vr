@@ -8,6 +8,7 @@ bool UMessageClient::SendMessage(const FMessage& message) {
 		UE_LOG(LogTemp, Error, TEXT("[UMessageClient::SendMessage] Client disconnected. Returning FALSE."));
 		return false;
 	}
+	
 	auto parts = FMessageParts(message);
 	for (auto& part : parts.Parts) {
 		FString Buffer;
@@ -213,6 +214,7 @@ bool UMessageClientThread::Receive(FString& MessageString)
 	uint32 pendingData = 0;
 	bool complete = false;
 	bool broken_pipe = false;
+	// while ((Client->IsValidLowLevelFast()) && (Client->Host->HasPendingData(pendingData) || offset) && !complete && !broken_pipe)
 	while ((Client->Host->HasPendingData(pendingData) || offset) && !complete && !broken_pipe)
 	{
 		while (!Client->Host->HasPendingData(pendingData));

@@ -1,6 +1,7 @@
 #pragma once
 #include "CoreMinimal.h"
-#include "Components/StaticMeshComponent.h" 
+#include "Components/StaticMeshComponent.h"
+#include "ExperimentPlugin.h"
 #include "Components/WidgetInteractionComponent.h" 
 #include "Components/WidgetComponent.h"
 #include "GameFramework/Pawn.h"
@@ -41,13 +42,12 @@ public:
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
-
 	//AGameModeMain* GameMode = nullptr; 
 
 public:
 	virtual void Tick(float DeltaTime) override;
 	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
-	virtual void Reset() override; 
+	virtual void Reset() override;
 
 	/* === properties === */
 	//UPROPERTY(VisibleDefaultsOnly, meta = (Category = "Default"))
@@ -76,6 +76,8 @@ public:
 
 	/* helpers for camera stuff */
 	UCameraComponent* GetCameraComponent();
+	void StartExperiment();
+	void StartEpisode();
 
 private: 
 	const float _capsule_radius      = 30.0f;

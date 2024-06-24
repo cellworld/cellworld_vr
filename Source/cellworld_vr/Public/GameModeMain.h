@@ -7,10 +7,6 @@
 #include "PredatorController/ExperimentServiceMonitor.h"
 #include "GameModeMain.generated.h"
 
-/**
- *
- */
-
 UCLASS()
 class CELLWORLD_VR_API AGameModeMain : public AGameModeBase
 {
@@ -26,21 +22,17 @@ public:
 	bool bSpawnExperimentService = true;
 	
 	/* debug */
-	FVector debug_vect;
-
-	APawnMain* PawnMain   = nullptr;
-	APlayerController* PlayerControllerClassCast = nullptr;
+	TObjectPtr<UClass> PawnClassToSpawn;
+	TObjectPtr<APawn> PlayerPawn;
 	FVector InitialPlayerLocation;
 	FRotator InitialPlayerRotation;
-
-	/* HP stuff */
-	bool InitializeHPKeys();
 
 	/* spawning player */
 	FVector spawn_location_player  = { -1700.0,1500.000000,30.000000 };
 	FRotator spawn_rotation_player = { 0.0,0.0, 0.0 };
 	void SpawnAndPossessPlayer(FVector spawn_location, FRotator spawn_rotation);
-	
+	bool AttachClientToPlayer(TObjectPtr<UMessageClient> ClientIn, TObjectPtr<APawnMain> PawnIn);
+
 	/* Spawns Sensors */
 	void SpawnGetCLMonitorComponentActor();
 
@@ -70,5 +62,5 @@ public:
 		bool ExperimentStopEpisode();
 
 	UFUNCTION(BlueprintCallable, Category = Experiment)
-		bool ExperimentStopExperiment(FString ExperimentName);
+		bool ExperimentStopExperiment(const FString ExperimentNameIn);
 };

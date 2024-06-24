@@ -223,24 +223,23 @@ struct FGetExperimentRequestResponse
 	GENERATED_BODY()
 public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Experiment)
-	FString experiment_name = "";
+		FString experiment_name = "";
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Experiment)
-	FWorldInfo world_info;
+		FWorldInfo world_info;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Experiment)
-	FString start_date;
+		FString start_date;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Experiment)
-	FString subject_name;
+		FString subject_name;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Experiment)
-	int duration;
+		int duration;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Experiment)
-	float remaining_time;
+		float remaining_time;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Experiment)
-	int episode_count;
+		int episode_count;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Experiment)
-	FCellGroup reward_cells;
+		FCellGroup rewards_cells;
 
 };
-
 
 USTRUCT(Blueprintable)
 struct FStartExperimentResponse {
@@ -266,7 +265,7 @@ struct FStartExperimentRequest
 public:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Experiment)
-		FString prefix = "VR";
+		FString prefix = "prefix";
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Experiment)
 		FString suffix = "suffix";
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Experiment)
@@ -275,6 +274,12 @@ public:
 		FString subject_name = "vr_dude";
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Experiment)
 		int duration = 0; // Tmax 30 min (convert to seconds)
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Experiment)
+		TArray<FString> rewards_cells;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Experiment)
+		TArray<int> rewards_orientations;
+	// UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Experiment)
+		// TArray<FString> rewards_orientations;
 };
 
 USTRUCT(Blueprintable)
