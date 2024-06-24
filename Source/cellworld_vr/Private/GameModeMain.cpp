@@ -14,11 +14,15 @@ AGameModeMain::AGameModeMain()
 	/* Get PawnMain to spawn */
 	if (!bUseVR){
 		DefaultPawnClass = APawnDebug::StaticClass(); 
+		// PawnClassToSpawn = APawnDebug::StaticClass(); 
+		// PlayerController = AMouseKeyboardPlayerController::StaticClass();
 		PlayerControllerClass = AMouseKeyboardPlayerController::StaticClass();
 	}
 	else { 
 		DefaultPawnClass = APawnMain::StaticClass(); 
+		// PawnClassToSpawn = APawnMain::StaticClass(); 
 		PlayerControllerClass = APlayerControllerVR::StaticClass();
+		// PlayerControllerClass = APlayerControllerVR::StaticClass();
 	}
 	 
 	/* Assign default game state */
@@ -28,9 +32,6 @@ AGameModeMain::AGameModeMain()
 	PrimaryActorTick.bStartWithTickEnabled = true;
 	PrimaryActorTick.bCanEverTick = true;
 }
-
-/* to do: UFUNCTION() getexperimentservicemonitor()->StartEpisode()*/
-/* to do: UFUNCTION() getexperimentservicemonitor()->StopEpisode()*/
 
 void AGameModeMain::SpawnExperimentServiceMonitor()
 {
@@ -64,9 +65,6 @@ void AGameModeMain::EndGame()
 * Updates GameInstance with HP keys. Will use variables inside GameInstanceMain.h 
 * to find, load, and process the HP keys. 
 */
-bool AGameModeMain::InitializeHPKeys() {
-	return false;
-}
 
 void AGameModeMain::SpawnAndPossessPlayer(FVector spawn_location, FRotator spawn_rotation)
 {
@@ -76,17 +74,23 @@ void AGameModeMain::SpawnAndPossessPlayer(FVector spawn_location, FRotator spawn
 
 	FActorSpawnParameters SpawnParams;
 	SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButAlwaysSpawn;
-	APawnMain* SpawnedPawn = GetWorld()->SpawnActor<APawnMain>(APawnMain::StaticClass(), spawn_location, spawn_rotation, SpawnParams);
-	if (!SpawnedPawn) return;
+	PlayerPawn = GetWorld()->SpawnActor<APawnMain>(PawnClassToSpawn, spawn_location, spawn_rotation, SpawnParams);
+	if (!PlayerPawn) return;
 
 	// Find the player controller
-	APlayerControllerVR* PlayerController = Cast<APlayerControllerVR>(GetWorld()->GetFirstPlayerController());
+	// APlayerControllerVR* PlayerController = Cast<APlayerControllerVR>(GetWorld()->GetFirstPlayerController());
+	APlayerController* PlayerController = Cast<APlayerControllerVR>(GetWorld()->GetFirstPlayerController());
 	if (PlayerController)
 	{
 		// Possess the spawned pawn
-		PlayerController->Possess(SpawnedPawn);
+		PlayerController->Possess(PlayerPawn);
 	}
 	//EAutoReceiveInput::Type::Player0;
+}
+// todo: should ESMonitor be attached to each individual pawn? 
+bool AGameModeMain::AttachClientToPlayer(TObjectPtr<UMessageClient> ClientIn, TObjectPtr<APawnMain> PawnIn)
+{
+	return false;
 }
 
 void AGameModeMain::InitGame(const FString& MapName, const FString& Options, FString& ErrorMessage)
@@ -135,9 +139,10 @@ void AGameModeMain::StartPlay()
 
 	/* spawn player */
 	// todo: make sure I don;t need this before deleting. Currently I don't think its necessary
-	//AGameModeMain::SpawnAndPossessPlayer(FVector(380, -1790, 0), FRotator::ZeroRotator); 
+	AGameModeMain::SpawnAndPossessPlayer(FVector(380, -1790, 0), FRotator::ZeroRotator); 
 	
 	if (bSpawnExperimentService) { AGameModeMain::SpawnExperimentServiceMonitor(); }
+
 	else { UE_LOG(LogTemp, Warning, TEXT("[AGameModeMain::StartPlay()] Not spawning Experiment Service!")); }
 	
 	AGameModeMain::StopLoadingScreen();
@@ -180,7 +185,7 @@ bool AGameModeMain::ExperimentStopEpisode() {
 
 bool AGameModeMain::ExperimentStopExperiment(const FString ExperimentNameIn)
 {
-	if (!ExperimentServiceMonitor) { return false; }
+	if (!IsValid(ExperimentServiceMonitor)) { return false; }
 	ExperimentServiceMonitor->StopExperiment(ExperimentNameIn);
 	return false;
 }

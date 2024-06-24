@@ -1,4 +1,7 @@
 #include "PredatorController/ExperimentServiceMonitor.h"
+
+#include "ParticleHelper.h"
+#include "EntitySystem/MovieSceneEntitySystemRunner.h"
 #include "PredatorController/AIControllerPredator.h"
 #include "Kismet/GameplayStatics.h"
 
@@ -347,7 +350,7 @@ void AExperimentServiceMonitor::HandleTrackingServiceResponseTimedOut() {
 }
 
 /* update predator ai's goal location using step message from tracking service */
-void AExperimentServiceMonitor::UpdatePredator(const FMessage message)
+void AExperimentServiceMonitor::UpdatePredator(FMessage message)
 {
 	UE_LOG(LogTemp, Error, TEXT("[AExperimentServiceMonitor::UpdatePredator] message.body:\n%s"), *message.body);
 
@@ -385,7 +388,6 @@ void AExperimentServiceMonitor::UpdatePreyPosition(const FVector vector)
 
 	/* send message to ES */
 	FMessage message = UMessageClient::NewMessage(header_prey_location, body);
-	UE_LOG(LogTemp, Log, TEXT("sending prey step: (route: %s; body: %s"),*header_prey_location,*message.body);
 	if (Client->IsConnected()) {
 		Client->SendMessage(message);
 	}
@@ -395,24 +397,24 @@ void AExperimentServiceMonitor::UpdatePreyPosition(const FVector vector)
 }
 
 /* handle tracking service message coming to default "send_step" route */
-void AExperimentServiceMonitor::HandleTrackingServiceMessage(const FMessage message)
+void AExperimentServiceMonitor::HandleTrackingServiceMessage(FMessage message)
 {
 	if (GEngine) { if (GEngine) GEngine->AddOnScreenDebugMessage(-1, 1.0f, FColor::Green, FString::Printf(TEXT("tracking message: (%s) %s"),*message.header, *message.body)); }
 }
 
 /* handles unrouted messages coming from tracking service. messages that do not have a route set up inside 
 this class (ExperimentServiceMonitor) will end up here */
-void AExperimentServiceMonitor::HandleTrackingServiceUnroutedMessage(const FMessage message)
+void AExperimentServiceMonitor::HandleTrackingServiceUnroutedMessage(FMessage message)
 {
 	if (GEngine) GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Red, FString::Printf(TEXT("tracking unrouted: (%s) %s"), *message.header, *message.body));
 }
 
-void HandleUnroutedExperiment(const FMessage message) {
+void HandleUnroutedExperiment(FMessage message) {
 	printScreen(message.body);
 	printScreen(message.header);
 }
 
-void AExperimentServiceMonitor::HandleExperimentServiceUnroutedMessage(const FMessage message)
+void AExperimentServiceMonitor::HandleUnroutedMessage(FMessage message)
 {
 	if (GEngine) GEngine->AddOnScreenDebugMessage(-1, 1.0f, FColor::Red, FString::Printf(TEXT("tracking unrouted: (%s) %s"), *message.header, *message.body));
 }
@@ -421,6 +423,11 @@ void AExperimentServiceMonitor::HandleExperimentServiceUnroutedMessage(const FMe
 bool AExperimentServiceMonitor::IsExperimentActive(const FString ExperimentNameIn)
 {
 	return false;
+}
+
+void AExperimentServiceMonitor::AttachAgent(TObjectPtr<APawn> PawnIn)
+{
+	printScreen("[AExperimentServiceMonitor::AttachAgent]");
 }
 
 /* gets player pawn from world */
@@ -457,6 +464,15 @@ bool AExperimentServiceMonitor::GetPlayerPawn()
 
 	return true;
 }
+//
+// void RequestUnbindDelegates(URequest* RequestIn)
+// {
+// 	if (RequestIn)
+// 	{
+// 		RequestIn->ResponseReceived.RemoveAll();
+// 		RequestIn
+// 	}
+// }
 
 /* destroy this actor. This is primarily used as an abort */
 void AExperimentServiceMonitor::SelfDestruct(const FString InErrorMessage)
@@ -469,6 +485,70 @@ void AExperimentServiceMonitor::SelfDestruct(const FString InErrorMessage)
 	{
 		this->Disconnect(Client);
 	}
+}
+
+bool AExperimentServiceMonitor::SubscribeToServer(TObjectPtr<UMessageClient> ClientIn)
+{
+	SubscribeRequest = ClientIn->Subscribe();
+	if (!SubscribeRequest)
+	{
+		printScreen("[AExperimentServiceMonitor::SubscribeToServer] SubscribeRequest not valid!"); return false;
+	}
+
+	SubscribeRequest->ResponseReceived.AddDynamic(this, &AExperimentServiceMonitor::HandleSubscribeToServerResponse);
+	SubscribeRequest->TimedOut.AddDynamic(this, &AExperimentServiceMonitor::HandleSubscribeToServerTimedOut);
+	return true;
+}
+
+void AExperimentServiceMonitor::RequestRemoveDelegates(URequest* RequestIn)
+{
+	if (RequestIn)
+	{
+		RequestIn->ResponseReceived.RemoveAll(this);
+		RequestIn->TimedOut.RemoveAll(this);
+		printScreen("[AExperimentServiceMonitor::RequestRemoveDelegates] Ubound delegates: OK.");
+	}
+	printScreen("[AExperimentServiceMonitor::RequestRemoveDelegates] Ubound delegates: Failed.");
+}
+
+void AExperimentServiceMonitor::HandleSubscribeToServerResponse(FString MessageIn)
+{
+	printScreen("[AExperimentServiceMonitor::HandleSubscribeToServerResponse]");
+	printScreen(MessageIn);
+	
+	this->RoutePredatorMessages();
+	if (SubscribeRequest)
+	{
+		SubscribeRequest->ResponseReceived.RemoveAll(this);
+		SubscribeRequest->TimedOut.RemoveAll(this);
+	}
+	
+	// if(!this->RoutePredatorMessages()) { printScreen("[AExperimentServiceMonitor::Test()] Failed to route."); }
+}
+
+void AExperimentServiceMonitor::HandleSubscribeToServerTimedOut()
+{
+	printScreen("[AExperimentServiceMonitor::HandleSubscribeToServerResponse]");
+}
+
+void AExperimentServiceMonitor::on_experiment_started()
+{
+	printScreen("[AExperimentServiceMonitor::on_experiment_started]");
+}
+
+void AExperimentServiceMonitor::on_experiment_finished()
+{
+	printScreen("[AExperimentServiceMonitor::on_experiment_finished]");
+}
+
+void AExperimentServiceMonitor::on_episode_started()
+{
+	printScreen("[AExperimentServiceMonitor::on_episode_started]");
+}
+
+void AExperimentServiceMonitor::on_episode_finished()
+{
+	printScreen("[AExperimentServiceMonitor::on_episode_finished]");
 }
 
 /* get occlusions in our specific experiment (FWorldInfo.occlusions; default: "21_05") */
@@ -573,6 +653,22 @@ bool AExperimentServiceMonitor::ConnectToServer(UMessageClient* ClientIn, const 
 	return true;
 }
 
+bool AExperimentServiceMonitor::RoutePredatorMessages()
+{
+	if (!Client) {printScreen("[AExperimentServiceMonitor::RoutePredatorMessages()] Client not valid."); return false;}
+	
+	Client->UnroutedMessageEvent.AddDynamic(this,&AExperimentServiceMonitor::HandleUnroutedMessage);
+	RoutePredator = Client->AddRoute("predator_step");
+	RouteOnEpisodeStarted = Client->AddRoute(on_episode_started_header);
+
+	if (!RoutePredator) {printScreen("[AExperimentServiceMonitor::RoutePredatorMessages()] Route not valid."); return false; }
+	// RoutePredator->MessageReceived.AddDynamic(this,&AExperimentServiceMonitor::HandleUpdatePredator);
+	RouteOnEpisodeStarted->MessageReceived.AddDynamic(this,&AExperimentServiceMonitor::HandleUpdatePredator);
+
+	printScreen("[AExperimentServiceMonitor::RoutePredatorMessages()] OK");
+	return true;
+}
+
 bool AExperimentServiceMonitor::Test() {
 
 	/* connect tracking service */
@@ -580,6 +676,9 @@ bool AExperimentServiceMonitor::Test() {
 	Client = AExperimentServiceMonitor::CreateNewClient();
 	constexpr int AttemptsMax = 5; 
 	if (!this->ConnectToServer(Client, AttemptsMax, ServerIPMessage, ServerPort)) { printScreen("ConnectToServer() failed."); return false; }
+
+	if (!this->SubscribeToServer(Client)) { printScreen("[AExperimentServiceMonitor::Test] Sending Subscribe request: OK."); }
+	else {printScreen("[AExperimentServiceMonitor::Test] Sending subscribe request: Failed."); }
 
 	/* Bind to Pawn's OnMovementDetected() */
 	if (!this->GetPlayerPawn()) { printScreen("Player Pawn found!"); return false; }
@@ -589,6 +688,12 @@ bool AExperimentServiceMonitor::Test() {
 	if (!StartExperimentRequest) { return false; }
 
 	return true;
+}
+
+
+void AExperimentServiceMonitor::HandleUpdatePredator(FMessage MessageIn)
+{
+	printScreen("[AExperimentServiceMonitor::HandleUpdatePredator]" + MessageIn.body);
 }
 
 /* main stuff happens here */
@@ -608,6 +713,10 @@ void AExperimentServiceMonitor::Tick(float DeltaTime)
 void AExperimentServiceMonitor::EndPlay(const EEndPlayReason::Type EndPLayReason)
 {
 	Super::EndPlay(EndPLayReason);
+	if (StartExperimentRequest) { this->RequestRemoveDelegates(StartExperimentRequest); }
+	else{printScreen("StartExperimentRequest not valid");}
+	if (StartEpisodeRequest) { this->RequestRemoveDelegates(StartEpisodeRequest); }
+	else{printScreen("StartEpisodeRequest not valid");}
 	
 	// if (/*Client->IsValidLowLevelFast() && */IsValid(Client) && Client->IsConnected())
 	// {

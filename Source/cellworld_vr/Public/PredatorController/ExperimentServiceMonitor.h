@@ -144,13 +144,22 @@ public:
 		TObjectPtr<URequest> StopExperimentRequest;
 	UPROPERTY()
 		TObjectPtr<URequest> StopEpisodeRequest;
+	UPROPERTY()
+		TObjectPtr<URequest> SubscribeRequest;
+	UPROPERTY()
+		TObjectPtr<UMessageRoute> RoutePredator;
+	UPROPERTY()
+		TObjectPtr<UMessageRoute> RouteAgent;
+	UPROPERTY()
+		TObjectPtr<UMessageRoute> RouteOnEpisodeStarted;
 
 	// const FString header_experiment_service			= "predator_step";
 	const FString header_prey_location		    = "prey_step";
 	const FString header_predator_location		= "predator_step";
 	const FString experiment_name               = "test_experiment";
-	const FString predator_step_header = "predator_step";
-
+	const FString predator_step_header          = "predator_step";
+	const FString on_episode_started_header     = "on_episode_started";
+	
 	/* ==== server stuff ==== */
 	const FString ServerIPMessage = "172.30.127.68";    // alternate 
 	// const FString ServerIPMessage = "192.168.137.25"; // lab  
@@ -189,10 +198,26 @@ public:
 	bool ValidateLevel(UWorld* InWorld, const FString InLevelName);
 	bool GetPlayerPawn();
 	void SelfDestruct(const FString InErrorMessage);
+	bool SubscribeToServer(TObjectPtr<UMessageClient> ClientIn);
+	void RequestRemoveDelegates(URequest* RequestIn);
+
+	/* event functions */
+	void on_experiment_started();
+	void on_experiment_finished();
+	void on_episode_started();
+	void on_episode_finished();
 	
 	/* ==== delegates ==== */
 
+	/* update predator stuff */
+	UFUNCTION()
+		void HandleUpdatePredator(FMessage MessageIn);
+
 	/* experiment service */
+	UFUNCTION()
+		void HandleSubscribeToServerResponse(FString MessageIn);
+	UFUNCTION()
+		void HandleSubscribeToServerTimedOut();
 	UFUNCTION()
 		void HandleTrackingServiceMessagePredator(FMessage message);
 	UFUNCTION()
@@ -232,19 +257,21 @@ public:
 	
 	/* update players */
 	UFUNCTION()
-		void UpdatePredator(const FMessage message);
+		void UpdatePredator(FMessage message);
 	UFUNCTION()
 		void UpdatePreyPosition(const FVector Location);
 
 	/* other */
 	UFUNCTION()
-		void HandleTrackingServiceMessage(const FMessage message);
+		void HandleTrackingServiceMessage(FMessage message);
 	UFUNCTION()
-		void HandleTrackingServiceUnroutedMessage(const FMessage message);
+		void HandleTrackingServiceUnroutedMessage(FMessage message);
 	UFUNCTION()
-		void HandleExperimentServiceUnroutedMessage(const FMessage message);
+		void HandleUnroutedMessage(FMessage message);
 	UFUNCTION()
 		bool IsExperimentActive(const FString ExperimentNameIn);
+	
+	void AttachAgent(TObjectPtr<APawn> PawnIn);
 
 	/* experiment control */
 	UPROPERTY(BlueprintReadWrite)
@@ -276,6 +303,7 @@ public:
 		void HandleOcclusionLocation(const FMessage MessageIn);
 	
 	static bool ConnectToServer(UMessageClient* ClientIn, const int MaxAttemptsIn, const FString& IPAddressIn, const int PortIn);
+	bool RoutePredatorMessages();
 
 	bool Test();
 

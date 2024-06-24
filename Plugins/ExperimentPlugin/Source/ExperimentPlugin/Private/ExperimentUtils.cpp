@@ -140,7 +140,6 @@ FString UExperimentUtils::StartEpisodeRequestToJsonString(FStartEpisodeRequest s
 	return jsonString;
 }
 
-
 FString UExperimentUtils::WorldInfoToJsonString(FWorldInfo structInput) {
 	FString jsonString;
 	FJsonObjectConverter::UStructToJsonObjectString(structInput, jsonString, 0, 0, 0);

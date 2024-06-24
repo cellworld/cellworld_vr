@@ -69,7 +69,7 @@ bool APawnDebug::DetectMovement()
 void APawnDebug::OnMovementDetected()
 {
 	MovementDetectedEvent.Broadcast(_new_location);
-	UE_LOG(LogTemp, Log, TEXT("[APawnDebug::OnMovementDetected()] Movement detected."));
+	// UE_LOG(LogTemp, Log, TEXT("[APawnDebug::OnMovementDetected()] Movement detected."));
 	//if (GEngine) GEngine->AddOnScreenDebugMessage(-1, 0.5f, FColor::Blue, FString::Printf(TEXT("Movement detected")));
 }
 

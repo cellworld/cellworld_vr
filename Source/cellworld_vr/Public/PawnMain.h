@@ -1,6 +1,7 @@
 #pragma once
 #include "CoreMinimal.h"
-#include "Components/StaticMeshComponent.h" 
+#include "Components/StaticMeshComponent.h"
+#include "ExperimentPlugin.h"
 #include "Components/WidgetInteractionComponent.h" 
 #include "Components/WidgetComponent.h"
 #include "GameFramework/Pawn.h"
@@ -41,13 +42,14 @@ public:
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
-
 	//AGameModeMain* GameMode = nullptr; 
 
 public:
 	virtual void Tick(float DeltaTime) override;
 	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
-	virtual void Reset() override; 
+	virtual void Reset() override;
+	TObjectPtr<UMessageClient> Client = nullptr; 
+
 
 	/* === properties === */
 	//UPROPERTY(VisibleDefaultsOnly, meta = (Category = "Default"))
