@@ -48,8 +48,6 @@ public:
 	virtual void Tick(float DeltaTime) override;
 	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 	virtual void Reset() override;
-	TObjectPtr<UMessageClient> Client = nullptr; 
-
 
 	/* === properties === */
 	//UPROPERTY(VisibleDefaultsOnly, meta = (Category = "Default"))

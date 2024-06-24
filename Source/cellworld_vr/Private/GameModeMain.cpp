@@ -78,14 +78,12 @@ void AGameModeMain::SpawnAndPossessPlayer(FVector spawn_location, FRotator spawn
 	if (!PlayerPawn) return;
 
 	// Find the player controller
-	// APlayerControllerVR* PlayerController = Cast<APlayerControllerVR>(GetWorld()->GetFirstPlayerController());
 	APlayerController* PlayerController = Cast<APlayerControllerVR>(GetWorld()->GetFirstPlayerController());
 	if (PlayerController)
 	{
 		// Possess the spawned pawn
 		PlayerController->Possess(PlayerPawn);
 	}
-	//EAutoReceiveInput::Type::Player0;
 }
 // todo: should ESMonitor be attached to each individual pawn? 
 bool AGameModeMain::AttachClientToPlayer(TObjectPtr<UMessageClient> ClientIn, TObjectPtr<APawnMain> PawnIn)
@@ -114,7 +112,7 @@ void AGameModeMain::SpawnGetCLMonitorComponentActor()
 	GetCLMonitorComponentActor = Cast<AGeCLMonitorComponentActor>(GetWorld()->SpawnActor(AGetCLMonitorComponentActor::StaticClass(), &TempLoc, &TempRot, SpawnInfo));*/
 }
 /* spawn all logging actors, some may contain threads but they handle themselves. 
-* right now, theres only one, but im gonna call this function to maintain consitency.
+* right now, there's only one, but im gonna call this function to maintain consitency.
 */
 void AGameModeMain::SpawnAllLoggingActor()
 {
@@ -139,7 +137,7 @@ void AGameModeMain::StartPlay()
 
 	/* spawn player */
 	// todo: make sure I don;t need this before deleting. Currently I don't think its necessary
-	AGameModeMain::SpawnAndPossessPlayer(FVector(380, -1790, 0), FRotator::ZeroRotator); 
+	// AGameModeMain::SpawnAndPossessPlayer(FVector(20.0f,-1230.0f,92.0f), FRotator::ZeroRotator); 
 	
 	if (bSpawnExperimentService) { AGameModeMain::SpawnExperimentServiceMonitor(); }
 
@@ -165,9 +163,8 @@ void AGameModeMain::Tick(float DeltaTime)
 }
 
 bool AGameModeMain::ExperimentStartEpisode() { 
-	if (!ExperimentServiceMonitor) { return false; }
-	// return ExperimentServiceMonitor->StartEpisode(TODO);  
-	return false;
+	if (!ExperimentServiceMonitor && !ExperimentServiceMonitor->Client) { return false; }
+	return ExperimentServiceMonitor->StartEpisode(ExperimentServiceMonitor->Client, ExperimentServiceMonitor->ExperimentNameActive);  
 }
 
 bool AGameModeMain::ExperimentStopEpisode() {

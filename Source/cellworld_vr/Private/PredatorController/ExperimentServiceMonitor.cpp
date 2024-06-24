@@ -111,7 +111,7 @@ bool AExperimentServiceMonitor::StopExperiment(const FString& ExperimentNameIn) 
 	const FString RequestString = UExperimentUtils::FinishExperimentRequestToJsonString(RequestBody);
 	StopExperimentRequest = Client->SendRequest("finish_experiment", RequestString, TimeOut);
 
-	if (!StopExperimentRequest) { return nullptr; }
+	if (!StopExperimentRequest) { return false; }
 
 	StopExperimentRequest->ResponseReceived.AddDynamic(this, &AExperimentServiceMonitor::HandleStopExperimentResponse); // uses same one as start/stop
 	StopExperimentRequest->TimedOut.AddDynamic(this, &AExperimentServiceMonitor::HandleStopExperimentTimedOut);
@@ -197,7 +197,7 @@ bool AExperimentServiceMonitor::StartEpisode(UMessageClient* ClientIn, const FSt
 	printScreen("[SendStartEpisodeRequest()] Sending request!");
 	StartEpisodeRequest = ClientIn->SendRequest("start_episode", RequestString, TimeOut);
 	
-	if (!StartEpisodeRequest) { return nullptr; }
+	if (!StartEpisodeRequest) { return false; }
 
 	StartEpisodeRequest->ResponseReceived.AddDynamic(this, &AExperimentServiceMonitor::HandleStartEpisodeRequestResponse);
 	StartEpisodeRequest->TimedOut.AddDynamic(this, &AExperimentServiceMonitor::HandleStartEpisodeRequestTimedOut);
@@ -296,7 +296,7 @@ void AExperimentServiceMonitor::HandleStartExperimentResponse(const FString Resp
 	UE_LOG(LogTemp, Warning, TEXT("[AExperimentServiceMonitor::HandleStartExperimentResponse] Experiment name: %s"), *ExperimentNameActive);
 	
 	bInExperiment = true;
-	this->StartEpisode(Client, ExperimentNameActive);
+	// this->StartEpisode(Client, ExperimentNameActive);
 }
 
 void AExperimentServiceMonitor::HandleStartExperimentTimedOut()

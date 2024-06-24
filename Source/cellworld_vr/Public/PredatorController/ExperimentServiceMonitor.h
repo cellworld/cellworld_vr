@@ -161,8 +161,8 @@ public:
 	const FString on_episode_started_header     = "on_episode_started";
 	
 	/* ==== server stuff ==== */
-	const FString ServerIPMessage = "172.30.127.68";    // alternate 
-	// const FString ServerIPMessage = "192.168.137.25"; // lab  
+	// const FString ServerIPMessage = "172.30.127.68";    // alternate 
+	const FString ServerIPMessage = "192.168.137.25"; // lab  
 	const int ServerPort	      = 4970;
 
 	/* ==== status stuff ==== */
