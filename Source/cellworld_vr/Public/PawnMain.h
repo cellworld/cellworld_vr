@@ -1,19 +1,13 @@
 #pragma once
 #include "CoreMinimal.h"
 #include "Components/StaticMeshComponent.h"
-#include "ExperimentPlugin.h"
-#include "Components/WidgetInteractionComponent.h" 
-#include "Components/WidgetComponent.h"
+#include "Interfaces/HUDExperiment.h"
 #include "GameFramework/Pawn.h"
-#include "PawnMainMovementComponent.h"
 #include "CoreMinimal.h"
 #include "HeadMountedDisplay.h"
 #include "Containers/Array.h" 
-#include "Kismet/GameplayStatics.h" 
-#include "GameFramework/FloatingPawnMovement.h" 
 #include "GameFramework/CharacterMovementComponent.h" // test 
 #include "Components/CustomCharacterMovementComponent.h"
-#include "Kismet/GameplayStatics.h" 
 #include "MotionControllerComponent.h"
 #include "PawnMain.generated.h"
 
@@ -25,16 +19,23 @@ class CELLWORLD_VR_API APawnMain : public APawn
 	GENERATED_BODY()
 
 public:
-
+	
+	/* debug stuff */
+	int DebugTimeRemaining = 0;
+	void DebugHUDAddTime();
+	
 	// Sets default values for this pawn's properties
 	APawnMain();
-
+	
 	UPROPERTY()
 	FOnMovementDetected MovementDetectedEvent; 
 
 	void ResetOrigin();
 	void RestartGame();
 	void QuitGame();
+	TObjectPtr<APlayerController> GetGenericController();
+	bool CreateAndInitializeWidget();
+	void DestroyHUD();
 
 	/* temp */
 	FVector RelLoc;
@@ -57,6 +58,13 @@ public:
 	UCustomCharacterMovementComponent* MovementComponent; 
 	class UMotionControllerComponent* MotionControllerLeft;
 	class UMotionControllerComponent* MotionControllerRight;
+
+	UPROPERTY(EditAnywhere)
+	TSubclassOf<class UHUDExperiment> PlayerHUDClass;
+	// TObjectPtr<UHUDExperiment> PlayerHUDClass;
+
+	UPROPERTY()
+	class UHUDExperiment* PlayerHUD;
 	
 	void SetupPlayerInputComponent(class UInputComponent* InInputComponent);
 

@@ -1,5 +1,5 @@
 #include "GameModeMain.h"
-#include "GameFramework/PlayerStart.h"
+#include "Interfaces/HUDExperiment.h"
 #include "PawnMain.h" 
 #include "GameStateMain.h"
 #include "PawnDebug.h"
@@ -14,21 +14,21 @@ AGameModeMain::AGameModeMain()
 	/* Get PawnMain to spawn */
 	if (!bUseVR){
 		DefaultPawnClass = APawnDebug::StaticClass(); 
-		// PawnClassToSpawn = APawnDebug::StaticClass(); 
-		// PlayerController = AMouseKeyboardPlayerController::StaticClass();
 		PlayerControllerClass = AMouseKeyboardPlayerController::StaticClass();
 	}
 	else { 
 		DefaultPawnClass = APawnMain::StaticClass(); 
-		// PawnClassToSpawn = APawnMain::StaticClass(); 
 		PlayerControllerClass = APlayerControllerVR::StaticClass();
-		// PlayerControllerClass = APlayerControllerVR::StaticClass();
 	}
-	 
-	/* Assign default game state */
 	GameStateClass = AGameStateMain::StaticClass();
 
-	/* standard defaults */
+	// look for components based in BP 
+	// static ConstructorHelpers::FObjectFinder<UHUDExperiment> PlayerHUD(TEXT("/Script/UMGEditor.WidgetBlueprint'/Game/Interfaces/BP_HUDExperiment.BP_HUDExperiment'"));
+	// if (PlayerHUD.Succeeded()) {
+	// 	HUDClass = PlayerHUD.Object;
+	// }
+	// HUDClass = UHUDExperiment::StaticClass();
+
 	PrimaryActorTick.bStartWithTickEnabled = true;
 	PrimaryActorTick.bCanEverTick = true;
 }
@@ -150,7 +150,7 @@ void AGameModeMain::StartPlay()
 void AGameModeMain::EndPlay(const EEndPlayReason::Type EndPlayReason)
 {
 	Super::EndPlay(EndPlayReason);
-	if (this->ExperimentServiceMonitor->IsValidLowLevelFast())
+	if (bSpawnExperimentService && this->ExperimentServiceMonitor->IsValidLowLevelFast())
 	{
 		this->ExperimentStopEpisode();
 		this->ExperimentStopExperiment(ExperimentServiceMonitor->ExperimentNameActive);

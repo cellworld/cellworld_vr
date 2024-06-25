@@ -61,6 +61,16 @@ APawnMain::APawnMain() : Super()
 	MotionControllerRight->MotionSource = FName("Right");
 	MotionControllerRight->SetVisibility(false, false);
 	MotionControllerRight->SetupAttachment(RootComponent);
+
+	const FSoftClassPath PlayerHUDClassRef(TEXT("/Script/UMGEditor.WidgetBlueprint'/Game/Interfaces/BP_HUDExperiment.BP_HUDExperiment_C'"));
+	if (TSubclassOf<UHUDExperiment> MyWidgetClass = PlayerHUDClassRef.TryLoadClass<UHUDExperiment>() )
+	{
+		PlayerHUDClass = MyWidgetClass;
+		// APlayerController* PlayerController = Cast<APlayerController>(this->GetController());
+		// if (PlayerController) { PlayerHUD = CreateWidget<UHUDExperiment>(PlayerController, MyWidgetClass);}
+		// else { UE_DEBUG_BREAK(); }
+	}
+
 }
 
 // Called to bind functionality to input
@@ -71,7 +81,7 @@ void APawnMain::SetupPlayerInputComponent(class UInputComponent* InInputComponen
 
 UCameraComponent* APawnMain::GetCameraComponent()
 {
-	return APawnMain::Camera;
+	return this->Camera;
 }
 
 void APawnMain::StartExperiment()
@@ -159,31 +169,86 @@ void APawnMain::QuitGame()
 	}
 }
 
+TObjectPtr<APlayerController> APawnMain::GetGenericController()
+{
+	TObjectPtr<APlayerController> PlayerControllerOut = nullptr;
+	if (this->IsValidLowLevelFast()) { PlayerControllerOut = Cast<APlayerController>(this->GetController()); }
+	return PlayerControllerOut;
+}
+
+bool APawnMain::CreateAndInitializeWidget()
+{
+	if (!PlayerHUDClass->IsValidLowLevelFast()) { return false; }
+	
+	TObjectPtr<APlayerController> PlayerController = this->GetGenericController();
+	if (!PlayerController->IsValidLowLevelFast())
+	{
+		if (GEngine) GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Red,
+			FString::Printf(TEXT("[APawnMain::CreateAndInitializeWidget()] PlayerController not valid.")));
+		UE_DEBUG_BREAK(); return false;
+	}
+
+	PlayerHUD = CreateWidget<UHUDExperiment>(PlayerController, PlayerHUDClass);
+	if (!PlayerHUD->IsValidLowLevelFast())
+	{
+		if (GEngine) GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Red,
+			FString::Printf(TEXT("[APawnMain::CreateAndInitializeWidget()] PlayerHUD not valid.")));
+		UE_DEBUG_BREAK();
+		return false;
+	}
+	
+	PlayerHUD->Init();
+	PlayerHUD->AddToViewport();
+	if (GEngine) GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Emerald,
+		FString::Printf(TEXT("[APawnMain::CreateAndInitializeWidget()] OK.")));
+	return true;
+}
+
 // Called when the game starts or when spawned
 void APawnMain::BeginPlay()
 {
 	Super::BeginPlay();
-	//UHeadMountedDisplayFunctionLibrary::ResetOrientationAndPosition(0.0f, EOrientPositionSelector::OrientationAndPosition);
+	if (!this->CreateAndInitializeWidget())
+	{
+		if (GEngine) GEngine->AddOnScreenDebugMessage(-1, 0.5f, FColor::Red,
+			FString::Printf(TEXT("[APawnMain::BeginPlay()] Failed to create Player HUD.")));
+	}
+	
 }
 
-// Called every frame
+void APawnMain::DebugHUDAddTime()
+{
+	DebugTimeRemaining += 1;
+	if ((DebugTimeRemaining % 10 == 0) && PlayerHUD)
+	{
+		PlayerHUD->SetTimeRemaining(FString::FromInt(DebugTimeRemaining));
+		PlayerHUD->SetCurrentStatus(FString::FromInt(DebugTimeRemaining));
+	}
+}
 
-/* todo: implement elsewhere */
+/* Called every frame:
+ * todo: implement elsewhere */
 void APawnMain::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 	
-	/* check if we moved */
 	if (this->DetectMovement()) {
 		this->OnMovementDetected();
 	}
+}
 
+void APawnMain::DestroyHUD()
+{
+	if (PlayerHUD)
+	{
+		PlayerHUD->RemoveFromParent();
+		PlayerHUD = nullptr;
+	}
 }
 
 void APawnMain::EndPlay(const EEndPlayReason::Type EndPlayReason)
 {
-	//UE_LOG(LogTemp, Warning, TEXT("[APawnMain::EndPlay] Destroying pawn."));
-	//APawnMain::Destroy(EEndPlayReason::Destroyed);
+	this->DestroyHUD();
 }
 
 void APawnMain::Reset()

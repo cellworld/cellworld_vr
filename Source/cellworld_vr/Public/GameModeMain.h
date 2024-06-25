@@ -19,7 +19,7 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Debug")
 	bool bUseVR = true;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Debug")
-	bool bSpawnExperimentService = true;
+	bool bSpawnExperimentService = false;
 	
 	/* debug */
 	TObjectPtr<UClass> PawnClassToSpawn;
@@ -52,15 +52,13 @@ public:
 
 	/* functions for door and experiment control */
 	UPROPERTY(BlueprintReadWrite)
-		AExperimentServiceMonitor* ExperimentServiceMonitor;
+		AExperimentServiceMonitor* ExperimentServiceMonitor = nullptr;
 	UFUNCTION(BlueprintCallable, Category = Experiment)
 		void SpawnExperimentServiceMonitor();
 	UFUNCTION(BlueprintCallable, Category = Experiment)
 		bool ExperimentStartEpisode(); 
-	
 	UFUNCTION(BlueprintCallable, Category = Experiment)
 		bool ExperimentStopEpisode();
-
 	UFUNCTION(BlueprintCallable, Category = Experiment)
 		bool ExperimentStopExperiment(const FString ExperimentNameIn);
 };
