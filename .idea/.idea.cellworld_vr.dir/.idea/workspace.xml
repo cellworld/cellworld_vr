@@ -8,14 +8,11 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="1c47d21e-d606-4573-a92c-992758c7f03c" name="Changes" comment="">
-      <change beforePath="$PROJECT_DIR$/Content/Levels/Door/BP_Door_Entry.uasset" beforeDir="false" afterPath="$PROJECT_DIR$/Content/Levels/Door/BP_Door_Entry.uasset" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Content/Levels/Door/BP_Door_Exit.uasset" beforeDir="false" afterPath="$PROJECT_DIR$/Content/Levels/Door/BP_Door_Exit.uasset" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Content/Levels/L_Maze.umap" beforeDir="false" afterPath="$PROJECT_DIR$/Content/Levels/L_Maze.umap" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Source/cellworld_vr/Private/GameModeMain.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/Source/cellworld_vr/Private/GameModeMain.cpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/.idea.cellworld_vr.dir/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/.idea.cellworld_vr.dir/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Source/cellworld_vr/Private/PawnMain.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/Source/cellworld_vr/Private/PawnMain.cpp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Source/cellworld_vr/Public/GameModeMain.h" beforeDir="false" afterPath="$PROJECT_DIR$/Source/cellworld_vr/Public/GameModeMain.h" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Source/cellworld_vr/Private/PredatorController/ExperimentServiceMonitor.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/Source/cellworld_vr/Private/PredatorController/ExperimentServiceMonitor.cpp" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Source/cellworld_vr/Public/PawnMain.h" beforeDir="false" afterPath="$PROJECT_DIR$/Source/cellworld_vr/Public/PawnMain.h" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Source/cellworld_vr/cellworld_vr.Build.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Source/cellworld_vr/cellworld_vr.Build.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Source/cellworld_vr/Public/PredatorController/ExperimentServiceMonitor.h" beforeDir="false" afterPath="$PROJECT_DIR$/Source/cellworld_vr/Public/PredatorController/ExperimentServiceMonitor.h" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -81,10 +78,10 @@
   <component name="MarkdownSettingsMigration">
     <option name="stateVersion" value="1" />
   </component>
-  <component name="ProjectColorInfo"><![CDATA[{
-  "customColor": "",
-  "associatedIndex": 2
-}]]></component>
+  <component name="ProjectColorInfo">{
+  &quot;customColor&quot;: &quot;&quot;,
+  &quot;associatedIndex&quot;: 2
+}</component>
   <component name="ProjectId" id="2iLg3NHKwvWobmOOkqEtgxuoE9x" />
   <component name="ProjectViewState">
     <option name="hideEmptyMiddlePackages" value="true" />
@@ -95,7 +92,7 @@
     "RunOnceActivity.OpenProjectViewOnStart": "true",
     "RunOnceActivity.ShowReadmeOnStart": "true",
     "Uproject.cellworld_vr.executor": "Run",
-    "git-widget-placeholder": "feature/HUD",
+    "git-widget-placeholder": "feature/Timer",
     "node.js.detected.package.eslint": "true",
     "node.js.detected.package.tslint": "true",
     "node.js.selected.package.eslint": "(autodetect)",
@@ -238,6 +235,7 @@
       <option name="presentableId" value="Default" />
       <updated>1719275072909</updated>
       <workItem from="1719275075128" duration="15315000" />
+      <workItem from="1719294451916" duration="1956000" />
     </task>
     <servers />
   </component>

@@ -34,6 +34,29 @@ bool AExperimentServiceMonitor::ValidateLevel(UWorld* InWorld, const FString InL
 	return true;
 }
 
+void AExperimentServiceMonitor::OnEpisodeTimerDone()
+{
+	printScreen("[AExperimentServiceMonitor::OnEpisodeTimerDone()]");
+}
+
+void AExperimentServiceMonitor::InitializeTimer(const float InitialTimeIn)
+{
+	printScreen("[AExperimentServiceMonitor::InitializeTimer()]");
+	GetWorld()->GetTimerManager().SetTimer(TimerHandleEpisode, this, &AExperimentServiceMonitor::OnEpisodeTimerDone,InitialTimeIn, false);
+}
+
+bool AExperimentServiceMonitor::StartTimer()
+{
+	printScreen("[AExperimentServiceMonitor::StartTimer()]");
+	return false;
+}
+
+bool AExperimentServiceMonitor::StopTimer()
+{
+	printScreen("[AExperimentServiceMonitor::StopTimer()]");
+	return false;
+}
+
 /* todo: make this take input ACharacter and spawn that one*/
 bool AExperimentServiceMonitor::SpawnAndPossessPredator() {
 
@@ -288,6 +311,8 @@ void AExperimentServiceMonitor::HandleStartExperimentResponse(const FString Resp
 	/* convert to usable format */
 	FStartExperimentResponse StartExperimentResponse = UExperimentUtils::JsonStringToStartExperimentResponse(*ResponseIn);
 	ExperimentNameActive = StartExperimentResponse.experiment_name;
+	
+	/* todo high priority: get StartExperimentResponse.duration and pass it to GlobalTimer inside GameModeMain */
 	
 	if (ExperimentNameActive == "") {
 		UE_DEBUG_BREAK();

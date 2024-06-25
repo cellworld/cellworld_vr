@@ -34,11 +34,19 @@ public:
 	void RestartGame();
 	void QuitGame();
 	TObjectPtr<APlayerController> GetGenericController();
+
+	/* HUD stuff */
 	bool CreateAndInitializeWidget();
 	void DestroyHUD();
-
+	bool HUDSetTimeRemaining(const FString& TimeRemainingIn);
+	bool HUDSetCurrentStatus(const FString& CurrentStatusIn);
+	
 	/* temp */
 	FVector RelLoc;
+
+	FTimerHandle TimerHandleEpisode;
+	void InitializeTimer(const float InitialTimeIn);
+	void OnTimerDone();
 
 protected:
 	// Called when the game starts or when spawned

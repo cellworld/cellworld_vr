@@ -172,6 +172,15 @@ public:
 	bool bConnectedExperimentService = false; 
 	bool bConnectedToServer			 = false;
 
+	UPROPERTY(EditAnywhere)
+		float InitialTimerDebug = 10.0f; 
+
+	FTimerHandle TimerHandleEpisode;
+	void InitializeTimer(const float InitialTimeIn);
+	void OnEpisodeTimerDone();
+	bool StartTimer();
+	bool StopTimer();
+	
 	/* ==== world stuff ==== */
 	float map_length                = 5100;
 	int frame_count                 = 0; // todo: will probably delete 

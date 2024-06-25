@@ -176,6 +176,7 @@ TObjectPtr<APlayerController> APawnMain::GetGenericController()
 	return PlayerControllerOut;
 }
 
+/*todo: change to PlayerController */
 bool APawnMain::CreateAndInitializeWidget()
 {
 	if (!PlayerHUDClass->IsValidLowLevelFast()) { return false; }
@@ -204,6 +205,37 @@ bool APawnMain::CreateAndInitializeWidget()
 	return true;
 }
 
+bool APawnMain::HUDSetTimeRemaining(const FString& TimeRemainingIn)
+{
+	if (!PlayerHUD) { return false; }
+	PlayerHUD->SetTimeRemaining(TimeRemainingIn);
+	return true;
+}
+
+bool APawnMain::HUDSetCurrentStatus(const FString& CurrentStatusIn)
+{
+	if (!PlayerHUD) { return false; }
+	PlayerHUD->SetTimeRemaining(CurrentStatusIn);
+	return true;
+}
+
+/* Tests TimerManager and calls bound function APawnMain::OnTimerDone
+ * Call on BeginPlay()
+ * Stable 6/25/2024
+ */
+void APawnMain::InitializeTimer(const float InitialTimeIn)
+{
+	if (GEngine) GEngine->AddOnScreenDebugMessage(-1, 0.5f, FColor::Red,
+			FString::Printf(TEXT("[APawnMain::InitializeTimer()] Init timer!.")));
+	GetWorld()->GetTimerManager().SetTimer(TimerHandleEpisode, this, &APawnMain::OnTimerDone,InitialTimeIn, false);
+}
+
+void APawnMain::OnTimerDone()
+{
+	if (GEngine) GEngine->AddOnScreenDebugMessage(-1, 0.5f, FColor::Red,
+			FString::Printf(TEXT("[APawnMain::OnTimerDone()] Timer Done!.")));
+}
+
 // Called when the game starts or when spawned
 void APawnMain::BeginPlay()
 {
@@ -213,13 +245,17 @@ void APawnMain::BeginPlay()
 		if (GEngine) GEngine->AddOnScreenDebugMessage(-1, 0.5f, FColor::Red,
 			FString::Printf(TEXT("[APawnMain::BeginPlay()] Failed to create Player HUD.")));
 	}
-	
+
 }
 
+/* Tests UUSerWidget: Add time every 2 frames.
+ * Call on tick
+ * Stable 6/25/2024
+ */
 void APawnMain::DebugHUDAddTime()
 {
 	DebugTimeRemaining += 1;
-	if ((DebugTimeRemaining % 10 == 0) && PlayerHUD)
+	if ((DebugTimeRemaining % 2 == 0) && PlayerHUD)
 	{
 		PlayerHUD->SetTimeRemaining(FString::FromInt(DebugTimeRemaining));
 		PlayerHUD->SetCurrentStatus(FString::FromInt(DebugTimeRemaining));
