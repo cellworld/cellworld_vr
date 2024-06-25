@@ -208,12 +208,6 @@ bool APawnMain::CreateAndInitializeWidget()
 void APawnMain::BeginPlay()
 {
 	Super::BeginPlay();
-	if (!this->CreateAndInitializeWidget())
-	{
-		if (GEngine) GEngine->AddOnScreenDebugMessage(-1, 0.5f, FColor::Red,
-			FString::Printf(TEXT("[APawnMain::BeginPlay()] Failed to create Player HUD.")));
-	}
-	
 }
 
 void APawnMain::DebugHUDAddTime()
@@ -231,12 +225,9 @@ void APawnMain::DebugHUDAddTime()
 void APawnMain::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
-	
 	if (this->DetectMovement()) {
 		this->OnMovementDetected();
 	}
-
-	this->DebugHUDAddTime();
 }
 
 void APawnMain::DestroyHUD()

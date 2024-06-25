@@ -174,13 +174,12 @@ public:
 	bool bConnectedToServer			 = false;
 
 	/* ==== world stuff ==== */
-	float map_length                = 5100;
-	int frame_count                 = 0; // todo: will probably delete 
+	float map_length      = 5100;
+	int FrameCount        = 0; // todo: will probably delete 
 	const float MapLength = 235.185;
 	int WorldScale        = 15; 
 
 	/* ==== setup ==== */
-
 	bool SpawnAndPossessPredator();
 	ACharacter* CharacterPredator = nullptr; 
 

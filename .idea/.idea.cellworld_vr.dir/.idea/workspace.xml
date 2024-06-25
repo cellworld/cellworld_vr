@@ -9,11 +9,16 @@
   <component name="ChangeListManager">
     <list default="true" id="bd3bfde3-e5c0-495a-96ec-db9c4e50535b" name="Changes" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/.idea.cellworld_vr.dir/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/.idea.cellworld_vr.dir/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Config/DefaultInput.ini" beforeDir="false" afterPath="$PROJECT_DIR$/Config/DefaultInput.ini" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Content/Levels/L_Maze.umap" beforeDir="false" afterPath="$PROJECT_DIR$/Content/Levels/L_Maze.umap" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Plugins/ExperimentPlugin/Source/ExperimentPlugin/Private/ExperimentUtils.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/Plugins/ExperimentPlugin/Source/ExperimentPlugin/Private/ExperimentUtils.cpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Source/cellworld_vr/Private/ExperimentComponents/ExperimentServiceClient.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/Source/cellworld_vr/Private/ExperimentComponents/ExperimentServiceClient.cpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Source/cellworld_vr/Private/GameModeMain.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/Source/cellworld_vr/Private/GameModeMain.cpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Source/cellworld_vr/Private/PawnDebug.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/Source/cellworld_vr/Private/PawnDebug.cpp" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Source/cellworld_vr/Private/PawnMain.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/Source/cellworld_vr/Private/PawnMain.cpp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Source/cellworld_vr/Private/PlayerControllerVR.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/Source/cellworld_vr/Private/PlayerControllerVR.cpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Source/cellworld_vr/Private/PredatorController/ExperimentServiceMonitor.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/Source/cellworld_vr/Private/PredatorController/ExperimentServiceMonitor.cpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Source/cellworld_vr/Public/ExperimentComponents/ExperimentServiceClient.h" beforeDir="false" afterPath="$PROJECT_DIR$/Source/cellworld_vr/Public/ExperimentComponents/ExperimentServiceClient.h" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Source/cellworld_vr/Public/GameModeMain.h" beforeDir="false" afterPath="$PROJECT_DIR$/Source/cellworld_vr/Public/GameModeMain.h" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Source/cellworld_vr/Public/PredatorController/ExperimentServiceMonitor.h" beforeDir="false" afterPath="$PROJECT_DIR$/Source/cellworld_vr/Public/PredatorController/ExperimentServiceMonitor.h" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cellworld_vr.uproject.DotSettings.user" beforeDir="false" afterPath="$PROJECT_DIR$/cellworld_vr.uproject.DotSettings.user" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -199,7 +204,7 @@
       <option name="number" value="Default" />
       <option name="presentableId" value="Default" />
       <updated>1719329878847</updated>
-      <workItem from="1719329880160" duration="3500000" />
+      <workItem from="1719329880160" duration="9065000" />
     </task>
     <servers />
   </component>

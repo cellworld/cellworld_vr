@@ -355,7 +355,7 @@ void AExperimentServiceMonitor::UpdatePredator(FMessage message)
 	UE_LOG(LogTemp, Error, TEXT("[AExperimentServiceMonitor::UpdatePredator] message.body:\n%s"), *message.body);
 
 	if (Client == nullptr) { return; }
-	frame_count++;
+	FrameCount++;
 	FStep step = UExperimentUtils::JsonStringToStep(message.body); 
 	FVector new_location_ue = UExperimentUtils::CanonicalToVr(step.location,MapLength, WorldScale); // ue --> unreal engine units 
 	
@@ -378,10 +378,10 @@ void AExperimentServiceMonitor::UpdatePreyPosition(const FVector vector)
 	/* prepare Step */
 	FStep send_step; 
 	send_step.agent_name = "prey";
-	send_step.frame = frame_count;
+	send_step.frame = FrameCount;
 	send_step.location = Location; 
 	send_step.rotation = 0.0f; // todo: get actual rotation of player  
-	send_step.time_stamp = frame_count; // todo: change to timer, not frame 
+	send_step.time_stamp = FrameCount; // todo: change to timer, not frame 
 
 	/* convert FStep to JsonString */
 	FString body = UExperimentUtils::StepToJsonString(send_step); 

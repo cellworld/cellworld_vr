@@ -234,7 +234,6 @@ FVector UExperimentUtils::CanonicalToVr(const FLocation LocationIn, const float 
 	return VectorOut;
 }
 
-
 int UExperimentUtils::updateFrame(int Frame)
 {
 	Frame++;

@@ -124,13 +124,10 @@ protected:
 	bool bConnectedExperimentService = false; 
 	bool bConnectedToServer			 = false;
 
-	/* world stuff */
-	float map_length                = 5100;
-	int frame_count                 = 0; 
-
-	/* coordinate system stuff */
+	/* world and coordinate system stuff */
 	const float MapLength = 235.185;
 	int WorldScale        = 15; 
+	int FrameCount        = 0; 
 
 	/* setup */
 	const FString predator_step_header = "predator_step";

@@ -1,10 +1,9 @@
 #include "GameModeMain.h"
-#include "Interfaces/HUDExperiment.h"
+#include "EngineUtils.h"
 #include "PawnMain.h" 
 #include "GameStateMain.h"
 #include "PawnDebug.h"
 #include "PredatorController/AIControllerPredator.h"
-#include "ExperimentPlugin.h"
 #include "AsyncLoadingScreenLibrary.h"
 #include "MouseKeyboardPlayerController.h"
 #include "PlayerControllerVR.h"
@@ -61,6 +60,20 @@ void AGameModeMain::EndGame()
 	UE_LOG(LogTemp, Warning, TEXT("[ AGameModeMain::EndGame()] Force quit."));
 	FGenericPlatformMisc::RequestExit(false);
 }
+
+AActor* AGameModeMain::GetLevelActorFromName(const FName& ActorNameIn)
+{
+	// Assuming this code is within a member function of an actor or game mode
+	for (TActorIterator<AActor> ActorItr(GetWorld()); ActorItr; ++ActorItr)
+	{
+		AActor* FoundActor = *ActorItr;
+		// Now you can do something with FoundActor
+		// For example, print the actor's name to the output log
+		UE_LOG(LogTemp, Warning, TEXT("Found actor: %s"), *FoundActor->GetName());
+	}
+	return nullptr;
+}
+
 /* 
 * Updates GameInstance with HP keys. Will use variables inside GameInstanceMain.h 
 * to find, load, and process the HP keys. 
@@ -138,6 +151,8 @@ void AGameModeMain::StartPlay()
 	/* spawn player */
 	// todo: make sure I don;t need this before deleting. Currently I don't think its necessary
 	// AGameModeMain::SpawnAndPossessPlayer(FVector(20.0f,-1230.0f,92.0f), FRotator::ZeroRotator); 
+	FName NameTemp = "BP_LevelActor";
+	this->GetLevelActorFromName(NameTemp);
 	
 	if (bSpawnExperimentService) { AGameModeMain::SpawnExperimentServiceMonitor(); }
 
@@ -169,7 +184,6 @@ bool AGameModeMain::ExperimentStartEpisode() {
 
 bool AGameModeMain::ExperimentStopEpisode() {
 	if (!ExperimentServiceMonitor) { return false; }
-	
 	// make sure the actor isn't already in queue for being destroyed 
 	//if (ExperimentServiceMonitor->IsPendingKill()) 
 	if (!IsValid(ExperimentServiceMonitor))
