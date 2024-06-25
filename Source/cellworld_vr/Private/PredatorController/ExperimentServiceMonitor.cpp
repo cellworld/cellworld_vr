@@ -659,11 +659,11 @@ bool AExperimentServiceMonitor::RoutePredatorMessages()
 	
 	Client->UnroutedMessageEvent.AddDynamic(this,&AExperimentServiceMonitor::HandleUnroutedMessage);
 	RoutePredator = Client->AddRoute("predator_step");
-	RouteOnEpisodeStarted = Client->AddRoute(on_episode_started_header);
+	RouteOnEpisodeStarted = Client->AddRoute(on_episode_started_header); // todo: make sure I can delete 
 
 	if (!RoutePredator) {printScreen("[AExperimentServiceMonitor::RoutePredatorMessages()] Route not valid."); return false; }
 	// RoutePredator->MessageReceived.AddDynamic(this,&AExperimentServiceMonitor::HandleUpdatePredator);
-	RouteOnEpisodeStarted->MessageReceived.AddDynamic(this,&AExperimentServiceMonitor::HandleUpdatePredator);
+	RouteOnEpisodeStarted->MessageReceived.AddDynamic(this, &AExperimentServiceMonitor::HandleUpdatePredator);
 
 	printScreen("[AExperimentServiceMonitor::RoutePredatorMessages()] OK");
 	return true;
