@@ -235,6 +235,8 @@ void APawnMain::Tick(float DeltaTime)
 	if (this->DetectMovement()) {
 		this->OnMovementDetected();
 	}
+
+	this->DebugHUDAddTime();
 }
 
 void APawnMain::DestroyHUD()

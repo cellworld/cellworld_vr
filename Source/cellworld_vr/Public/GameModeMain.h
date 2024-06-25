@@ -19,7 +19,7 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Debug")
 	bool bUseVR = true;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Debug")
-	bool bSpawnExperimentService = false;
+	bool bSpawnExperimentService = true;
 	
 	/* debug */
 	TObjectPtr<UClass> PawnClassToSpawn;
