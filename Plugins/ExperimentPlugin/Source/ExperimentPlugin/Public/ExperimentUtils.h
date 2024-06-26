@@ -85,7 +85,7 @@ public:
 	UFUNCTION(BlueprintCallable, Category = Experiment)
 		static FString UpdateGhostMovementMessageToJsonString(FUpdateGhostMovementMessage structInput);
 	UFUNCTION(BlueprintCallable, Category = Experiment)
-		static FLocation VrToCanonical(const FVector VectorIn, const float MapLengthIn, const int WorldScaleIn);
+		static FLocation VrToCanonical(const FVector VectorIn, const float MapLengthIn, const float WorldScaleIn);
 	UFUNCTION(BlueprintCallable, Category = Experiment)
 		static FVector CanonicalToVr(const FLocation LocationIn, const float MapLengthIn, const float WorldScaleIn);
 	UFUNCTION(BlueprintCallable, Category = Experiment)

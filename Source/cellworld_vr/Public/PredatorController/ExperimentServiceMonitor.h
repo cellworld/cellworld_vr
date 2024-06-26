@@ -51,11 +51,11 @@ public:
 		for (int i = 0; i < OcclusionAllLocationsArr.Num(); i++) {
 			AOcclusion* MyMeshActor = WorldRefIn->SpawnActor<AOcclusion>(
 				AOcclusion::StaticClass(),
-				UExperimentUtils::CanonicalToVr(OcclusionAllLocationsArr[i], MapLength, 15*ScaleOffset), // todo: make scale dynamic
+				UExperimentUtils::CanonicalToVr(OcclusionAllLocationsArr[i], MapLength, WorldScaleVecIn.X*ScaleOffset), // todo: make scale dynamic
 				Rotation,
 				SpawnParams);
-			 
-			MyMeshActor->SetActorScale3D(FVector(15* ScaleOffset,15*ScaleOffset, 15)); // todo: change to WorldScaleVecIn
+			
+			MyMeshActor->SetActorScale3D(WorldScaleVecIn*ScaleOffset); 
 			MyMeshActor->SetActorHiddenInGame(bVisibilityIn);
 			MyMeshActor->SetActorEnableCollision(bEnableCollisonIn);
 
@@ -161,10 +161,10 @@ public:
 	const FString on_episode_started_header     = "on_episode_started";
 	
 	/* ==== server stuff ==== */
-	const FString ServerIPMessage = "172.30.127.68";    // alternate 
-	// const FString ServerIPMessage = "192.168.137.25"; // lab old   
-	// const FString ServerIPMessage = "192.168.137.4"; // lab new
-	// const FString ServerIPMessage = "192.168.137.111";  // static laptop lab 
+	// const FString ServerIPMessage = "172.30.127.68";   // alternate 
+	const FString ServerIPMessage = "192.168.137.8";   // lab new
+	// const FString ServerIPMessage = "192.168.137.111"; // static laptop lab 
+	// const FString ServerIPMessage = "127.0.0.1";		  // localhost  
 	const int ServerPort	      = 4970;
 
 	/* ==== status stuff ==== */
@@ -177,7 +177,7 @@ public:
 	float map_length      = 5100;
 	int FrameCount        = 0; // todo: will probably delete 
 	const float MapLength = 235.185;
-	int WorldScale        = 15; 
+	float WorldScale      = 4.0f; 
 
 	/* ==== setup ==== */
 	bool SpawnAndPossessPredator();

@@ -219,7 +219,7 @@ FString UExperimentUtils::StepToJsonString(FStep Step) {
 	return jsonString;
 }
 
-FLocation UExperimentUtils::VrToCanonical(const FVector VectorIn, const float MapLengthIn, const int WorldScaleIn) {
+FLocation UExperimentUtils::VrToCanonical(const FVector VectorIn, const float MapLengthIn, const float WorldScaleIn) {
 	FLocation LocationOut;
 	LocationOut.x = ((VectorIn.X) / (MapLengthIn * WorldScaleIn));
 	LocationOut.y = VectorIn.Y / (-MapLengthIn * WorldScaleIn);

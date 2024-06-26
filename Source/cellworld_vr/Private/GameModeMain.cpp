@@ -7,6 +7,9 @@
 #include "AsyncLoadingScreenLibrary.h"
 #include "MouseKeyboardPlayerController.h"
 #include "PlayerControllerVR.h"
+#include "Kismet/GameplayStatics.h"
+#include "GameInstanceMain.h"
+#include "Misc/OutputDeviceNull.h"
 
 AGameModeMain::AGameModeMain()
 {
@@ -20,7 +23,7 @@ AGameModeMain::AGameModeMain()
 		PlayerControllerClass = APlayerControllerVR::StaticClass();
 	}
 	GameStateClass = AGameStateMain::StaticClass();
-
+	
 	// look for components based in BP 
 	// static ConstructorHelpers::FObjectFinder<UHUDExperiment> PlayerHUD(TEXT("/Script/UMGEditor.WidgetBlueprint'/Game/Interfaces/BP_HUDExperiment.BP_HUDExperiment'"));
 	// if (PlayerHUD.Succeeded()) {
@@ -67,9 +70,11 @@ AActor* AGameModeMain::GetLevelActorFromName(const FName& ActorNameIn)
 	for (TActorIterator<AActor> ActorItr(GetWorld()); ActorItr; ++ActorItr)
 	{
 		AActor* FoundActor = *ActorItr;
-		// Now you can do something with FoundActor
-		// For example, print the actor's name to the output log
-		UE_LOG(LogTemp, Warning, TEXT("Found actor: %s"), *FoundActor->GetName());
+		if (FoundActor->GetName() == ActorNameIn)
+		{
+			UE_LOG(LogTemp, Warning, TEXT("Found actor: %s"), *FoundActor->GetName());
+			return FoundActor;
+		}
 	}
 	return nullptr;
 }
@@ -81,13 +86,20 @@ AActor* AGameModeMain::GetLevelActorFromName(const FName& ActorNameIn)
 
 void AGameModeMain::SpawnAndPossessPlayer(FVector spawn_location, FRotator spawn_rotation)
 {
+	if (!bUseVR)
+	{
+		return;
+	}
+	
+	if (GEngine) GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Red, FString::Printf(TEXT("[AGameModeMain::SpawnAndPossessPlayer]!")));
+
 	/* to do: remove, no need for this if player start is present in map. if it isn''t, location will be taken care of by experiment service */
 
 	if(!GetWorld() || !GetWorld()->GetFirstPlayerController()) { UE_DEBUG_BREAK(); return; }
 
 	FActorSpawnParameters SpawnParams;
 	SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButAlwaysSpawn;
-	PlayerPawn = GetWorld()->SpawnActor<APawnMain>(PawnClassToSpawn, spawn_location, spawn_rotation, SpawnParams);
+	PlayerPawn = GetWorld()->SpawnActor<APawnMain>(DefaultPawnClass, spawn_location, spawn_rotation, SpawnParams);
 	if (!PlayerPawn) return;
 
 	// Find the player controller
@@ -150,10 +162,31 @@ void AGameModeMain::StartPlay()
 
 	/* spawn player */
 	// todo: make sure I don;t need this before deleting. Currently I don't think its necessary
-	// AGameModeMain::SpawnAndPossessPlayer(FVector(20.0f,-1230.0f,92.0f), FRotator::ZeroRotator); 
-	FName NameTemp = "BP_LevelActor";
-	this->GetLevelActorFromName(NameTemp);
+	// this->SpawnAndPossessPlayer(FVector(20.0f,-1230.0f,92.0f), FRotator::ZeroRotator); 
+	FLocation SpawnLocation;
+	SpawnLocation.x = 0.0f;
+	SpawnLocation.y = 0.4f;
+	const FVector SpawnLocationVR = UExperimentUtils::CanonicalToVr(SpawnLocation,235.185,4.0f);
+	this->SpawnAndPossessPlayer(SpawnLocationVR, FRotator::ZeroRotator); 
+	// FName NameTemp = "BP_Habitat_Actor_2";
+	// AActor* LevelActorBase = this->GetLevelActorFromName(NameTemp);
+	// if (LevelActorBase->IsValidLowLevelFast())
+	// {
+	// 	UE_LOG(LogTemp, Warning, TEXT("[AGameModeMain::StartPlay()] Found level actor! %s"),*LevelActorBase->GetName());
+	// }else{ LevelActorBase = nullptr; }
 	
+	// UGameInstanceMain* GameInstance = Cast<UGameInstanceMain>(UGameplayStatics::GetGameInstance(GetWorld()));
+	// if (GameInstance->IsValidLowLevelFast())
+	// {
+	// 	const FVector WorldScaleVector = GameInstance->GetLevelScale(nullptr);
+	// 	if (WorldScaleVector != FVector::ZeroVector) { GameInstance->SetWorldScale(WorldScaleVector.X); }
+	// 	else { UE_LOG(LogTemp, Warning, TEXT("[AGameModeMain::StartPlay()] WorldScaleVector not valid!")); }
+	// 	
+	// } else {
+	// 	UE_LOG(LogTemp, Warning, TEXT("[AGameModeMain::StartPlay()] GameInstanceMain NOT found!"));
+	// 	GameInstance = nullptr;
+	// }
+	//
 	if (bSpawnExperimentService) { AGameModeMain::SpawnExperimentServiceMonitor(); }
 
 	else { UE_LOG(LogTemp, Warning, TEXT("[AGameModeMain::StartPlay()] Not spawning Experiment Service!")); }

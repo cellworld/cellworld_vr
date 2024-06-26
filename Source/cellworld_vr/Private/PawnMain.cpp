@@ -41,7 +41,7 @@ APawnMain::APawnMain() : Super()
 	/* create camera component as root so pawn moves with camera */
 	Camera = CreateDefaultSubobject<UCameraComponent>(TEXT("ActualCamera"));
 	Camera->SetMobility(EComponentMobility::Movable);
-	Camera->SetRelativeLocation(FVector(0.0f,0.0f,_capsule_half_height*-2)); // todo: make sure this is OK
+	Camera->SetRelativeLocation(FVector(0.0f,0.0f,-_capsule_half_height)); // todo: make sure this is OK
 	Camera->bUsePawnControlRotation = true;
 	Camera->SetupAttachment(RootComponent);
 
@@ -62,14 +62,14 @@ APawnMain::APawnMain() : Super()
 	MotionControllerRight->SetVisibility(false, false);
 	MotionControllerRight->SetupAttachment(RootComponent);
 
-	const FSoftClassPath PlayerHUDClassRef(TEXT("/Script/UMGEditor.WidgetBlueprint'/Game/Interfaces/BP_HUDExperiment.BP_HUDExperiment_C'"));
-	if (TSubclassOf<UHUDExperiment> MyWidgetClass = PlayerHUDClassRef.TryLoadClass<UHUDExperiment>() )
-	{
-		PlayerHUDClass = MyWidgetClass;
-		// APlayerController* PlayerController = Cast<APlayerController>(this->GetController());
-		// if (PlayerController) { PlayerHUD = CreateWidget<UHUDExperiment>(PlayerController, MyWidgetClass);}
-		// else { UE_DEBUG_BREAK(); }
-	}
+	// const FSoftClassPath PlayerHUDClassRef(TEXT("/Script/UMGEditor.WidgetBlueprint'/Game/Interfaces/BP_HUDExperiment.BP_HUDExperiment_C'"));
+	// if (TSubclassOf<UHUDExperiment> MyWidgetClass = PlayerHUDClassRef.TryLoadClass<UHUDExperiment>() )
+	// {
+	// 	PlayerHUDClass = MyWidgetClass;
+	// 	// APlayerController* PlayerController = Cast<APlayerController>(this->GetController());
+	// 	// if (PlayerController) { PlayerHUD = CreateWidget<UHUDExperiment>(PlayerController, MyWidgetClass);}
+	// 	// else { UE_DEBUG_BREAK(); }
+	// }
 
 }
 
@@ -124,13 +124,22 @@ bool APawnMain::DetectMovement()
 
 void APawnMain::UpdateRoomScaleLocation()
 {
-	FVector DeltaLocation = Camera->GetComponentLocation() - this->CapsuleComponent->GetComponentLocation();
-	DeltaLocation.Z = .0f;
+	const FVector CapsuleLocation = this->CapsuleComponent->GetComponentLocation();
+
+	FVector CameraLocation = Camera->GetComponentLocation();
+	CameraLocation.Z = 0.0f;
+
+	FVector DeltaLocation = Camera->GetComponentLocation() - CapsuleLocation;
+	DeltaLocation.Z = 0.0f;
+	
 	AddActorWorldOffset(DeltaLocation, false, nullptr, ETeleportType::TeleportPhysics);
 	VROrigin->AddWorldOffset(-DeltaLocation, false, nullptr, ETeleportType::TeleportPhysics);
+	this->CapsuleComponent->SetWorldLocation(CameraLocation); // make 
 	const FVector LocOrigin = VROrigin->GetComponentLocation();
 	const FVector LocCamera = Camera->GetComponentLocation();
-	if (GEngine) GEngine->AddOnScreenDebugMessage(-1, 0.5f, FColor::Red, FString::Printf(TEXT("Origin : %f, %f, %f"), LocOrigin.X, LocOrigin.Y, LocOrigin.Z));
+	
+	if (GEngine) GEngine->AddOnScreenDebugMessage(-1, 0.5f, FColor::Magenta, FString::Printf(TEXT("Capsule : %f, %f, %f"), CapsuleLocation.X, CapsuleLocation.Y, CapsuleLocation.Z));
+	if (GEngine) GEngine->AddOnScreenDebugMessage(-1, 0.5f, FColor::Cyan, FString::Printf(TEXT("Origin : %f, %f, %f"), LocOrigin.X, LocOrigin.Y, LocOrigin.Z));
 	if (GEngine) GEngine->AddOnScreenDebugMessage(-1, 0.5f, FColor::Blue, FString::Printf(TEXT("Camera: %f, %f, %f"), LocCamera.X, LocCamera.Y, LocCamera.Z));
 }
 
@@ -251,7 +260,8 @@ void APawnMain::Reset()
 
 void APawnMain::OnOverlapBegin(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 {
-	
+	// if (GEngine) GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Red, FString::Printf(TEXT("[APawnMain::OnOverlapBegin()] Hit something!")));
+
 }
 
 void APawnMain::OnOverlapEnd(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex)

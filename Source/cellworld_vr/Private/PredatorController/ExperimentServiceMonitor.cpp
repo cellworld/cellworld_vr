@@ -2,6 +2,7 @@
 
 #include "ParticleHelper.h"
 #include "EntitySystem/MovieSceneEntitySystemRunner.h"
+#include "GameInstanceMain.h"
 #include "PredatorController/AIControllerPredator.h"
 #include "Kismet/GameplayStatics.h"
 
@@ -373,7 +374,7 @@ void AExperimentServiceMonitor::UpdatePreyPosition(const FVector vector)
 {
 	if (Client == nullptr) { printScreen("Cannot send step. Client not valid."); return; }
 
-	FLocation Location = UExperimentUtils::VrToCanonical(vector, MapLength, WorldScale);
+	FLocation Location = UExperimentUtils::VrToCanonical(vector, MapLength, 4.0f);
 
 	/* prepare Step */
 	FStep send_step; 
@@ -585,10 +586,14 @@ void AExperimentServiceMonitor::HandleGetOcclusionsResponse(const FString Respon
 		else SamplesLost++;
 	}
 
-	UE_LOG(LogTemp, Warning, TEXT("[AExperimentServiceMonitor::HandleGetOcclusionsResponse] Number of occlusions lost druing AtoI: %i"),SamplesLost);
-	// todo: pass this information to game state 
+	// UGameInstanceMain* GameInstance = Cast<UGameInstanceMain>(UGameplayStatics::GetGameInstance(GetWorld()));
+	// if (GameInstance->IsValidLowLevelFast())
+	// {
+	// 	UE_LOG(LogTemp, Warning, TEXT("[AExperimentServiceMonitor::HandleGetOcclusionsResponse] Set ExperimentService->WorldScale"));
+	// 	this->WorldScale = GameInstance->WorldScale;
+	// }
 	OcclusionsStruct.SetCurrentLocationsByIndex(OcclusionIDsTemp);
-	OcclusionsStruct.SpawnAll(GetWorld(), true, false, FVector(15.0f, 15.0f, 15.0f));
+	OcclusionsStruct.SpawnAll(GetWorld(), true, false, FVector(4.0, 4.0, 10.0f));
 	OcclusionsStruct.SetVisibilityArr(OcclusionIDsTemp, false, true); 
 }
 
@@ -681,7 +686,7 @@ bool AExperimentServiceMonitor::Test() {
 	else {printScreen("[AExperimentServiceMonitor::Test] Sending subscribe request: Failed."); }
 
 	/* Bind to Pawn's OnMovementDetected() */
-	if (!this->GetPlayerPawn()) { printScreen("Player Pawn found!"); return false; }
+	if (!this->GetPlayerPawn()) { printScreen("Player Pawn NOT found!"); return false; }
 	
 	/* start experiment  */
 	StartExperimentRequest = this->SendStartExperimentRequest(Client, "ExperimentNameIn");
