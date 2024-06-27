@@ -2,7 +2,6 @@
 #include "GameModeMain.h"
 #include "Camera/CameraComponent.h"
 #include "Camera/PlayerCameraManager.h"
-#include "Components/ArrowComponent.h"
 #include "Components/CapsuleComponent.h"
 #include "Components/SphereComponent.h"
 #include "Components/SceneComponent.h"
@@ -30,7 +29,7 @@ APawnMain::APawnMain() : Super()
 	RootComponent = VROrigin;
 
 	/* create collision component */
-	CapsuleComponent = CreateDefaultSubobject<UCapsuleComponent>(TEXT("RootComponent"));
+	CapsuleComponent = CreateDefaultSubobject<UCapsuleComponent>(TEXT("CapsuleComponent"));
 	CapsuleComponent->SetMobility(EComponentMobility::Movable);
 	CapsuleComponent->InitCapsuleSize(_capsule_radius, _capsule_half_height);
 	CapsuleComponent->SetCollisionProfileName(TEXT("Pawn"));
@@ -45,6 +44,17 @@ APawnMain::APawnMain() : Super()
 	Camera->bUsePawnControlRotation = true;
 	Camera->SetupAttachment(RootComponent);
 
+	/* create HUD widget and attach to camera */
+	HUDWidgetComponent = CreateDefaultSubobject<UWidgetComponent>(TEXT("HUDWidget"));
+	HUDWidgetComponent->AttachToComponent(Camera, FAttachmentTransformRules::KeepRelativeTransform);
+	HUDWidgetComponent->SetOnlyOwnerSee(true);
+	HUDWidgetComponent->SetVisibility(true);
+	HUDWidgetComponent->SetRelativeLocation(FVector(250.0f,0.0f,-20.0f));
+	HUDWidgetComponent->SetRelativeScale3D(FVector(0.25f,0.25f,0.25f));
+	HUDWidgetComponent->SetRelativeRotation(FRotator(0.0f,180.0f,0.0f));
+	HUDWidgetComponent->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	HUDWidgetComponent->SetDrawSize(FVector2d(1080,720));
+	
 	/*Create Motion Controllers*/
 	MotionControllerLeft = CreateDefaultSubobject<UMotionControllerComponent>(TEXT("MotionControllerLeft"));
 	MotionControllerLeft->CreationMethod = EComponentCreationMethod::Native;
@@ -62,14 +72,15 @@ APawnMain::APawnMain() : Super()
 	MotionControllerRight->SetVisibility(false, false);
 	MotionControllerRight->SetupAttachment(RootComponent);
 
-	// const FSoftClassPath PlayerHUDClassRef(TEXT("/Script/UMGEditor.WidgetBlueprint'/Game/Interfaces/BP_HUDExperiment.BP_HUDExperiment_C'"));
-	// if (TSubclassOf<UHUDExperiment> MyWidgetClass = PlayerHUDClassRef.TryLoadClass<UHUDExperiment>() )
-	// {
-	// 	PlayerHUDClass = MyWidgetClass;
-	// 	// APlayerController* PlayerController = Cast<APlayerController>(this->GetController());
-	// 	// if (PlayerController) { PlayerHUD = CreateWidget<UHUDExperiment>(PlayerController, MyWidgetClass);}
-	// 	// else { UE_DEBUG_BREAK(); }
-	// }
+	const FSoftClassPath PlayerHUDClassRef(TEXT("/Script/UMGEditor.WidgetBlueprint'/Game/Interfaces/BP_HUDExperiment.BP_HUDExperiment_C'"));
+	if (TSubclassOf<UHUDExperiment> MyWidgetClass = PlayerHUDClassRef.TryLoadClass<UHUDExperiment>() )
+	{
+		PlayerHUDClass = MyWidgetClass;
+		HUDWidgetComponent->SetWidgetClass(MyWidgetClass);
+		// APlayerController* PlayerController = Cast<APlayerController>(this->GetController());
+		// if (PlayerController) { PlayerHUD = CreateWidget<UHUDExperiment>(PlayerController, MyWidgetClass);}
+		// else { UE_DEBUG_BREAK(); }
+	}
 
 }
 
@@ -105,7 +116,6 @@ bool APawnMain::DetectMovement()
 	FVector NewLocation;
 	FRotator NewRotation;
 	UHeadMountedDisplayFunctionLibrary::GetOrientationAndPosition(NewRotation, NewLocation);
-	UE_LOG(LogTemp, Warning, TEXT("[APawnMain::DetectMovement()] HMD(x,y) = (%0.4f, %0.4f)"),NewLocation.X, NewLocation.Y);
 	if (!NewLocation.Equals(_old_location, 2)) {
 		_blocation_updated = true;
 		_old_location = NewLocation;
@@ -133,11 +143,11 @@ void APawnMain::UpdateRoomScaleLocation()
 
 	const FVector LocOrigin = VROrigin->GetComponentLocation();
 	const FVector LocCamera = Camera->GetComponentLocation();
-	if (GEngine) GEngine->AddOnScreenDebugMessage(-1, 0.5f, FColor::Green, FString::Printf(TEXT("Delta : %f, %f, %f"), DeltaLocation.X, DeltaLocation.Y, DeltaLocation.Z));
-	if (GEngine) GEngine->AddOnScreenDebugMessage(-1, 0.5f, FColor::Magenta, FString::Printf(TEXT("Capsule : %f, %f, %f"), CapsuleLocation.X, CapsuleLocation.Y, CapsuleLocation.Z));
-	if (GEngine) GEngine->AddOnScreenDebugMessage(-1, 0.5f, FColor::Cyan, FString::Printf(TEXT("Origin : %f, %f, %f"), LocOrigin.X, LocOrigin.Y, LocOrigin.Z));
-	if (GEngine) GEngine->AddOnScreenDebugMessage(-1, 0.5f, FColor::Blue, FString::Printf(TEXT("Camera: %f, %f, %f"), LocCamera.X, LocCamera.Y, LocCamera.Z));
 
+// 	if (GEngine) GEngine->AddOnScreenDebugMessage(-1, 0.5f, FColor::Green, FString::Printf(TEXT("Delta : %f, %f, %f"), DeltaLocation.X, DeltaLocation.Y, DeltaLocation.Z));
+// 	if (GEngine) GEngine->AddOnScreenDebugMessage(-1, 0.5f, FColor::Magenta, FString::Printf(TEXT("Capsule : %f, %f, %f"), CapsuleLocation.X, CapsuleLocation.Y, CapsuleLocation.Z));
+// 	if (GEngine) GEngine->AddOnScreenDebugMessage(-1, 0.5f, FColor::Cyan, FString::Printf(TEXT("Origin : %f, %f, %f"), LocOrigin.X, LocOrigin.Y, LocOrigin.Z));
+// 	if (GEngine) GEngine->AddOnScreenDebugMessage(-1, 0.5f, FColor::Blue, FString::Printf(TEXT("Camera: %f, %f, %f"), LocCamera.X, LocCamera.Y, LocCamera.Z));
 }
 
 void APawnMain::OnMovementDetected()
@@ -173,10 +183,14 @@ void APawnMain::QuitGame()
 	}
 }
 
-TObjectPtr<APlayerController> APawnMain::GetGenericController()
+APlayerController* APawnMain::GetGenericController()
 {
 	TObjectPtr<APlayerController> PlayerControllerOut = nullptr;
-	if (this->IsValidLowLevelFast()) { PlayerControllerOut = Cast<APlayerController>(this->GetController()); }
+	if (this->IsValidLowLevelFast())
+	{
+		AController* ControllerTemp = this->GetController();
+		PlayerControllerOut = Cast<APlayerController>(ControllerTemp);
+	}
 	return PlayerControllerOut;
 }
 
@@ -184,7 +198,7 @@ bool APawnMain::CreateAndInitializeWidget()
 {
 	if (!PlayerHUDClass->IsValidLowLevelFast()) { return false; }
 	
-	TObjectPtr<APlayerController> PlayerController = this->GetGenericController();
+	APlayerController* PlayerController = GetWorld()->GetFirstPlayerController();
 	if (!PlayerController->IsValidLowLevelFast())
 	{
 		if (GEngine) GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Red,
@@ -202,7 +216,8 @@ bool APawnMain::CreateAndInitializeWidget()
 	}
 	
 	PlayerHUD->Init();
-	PlayerHUD->AddToViewport();
+	this->HUDWidgetComponent->SetWidget(PlayerHUD);
+	// PlayerHUD->AddToViewport();
 	if (GEngine) GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Emerald,
 		FString::Printf(TEXT("[APawnMain::CreateAndInitializeWidget()] OK.")));
 	return true;
@@ -212,6 +227,7 @@ bool APawnMain::CreateAndInitializeWidget()
 void APawnMain::BeginPlay()
 {
 	Super::BeginPlay();
+	this->CreateAndInitializeWidget();
 }
 
 void APawnMain::DebugHUDAddTime()

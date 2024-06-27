@@ -1,13 +1,14 @@
 #pragma once
 #include "CoreMinimal.h"
+#include "Components/CustomCharacterMovementComponent.h"
 #include "Components/StaticMeshComponent.h"
+#include "Components/WidgetComponent.h"
 #include "Interfaces/HUDExperiment.h"
 #include "GameFramework/Pawn.h"
 #include "CoreMinimal.h"
 #include "HeadMountedDisplay.h"
 #include "Containers/Array.h" 
 #include "GameFramework/CharacterMovementComponent.h" // test 
-#include "Components/CustomCharacterMovementComponent.h"
 #include "MotionControllerComponent.h"
 #include "PawnMain.generated.h"
 
@@ -33,7 +34,7 @@ public:
 	void ResetOrigin();
 	void RestartGame();
 	void QuitGame();
-	TObjectPtr<APlayerController> GetGenericController();
+	APlayerController* GetGenericController();
 	bool CreateAndInitializeWidget();
 	void DestroyHUD();
 
@@ -53,6 +54,8 @@ public:
 	/* === properties === */
 	//UPROPERTY(VisibleDefaultsOnly, meta = (Category = "Default"))
 	class UCameraComponent* Camera;
+	UPROPERTY(EditAnywhere)
+	UWidgetComponent* HUDWidgetComponent; 
 	USceneComponent* VROrigin; 
 	UCapsuleComponent* CapsuleComponent;
 	UCustomCharacterMovementComponent* MovementComponent; 
@@ -61,7 +64,6 @@ public:
 
 	UPROPERTY(EditAnywhere)
 	TSubclassOf<class UHUDExperiment> PlayerHUDClass;
-	// TObjectPtr<UHUDExperiment> PlayerHUDClass;
 
 	UPROPERTY()
 	class UHUDExperiment* PlayerHUD;
