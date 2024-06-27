@@ -181,7 +181,7 @@ public:
 
 	/* ==== setup ==== */
 	bool SpawnAndPossessPredator();
-	ACharacter* CharacterPredator = nullptr; 
+	ACharacter* CharacterPredator = nullptr;
 
 	/* functions called by GameMode and Blueprints */
 	static UMessageClient* CreateNewClient();

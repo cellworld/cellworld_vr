@@ -293,7 +293,6 @@ void AExperimentServiceMonitor::HandleStartExperimentResponse(const FString Resp
 	if (ExperimentNameActive == "") {
 		UE_DEBUG_BREAK();
 	}
-	
 	UE_LOG(LogTemp, Warning, TEXT("[AExperimentServiceMonitor::HandleStartExperimentResponse] Experiment name: %s"), *ExperimentNameActive);
 	
 	bInExperiment = true;
@@ -449,13 +448,11 @@ bool AExperimentServiceMonitor::GetPlayerPawn()
 		PlayerPawn->MovementDetectedEvent.AddDynamic(this, &AExperimentServiceMonitor::UpdatePreyPosition);
 		PlayerPawn->ResetOrigin();
 	}
-
 	else if (Cast<APawnDebug>(Pawn)) {
 		APawnDebug* PlayerPawn = Cast<APawnDebug>(Pawn); // Adjust according to the actual type of PlayerPawn
 		UE_LOG(LogTemp, Log, TEXT("[AExperimentServiceMonitor::GetPlayerPawn()] APawnDebug found and assigned."));
 		PlayerPawn->MovementDetectedEvent.AddDynamic(this, &AExperimentServiceMonitor::UpdatePreyPosition);
 	}
-
 	else {
 		const FString ErrorMessage = "[AExperimentServiceMonitor::GetPlayerPawn()] No valid pawn found nor assigned.";
 		UE_LOG(LogTemp, Error, TEXT("%s"), *ErrorMessage);

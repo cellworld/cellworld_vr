@@ -8,6 +8,7 @@
 #include "Components/SkeletalMeshComponent.h"
 #include "HeadMountedDisplayFunctionLibrary.h"
 #include "IXRTrackingSystem.h"
+#include "cellworld_vr/cellworld_vr.h"
 #include "Engine/GameEngine.h"
 #include "GameFramework/PlayerController.h"
 #include "GameFramework/CharacterMovementComponent.h" // test 
@@ -49,9 +50,9 @@ APawnMain::APawnMain() : Super()
 	HUDWidgetComponent->AttachToComponent(Camera, FAttachmentTransformRules::KeepRelativeTransform);
 	HUDWidgetComponent->SetOnlyOwnerSee(true);
 	HUDWidgetComponent->SetVisibility(true);
-	HUDWidgetComponent->SetRelativeLocation(FVector(250.0f,0.0f,-20.0f));
+	HUDWidgetComponent->SetRelativeLocation(FVector(250.0f,30.0f,-20.0f));
 	HUDWidgetComponent->SetRelativeScale3D(FVector(0.25f,0.25f,0.25f));
-	HUDWidgetComponent->SetRelativeRotation(FRotator(0.0f,180.0f,0.0f));
+	HUDWidgetComponent->SetRelativeRotation(FRotator(0.0f,-180.0f,0.0f));
 	HUDWidgetComponent->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	HUDWidgetComponent->SetDrawSize(FVector2d(1080,720));
 	
@@ -73,15 +74,9 @@ APawnMain::APawnMain() : Super()
 	MotionControllerRight->SetupAttachment(RootComponent);
 
 	const FSoftClassPath PlayerHUDClassRef(TEXT("/Script/UMGEditor.WidgetBlueprint'/Game/Interfaces/BP_HUDExperiment.BP_HUDExperiment_C'"));
-	if (TSubclassOf<UHUDExperiment> MyWidgetClass = PlayerHUDClassRef.TryLoadClass<UHUDExperiment>() )
-	{
-		PlayerHUDClass = MyWidgetClass;
-		HUDWidgetComponent->SetWidgetClass(MyWidgetClass);
-		// APlayerController* PlayerController = Cast<APlayerController>(this->GetController());
-		// if (PlayerController) { PlayerHUD = CreateWidget<UHUDExperiment>(PlayerController, MyWidgetClass);}
-		// else { UE_DEBUG_BREAK(); }
-	}
-
+	if (TSubclassOf<UHUDExperiment> HUDClass = PlayerHUDClassRef.TryLoadClass<UHUDExperiment>()){
+		HUDWidgetComponent->SetWidgetClass(HUDClass);
+	} else { UE_LOG(LogExperiment, Error, TEXT("[APawnMain::APawnMain()] Couldn't find HUD experiment.")); }
 }
 
 // Called to bind functionality to input
@@ -216,7 +211,7 @@ bool APawnMain::CreateAndInitializeWidget()
 	}
 	
 	PlayerHUD->Init();
-	this->HUDWidgetComponent->SetWidget(PlayerHUD);
+	// this->HUDWidgetComponent->SetWidget(PlayerHUD);
 	// PlayerHUD->AddToViewport();
 	if (GEngine) GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Emerald,
 		FString::Printf(TEXT("[APawnMain::CreateAndInitializeWidget()] OK.")));
@@ -227,13 +222,18 @@ bool APawnMain::CreateAndInitializeWidget()
 void APawnMain::BeginPlay()
 {
 	Super::BeginPlay();
-	this->CreateAndInitializeWidget();
+
+	if (UUserWidget* HUDWidget = HUDWidgetComponent->GetWidget())
+	{
+		PlayerHUD = Cast<UHUDExperiment>(HUDWidget);
+	}
 }
 
 void APawnMain::DebugHUDAddTime()
 {
+	
 	DebugTimeRemaining += 1;
-	if ((DebugTimeRemaining % 10 == 0) && PlayerHUD)
+	if ((DebugTimeRemaining % 10 == 0) && PlayerHUD->IsValidLowLevelFast())
 	{
 		PlayerHUD->SetTimeRemaining(FString::FromInt(DebugTimeRemaining));
 		PlayerHUD->SetCurrentStatus(FString::FromInt(DebugTimeRemaining));
@@ -261,7 +261,7 @@ void APawnMain::DestroyHUD()
 
 void APawnMain::EndPlay(const EEndPlayReason::Type EndPlayReason)
 {
-	this->DestroyHUD();
+	// this->DestroyHUD();
 }
 
 void APawnMain::Reset()

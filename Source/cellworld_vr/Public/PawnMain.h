@@ -66,7 +66,7 @@ public:
 	TSubclassOf<class UHUDExperiment> PlayerHUDClass;
 
 	UPROPERTY()
-	class UHUDExperiment* PlayerHUD;
+	class UHUDExperiment* PlayerHUD = nullptr;
 	
 	void SetupPlayerInputComponent(class UInputComponent* InInputComponent);
 
