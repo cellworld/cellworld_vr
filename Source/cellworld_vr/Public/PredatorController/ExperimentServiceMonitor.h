@@ -163,8 +163,8 @@ public:
 	/* ==== server stuff ==== */
 	// const FString ServerIPMessage = "172.30.127.68";   // alternate 
 	// const FString ServerIPMessage = "192.168.137.8";   // lab new
-	const FString ServerIPMessage = "192.168.137.111"; // static laptop lab 
-	// const FString ServerIPMessage = "127.0.0.1";		  // localhost  
+	// const FString ServerIPMessage = "192.168.137.111"; // static laptop lab 
+	const FString ServerIPMessage = "127.0.0.1";		  // localhost  
 	const int ServerPort	      = 4970;
 
 	/* ==== status stuff ==== */

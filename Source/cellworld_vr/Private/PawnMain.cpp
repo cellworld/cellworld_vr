@@ -100,16 +100,12 @@ bool APawnMain::DetectMovement()
 {
 	bool _blocation_updated = false;
 
-	if (!UHeadMountedDisplayFunctionLibrary::IsHeadMountedDisplayEnabled())
-	{
-		// UE_LOG(LogTemp, Warning, TEXT("HMD not enabled"));
-		return false;
-	}
+	if (!UHeadMountedDisplayFunctionLibrary::IsHeadMountedDisplayEnabled()) { return false; }
 
 	FVector NewLocation;
 	FRotator NewRotation;
 	UHeadMountedDisplayFunctionLibrary::GetOrientationAndPosition(NewRotation, NewLocation);
-
+	UE_LOG(LogTemp, Warning, TEXT("[APawnMain::DetectMovement()] HMD(x,y) = (%0.4f, %0.4f)"),NewLocation.X, NewLocation.Y);
 	if (!NewLocation.Equals(_old_location, 2)) {
 		_blocation_updated = true;
 		_old_location = NewLocation;
@@ -117,7 +113,6 @@ bool APawnMain::DetectMovement()
 	else {
 		_blocation_updated = false; 
 	}
-
 	_new_location = NewLocation;
 	return _blocation_updated;
 }
@@ -134,21 +129,21 @@ void APawnMain::UpdateRoomScaleLocation()
 	
 	AddActorWorldOffset(DeltaLocation, false, nullptr, ETeleportType::TeleportPhysics);
 	VROrigin->AddWorldOffset(-DeltaLocation, false, nullptr, ETeleportType::TeleportPhysics);
-	this->CapsuleComponent->SetWorldLocation(CameraLocation); // make 
+	this->CapsuleComponent->SetWorldLocation(CameraLocation); 
+
 	const FVector LocOrigin = VROrigin->GetComponentLocation();
 	const FVector LocCamera = Camera->GetComponentLocation();
-	
+	if (GEngine) GEngine->AddOnScreenDebugMessage(-1, 0.5f, FColor::Green, FString::Printf(TEXT("Delta : %f, %f, %f"), DeltaLocation.X, DeltaLocation.Y, DeltaLocation.Z));
 	if (GEngine) GEngine->AddOnScreenDebugMessage(-1, 0.5f, FColor::Magenta, FString::Printf(TEXT("Capsule : %f, %f, %f"), CapsuleLocation.X, CapsuleLocation.Y, CapsuleLocation.Z));
 	if (GEngine) GEngine->AddOnScreenDebugMessage(-1, 0.5f, FColor::Cyan, FString::Printf(TEXT("Origin : %f, %f, %f"), LocOrigin.X, LocOrigin.Y, LocOrigin.Z));
 	if (GEngine) GEngine->AddOnScreenDebugMessage(-1, 0.5f, FColor::Blue, FString::Printf(TEXT("Camera: %f, %f, %f"), LocCamera.X, LocCamera.Y, LocCamera.Z));
+
 }
 
 void APawnMain::OnMovementDetected()
 {
-	MovementDetectedEvent.Broadcast(_new_location);
-	// UE_LOG(LogTemp, Log, TEXT("[APawnMain::OnMovementDetected()] Movement detected."));
+	MovementDetectedEvent.Broadcast(_new_location + this->VROrigin->GetComponentLocation());
 	this->UpdateRoomScaleLocation();
-	//if (GEngine) GEngine->AddOnScreenDebugMessage(-1, 0.5f, FColor::Blue, FString::Printf(TEXT("Movement detected")));
 }
 
 void APawnMain::ResetOrigin() 

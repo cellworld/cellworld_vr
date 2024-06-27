@@ -9,6 +9,7 @@
 #include "PlayerControllerVR.h"
 #include "Kismet/GameplayStatics.h"
 #include "GameInstanceMain.h"
+#include "cellworld_vr/cellworld_vr.h"
 #include "Misc/OutputDeviceNull.h"
 
 AGameModeMain::AGameModeMain()
@@ -110,6 +111,7 @@ void AGameModeMain::SpawnAndPossessPlayer(FVector spawn_location, FRotator spawn
 		PlayerController->Possess(PlayerPawn);
 	}
 }
+
 // todo: should ESMonitor be attached to each individual pawn? 
 bool AGameModeMain::AttachClientToPlayer(TObjectPtr<UMessageClient> ClientIn, TObjectPtr<APawnMain> PawnIn)
 {
@@ -158,11 +160,9 @@ void AGameModeMain::StopLoadingScreen()
 void AGameModeMain::StartPlay()
 {
 	Super::StartPlay();
-	UE_LOG(LogTemp, Warning, TEXT("[AGameModeMain::StartPlay()] Starting game!"));
-
+	UE_LOG(LogExperiment, Warning, TEXT("[AGameModeMain::StartPlay()] Starting game!"));
+	
 	/* spawn player */
-	// todo: make sure I don;t need this before deleting. Currently I don't think its necessary
-	// this->SpawnAndPossessPlayer(FVector(20.0f,-1230.0f,92.0f), FRotator::ZeroRotator); 
 	FLocation SpawnLocation;
 	SpawnLocation.x = 0.0f;
 	SpawnLocation.y = 0.4f;
@@ -172,7 +172,7 @@ void AGameModeMain::StartPlay()
 	// AActor* LevelActorBase = this->GetLevelActorFromName(NameTemp);
 	// if (LevelActorBase->IsValidLowLevelFast())
 	// {
-	// 	UE_LOG(LogTemp, Warning, TEXT("[AGameModeMain::StartPlay()] Found level actor! %s"),*LevelActorBase->GetName());
+	// 	UE_LOG(LogExperiment, Warning, TEXT("[AGameModeMain::StartPlay()] Found level actor! %s"),*LevelActorBase->GetName());
 	// }else{ LevelActorBase = nullptr; }
 	
 	// UGameInstanceMain* GameInstance = Cast<UGameInstanceMain>(UGameplayStatics::GetGameInstance(GetWorld()));
@@ -180,16 +180,16 @@ void AGameModeMain::StartPlay()
 	// {
 	// 	const FVector WorldScaleVector = GameInstance->GetLevelScale(nullptr);
 	// 	if (WorldScaleVector != FVector::ZeroVector) { GameInstance->SetWorldScale(WorldScaleVector.X); }
-	// 	else { UE_LOG(LogTemp, Warning, TEXT("[AGameModeMain::StartPlay()] WorldScaleVector not valid!")); }
+	// 	else { UE_LOG(LogExperiment, Warning, TEXT("[AGameModeMain::StartPlay()] WorldScaleVector not valid!")); }
 	// 	
 	// } else {
-	// 	UE_LOG(LogTemp, Warning, TEXT("[AGameModeMain::StartPlay()] GameInstanceMain NOT found!"));
+	// 	UE_LOG(LogExperiment, Warning, TEXT("[AGameModeMain::StartPlay()] GameInstanceMain NOT found!"));
 	// 	GameInstance = nullptr;
 	// }
 	//
 	if (bSpawnExperimentService) { AGameModeMain::SpawnExperimentServiceMonitor(); }
 
-	else { UE_LOG(LogTemp, Warning, TEXT("[AGameModeMain::StartPlay()] Not spawning Experiment Service!")); }
+	else { UE_LOG(LogExperiment, Warning, TEXT("[AGameModeMain::StartPlay()] Not spawning Experiment Service!")); }
 	
 	AGameModeMain::StopLoadingScreen();
 
@@ -221,7 +221,7 @@ bool AGameModeMain::ExperimentStopEpisode() {
 	//if (ExperimentServiceMonitor->IsPendingKill()) 
 	if (!IsValid(ExperimentServiceMonitor))
 	{ 
-		UE_LOG(LogTemp, Warning, TEXT("[AGameModeMain::ExperimentStopEpisode()] Failed to destroy, Already pending kill.")); 
+		UE_LOG(LogExperiment, Warning, TEXT("[AGameModeMain::ExperimentStopEpisode()] Failed to destroy, Already pending kill.")); 
 		return false; 
 	}
 	return ExperimentServiceMonitor->StopEpisode(); 
