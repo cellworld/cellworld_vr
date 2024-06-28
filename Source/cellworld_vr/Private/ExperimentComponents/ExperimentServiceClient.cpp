@@ -238,7 +238,7 @@ void AExperimentServiceClient::UpdatePredator(const FMessage message){
 	UE_LOG(LogTemp, Error, TEXT("[AExperimentServiceClient::UpdatePredator] message.body:\n%s"), *message.body);
 
 	if (Client == nullptr) { return; }
-	frame_count++;
+	FrameCount++;
 	FStep step = UExperimentUtils::JsonStringToStep(message.body); 
 	FVector new_location_ue = UExperimentUtils::CanonicalToVr(step.location,MapLength, WorldScale); // ue --> unreal engine units 
 	
@@ -263,10 +263,10 @@ void AExperimentServiceClient::UpdatePreyPosition(const FVector vector){
 	//FString header_prey = "send_step";
 	FStep send_step; 
 	send_step.agent_name = "prey";
-	send_step.frame = frame_count;
+	send_step.frame = FrameCount;
 	send_step.location = Location; 
 	send_step.rotation = 0.0f; // todo: change! 
-	send_step.time_stamp = frame_count; // todo: change to querycounterelapsedtime!
+	send_step.time_stamp = FrameCount; // todo: change to querycounterelapsedtime!
 
 	/* convert FStep to JsonString */
 	FString body = UExperimentUtils::StepToJsonString(send_step); 
@@ -345,7 +345,7 @@ void AExperimentServiceClient::HandleGetOcclusionsResponse(const FString Respons
 	UE_LOG(LogTemp, Warning, TEXT("[AExperimentServiceClient::HandleGetOcclusionsResponse] Occlusion IDs (raw): %s"), *ResponseIn);
 	
 	/* start empty */
-	OcclusionIDsIntArr.Empty(); 
+	// OcclusionIDsIntArr.Empty(); 
 	TArray<int32> OcclusionIDsTemp; 
 	/* process the array before using */
 	TArray<FString> OcclusionIDsStringArr; 
@@ -363,9 +363,9 @@ void AExperimentServiceClient::HandleGetOcclusionsResponse(const FString Respons
 
 	UE_LOG(LogTemp, Warning, TEXT("[AExperimentServiceClient::HandleGetOcclusionsResponse] Number of occlusions lost druing AtoI: %i"),SamplesLost);
 	// todo: pass this information to game state 
-	OcclusionsStruct.SetCurrentLocationsByIndex(OcclusionIDsTemp);
-	OcclusionsStruct.SpawnAll(GetWorld(), true, false, FVector(15.0f, 15.0f, 15.0f));
-	OcclusionsStruct.SetVisibilityArr(OcclusionIDsTemp);
+	// OcclusionsStruct.SetCurrentLocationsByIndex(OcclusionIDsTemp);
+	// OcclusionsStruct.SpawnAll(GetWorld(), true, false, FVector(15.0f, 15.0f, 15.0f));
+	// OcclusionsStruct.SetVisibilityArr(OcclusionIDsTemp);
 	//OcclusionsStruct.SetAllLocations()
 	//SpawnOcclusions(OcclusionIDsIntArr, OcclusionLocationsAll);
 	return;
@@ -407,9 +407,9 @@ URequest* AExperimentServiceClient::SendGetOcclusionLocationsRequest()
 /* gets location of all possible occlusions in our given experiment/world configuration */
 void AExperimentServiceClient::HandleGetOcclusionLocationsResponse(const FString ResponseIn) {
 	UE_LOG(LogTemp, Log, TEXT("[HandleGetOcclusionLocationsResponse] %s"), *ResponseIn);
-	OcclusionLocationsAll = UExperimentUtils::OcclusionsParseAllLocations(ResponseIn);
-
-	OcclusionsStruct.SetAllLocations(OcclusionLocationsAll); 
+	// OcclusionLocationsAll = UExperimentUtils::OcclusionsParseAllLocations(ResponseIn);
+	//
+	// OcclusionsStruct.SetAllLocations(OcclusionLocationsAll); 
 	if (!this->SendGetOcclusionsRequest()) {
 		UE_LOG(LogTemp, Log, TEXT("[SendGetOcclusionsRequest] send request false!"));
 	}

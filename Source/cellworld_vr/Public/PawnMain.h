@@ -1,18 +1,14 @@
 #pragma once
 #include "CoreMinimal.h"
-#include "Components/StaticMeshComponent.h" 
-#include "Components/WidgetInteractionComponent.h" 
+#include "Components/CustomCharacterMovementComponent.h"
+#include "Components/StaticMeshComponent.h"
 #include "Components/WidgetComponent.h"
+#include "Interfaces/HUDExperiment.h"
 #include "GameFramework/Pawn.h"
-#include "PawnMainMovementComponent.h"
 #include "CoreMinimal.h"
 #include "HeadMountedDisplay.h"
 #include "Containers/Array.h" 
-#include "Kismet/GameplayStatics.h" 
-#include "GameFramework/FloatingPawnMovement.h" 
 #include "GameFramework/CharacterMovementComponent.h" // test 
-#include "Components/CustomCharacterMovementComponent.h"
-#include "Kismet/GameplayStatics.h" 
 #include "MotionControllerComponent.h"
 #include "PawnMain.generated.h"
 
@@ -24,16 +20,23 @@ class CELLWORLD_VR_API APawnMain : public APawn
 	GENERATED_BODY()
 
 public:
-
+	
+	/* debug stuff */
+	int DebugTimeRemaining = 0;
+	void DebugHUDAddTime();
+	
 	// Sets default values for this pawn's properties
 	APawnMain();
-
+	
 	UPROPERTY()
 	FOnMovementDetected MovementDetectedEvent; 
 
 	void ResetOrigin();
 	void RestartGame();
 	void QuitGame();
+	APlayerController* GetGenericController();
+	bool CreateAndInitializeWidget();
+	void DestroyHUD();
 
 	/* temp */
 	FVector RelLoc;
@@ -41,22 +44,29 @@ public:
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
-
 	//AGameModeMain* GameMode = nullptr; 
 
 public:
 	virtual void Tick(float DeltaTime) override;
 	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
-	virtual void Reset() override; 
+	virtual void Reset() override;
 
 	/* === properties === */
 	//UPROPERTY(VisibleDefaultsOnly, meta = (Category = "Default"))
 	class UCameraComponent* Camera;
+	UPROPERTY(EditAnywhere)
+	UWidgetComponent* HUDWidgetComponent; 
 	USceneComponent* VROrigin; 
 	UCapsuleComponent* CapsuleComponent;
 	UCustomCharacterMovementComponent* MovementComponent; 
 	class UMotionControllerComponent* MotionControllerLeft;
 	class UMotionControllerComponent* MotionControllerRight;
+
+	UPROPERTY(EditAnywhere)
+	TSubclassOf<class UHUDExperiment> PlayerHUDClass;
+
+	UPROPERTY()
+	class UHUDExperiment* PlayerHUD = nullptr;
 	
 	void SetupPlayerInputComponent(class UInputComponent* InInputComponent);
 
@@ -76,6 +86,8 @@ public:
 
 	/* helpers for camera stuff */
 	UCameraComponent* GetCameraComponent();
+	void StartExperiment();
+	void StartEpisode();
 
 private: 
 	const float _capsule_radius      = 30.0f;

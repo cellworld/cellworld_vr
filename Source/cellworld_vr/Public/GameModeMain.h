@@ -7,10 +7,6 @@
 #include "PredatorController/ExperimentServiceMonitor.h"
 #include "GameModeMain.generated.h"
 
-/**
- *
- */
-
 UCLASS()
 class CELLWORLD_VR_API AGameModeMain : public AGameModeBase
 {
@@ -25,22 +21,21 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Debug")
 	bool bSpawnExperimentService = true;
 	
+	/* world and coordinate system stuff */
+	AActor* GetLevelActorFromName(const FName& ActorNameIn);
+	
 	/* debug */
-	FVector debug_vect;
-
-	APawnMain* PawnMain   = nullptr;
-	APlayerController* PlayerControllerClassCast = nullptr;
+	TObjectPtr<UClass> PawnClassToSpawn;
+	TObjectPtr<APawn> PlayerPawn;
 	FVector InitialPlayerLocation;
 	FRotator InitialPlayerRotation;
-
-	/* HP stuff */
-	bool InitializeHPKeys();
 
 	/* spawning player */
 	FVector spawn_location_player  = { -1700.0,1500.000000,30.000000 };
 	FRotator spawn_rotation_player = { 0.0,0.0, 0.0 };
 	void SpawnAndPossessPlayer(FVector spawn_location, FRotator spawn_rotation);
-	
+	bool AttachClientToPlayer(TObjectPtr<UMessageClient> ClientIn, TObjectPtr<APawnMain> PawnIn);
+
 	/* Spawns Sensors */
 	void SpawnGetCLMonitorComponentActor();
 
@@ -60,15 +55,13 @@ public:
 
 	/* functions for door and experiment control */
 	UPROPERTY(BlueprintReadWrite)
-		AExperimentServiceMonitor* ExperimentServiceMonitor;
+		AExperimentServiceMonitor* ExperimentServiceMonitor = nullptr;
 	UFUNCTION(BlueprintCallable, Category = Experiment)
 		void SpawnExperimentServiceMonitor();
 	UFUNCTION(BlueprintCallable, Category = Experiment)
 		bool ExperimentStartEpisode(); 
-	
 	UFUNCTION(BlueprintCallable, Category = Experiment)
 		bool ExperimentStopEpisode();
-
 	UFUNCTION(BlueprintCallable, Category = Experiment)
-		bool ExperimentStopExperiment(FString ExperimentName);
+		bool ExperimentStopExperiment(const FString ExperimentNameIn);
 };

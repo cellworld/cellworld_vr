@@ -2,13 +2,13 @@
 #include "GameModeMain.h"
 #include "Camera/CameraComponent.h"
 #include "Camera/PlayerCameraManager.h"
-#include "Components/ArrowComponent.h"
 #include "Components/CapsuleComponent.h"
 #include "Components/SphereComponent.h"
 #include "Components/SceneComponent.h"
 #include "Components/SkeletalMeshComponent.h"
 #include "HeadMountedDisplayFunctionLibrary.h"
 #include "IXRTrackingSystem.h"
+#include "cellworld_vr/cellworld_vr.h"
 #include "Engine/GameEngine.h"
 #include "GameFramework/PlayerController.h"
 #include "GameFramework/CharacterMovementComponent.h" // test 
@@ -30,21 +30,32 @@ APawnMain::APawnMain() : Super()
 	RootComponent = VROrigin;
 
 	/* create collision component */
-	CapsuleComponent = CreateDefaultSubobject<UCapsuleComponent>(TEXT("RootComponent"));
+	CapsuleComponent = CreateDefaultSubobject<UCapsuleComponent>(TEXT("CapsuleComponent"));
 	CapsuleComponent->SetMobility(EComponentMobility::Movable);
 	CapsuleComponent->InitCapsuleSize(_capsule_radius, _capsule_half_height);
 	CapsuleComponent->SetCollisionProfileName(TEXT("Pawn"));
 	CapsuleComponent->OnComponentBeginOverlap.AddDynamic(this, &APawnMain::OnOverlapBegin); // overlap events
 	CapsuleComponent->OnComponentEndOverlap.AddDynamic(this, &APawnMain::OnOverlapEnd); // overlap events 
 	CapsuleComponent->SetupAttachment(RootComponent);
-	//RootComponent = CapsuleComponent;
 
 	/* create camera component as root so pawn moves with camera */
 	Camera = CreateDefaultSubobject<UCameraComponent>(TEXT("ActualCamera"));
 	Camera->SetMobility(EComponentMobility::Movable);
+	Camera->SetRelativeLocation(FVector(0.0f,0.0f,-_capsule_half_height)); // todo: make sure this is OK
 	Camera->bUsePawnControlRotation = true;
 	Camera->SetupAttachment(RootComponent);
 
+	/* create HUD widget and attach to camera */
+	HUDWidgetComponent = CreateDefaultSubobject<UWidgetComponent>(TEXT("HUDWidget"));
+	HUDWidgetComponent->AttachToComponent(Camera, FAttachmentTransformRules::KeepRelativeTransform);
+	HUDWidgetComponent->SetOnlyOwnerSee(true);
+	HUDWidgetComponent->SetVisibility(true);
+	HUDWidgetComponent->SetRelativeLocation(FVector(250.0f,30.0f,-20.0f));
+	HUDWidgetComponent->SetRelativeScale3D(FVector(0.25f,0.25f,0.25f));
+	HUDWidgetComponent->SetRelativeRotation(FRotator(0.0f,-180.0f,0.0f));
+	HUDWidgetComponent->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	HUDWidgetComponent->SetDrawSize(FVector2d(1080,720));
+	
 	/*Create Motion Controllers*/
 	MotionControllerLeft = CreateDefaultSubobject<UMotionControllerComponent>(TEXT("MotionControllerLeft"));
 	MotionControllerLeft->CreationMethod = EComponentCreationMethod::Native;
@@ -61,6 +72,11 @@ APawnMain::APawnMain() : Super()
 	MotionControllerRight->MotionSource = FName("Right");
 	MotionControllerRight->SetVisibility(false, false);
 	MotionControllerRight->SetupAttachment(RootComponent);
+
+	const FSoftClassPath PlayerHUDClassRef(TEXT("/Script/UMGEditor.WidgetBlueprint'/Game/Interfaces/BP_HUDExperiment.BP_HUDExperiment_C'"));
+	if (TSubclassOf<UHUDExperiment> HUDClass = PlayerHUDClassRef.TryLoadClass<UHUDExperiment>()){
+		HUDWidgetComponent->SetWidgetClass(HUDClass);
+	} else { UE_LOG(LogExperiment, Error, TEXT("[APawnMain::APawnMain()] Couldn't find HUD experiment.")); }
 }
 
 // Called to bind functionality to input
@@ -71,23 +87,30 @@ void APawnMain::SetupPlayerInputComponent(class UInputComponent* InInputComponen
 
 UCameraComponent* APawnMain::GetCameraComponent()
 {
-	return APawnMain::Camera;
+	return this->Camera;
+}
+
+void APawnMain::StartExperiment()
+{
+	if (GEngine) GEngine->AddOnScreenDebugMessage(-1, 0.5f, FColor::Red, FString::Printf(TEXT("[APawnMain::StartExperiment()]")));
+	return;
+}
+
+void APawnMain::StartEpisode()
+{
+	if (GEngine) GEngine->AddOnScreenDebugMessage(-1, 0.5f, FColor::Red, FString::Printf(TEXT("[APawnMain::StartEpisode()]")));
+	return; 
 }
 
 bool APawnMain::DetectMovement()
 {
 	bool _blocation_updated = false;
 
-	if (!UHeadMountedDisplayFunctionLibrary::IsHeadMountedDisplayEnabled())
-	{
-		UE_LOG(LogTemp, Warning, TEXT("HMD not enabled"));
-		return false;
-	}
+	if (!UHeadMountedDisplayFunctionLibrary::IsHeadMountedDisplayEnabled()) { return false; }
 
 	FVector NewLocation;
 	FRotator NewRotation;
 	UHeadMountedDisplayFunctionLibrary::GetOrientationAndPosition(NewRotation, NewLocation);
-
 	if (!NewLocation.Equals(_old_location, 2)) {
 		_blocation_updated = true;
 		_old_location = NewLocation;
@@ -95,30 +118,37 @@ bool APawnMain::DetectMovement()
 	else {
 		_blocation_updated = false; 
 	}
-
-
 	_new_location = NewLocation;
 	return _blocation_updated;
 }
 
 void APawnMain::UpdateRoomScaleLocation()
 {
-	FVector DeltaLocation = Camera->GetComponentLocation() - this->CapsuleComponent->GetComponentLocation();
-	DeltaLocation.Z = .0f;
+	const FVector CapsuleLocation = this->CapsuleComponent->GetComponentLocation();
+
+	FVector CameraLocation = Camera->GetComponentLocation();
+	CameraLocation.Z = 0.0f;
+
+	FVector DeltaLocation = Camera->GetComponentLocation() - CapsuleLocation;
+	DeltaLocation.Z = 0.0f;
+	
 	AddActorWorldOffset(DeltaLocation, false, nullptr, ETeleportType::TeleportPhysics);
 	VROrigin->AddWorldOffset(-DeltaLocation, false, nullptr, ETeleportType::TeleportPhysics);
+	this->CapsuleComponent->SetWorldLocation(CameraLocation); 
+
 	const FVector LocOrigin = VROrigin->GetComponentLocation();
 	const FVector LocCamera = Camera->GetComponentLocation();
-	if (GEngine) GEngine->AddOnScreenDebugMessage(-1, 0.5f, FColor::Red, FString::Printf(TEXT("Origin : %f, %f, %f"), LocOrigin.X, LocOrigin.Y, LocOrigin.Z));
-	if (GEngine) GEngine->AddOnScreenDebugMessage(-1, 0.5f, FColor::Blue, FString::Printf(TEXT("Camera: %f, %f, %f"), LocCamera.X, LocCamera.Y, LocCamera.Z));
+
+// 	if (GEngine) GEngine->AddOnScreenDebugMessage(-1, 0.5f, FColor::Green, FString::Printf(TEXT("Delta : %f, %f, %f"), DeltaLocation.X, DeltaLocation.Y, DeltaLocation.Z));
+// 	if (GEngine) GEngine->AddOnScreenDebugMessage(-1, 0.5f, FColor::Magenta, FString::Printf(TEXT("Capsule : %f, %f, %f"), CapsuleLocation.X, CapsuleLocation.Y, CapsuleLocation.Z));
+// 	if (GEngine) GEngine->AddOnScreenDebugMessage(-1, 0.5f, FColor::Cyan, FString::Printf(TEXT("Origin : %f, %f, %f"), LocOrigin.X, LocOrigin.Y, LocOrigin.Z));
+// 	if (GEngine) GEngine->AddOnScreenDebugMessage(-1, 0.5f, FColor::Blue, FString::Printf(TEXT("Camera: %f, %f, %f"), LocCamera.X, LocCamera.Y, LocCamera.Z));
 }
 
 void APawnMain::OnMovementDetected()
 {
-	MovementDetectedEvent.Broadcast(_new_location);
-	UE_LOG(LogTemp, Log, TEXT("[APawnMain::OnMovementDetected()] Movement detected."));
+	MovementDetectedEvent.Broadcast(_new_location + this->VROrigin->GetComponentLocation());
 	this->UpdateRoomScaleLocation();
-	//if (GEngine) GEngine->AddOnScreenDebugMessage(-1, 0.5f, FColor::Blue, FString::Printf(TEXT("Movement detected")));
 }
 
 void APawnMain::ResetOrigin() 
@@ -148,36 +178,90 @@ void APawnMain::QuitGame()
 	}
 }
 
+APlayerController* APawnMain::GetGenericController()
+{
+	TObjectPtr<APlayerController> PlayerControllerOut = nullptr;
+	if (this->IsValidLowLevelFast())
+	{
+		AController* ControllerTemp = this->GetController();
+		PlayerControllerOut = Cast<APlayerController>(ControllerTemp);
+	}
+	return PlayerControllerOut;
+}
+
+bool APawnMain::CreateAndInitializeWidget()
+{
+	if (!PlayerHUDClass->IsValidLowLevelFast()) { return false; }
+	
+	APlayerController* PlayerController = GetWorld()->GetFirstPlayerController();
+	if (!PlayerController->IsValidLowLevelFast())
+	{
+		if (GEngine) GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Red,
+			FString::Printf(TEXT("[APawnMain::CreateAndInitializeWidget()] PlayerController not valid.")));
+		UE_DEBUG_BREAK(); return false;
+	}
+
+	PlayerHUD = CreateWidget<UHUDExperiment>(PlayerController, PlayerHUDClass);
+	if (!PlayerHUD->IsValidLowLevelFast())
+	{
+		if (GEngine) GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Red,
+			FString::Printf(TEXT("[APawnMain::CreateAndInitializeWidget()] PlayerHUD not valid.")));
+		UE_DEBUG_BREAK();
+		return false;
+	}
+	
+	PlayerHUD->Init();
+	// this->HUDWidgetComponent->SetWidget(PlayerHUD);
+	// PlayerHUD->AddToViewport();
+	if (GEngine) GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Emerald,
+		FString::Printf(TEXT("[APawnMain::CreateAndInitializeWidget()] OK.")));
+	return true;
+}
+
 // Called when the game starts or when spawned
 void APawnMain::BeginPlay()
 {
 	Super::BeginPlay();
-	//UHeadMountedDisplayFunctionLibrary::ResetOrientationAndPosition(0.0f, EOrientPositionSelector::OrientationAndPosition);
+
+	if (UUserWidget* HUDWidget = HUDWidgetComponent->GetWidget())
+	{
+		PlayerHUD = Cast<UHUDExperiment>(HUDWidget);
+	}
 }
 
-float IPDtoUU() {
-	const float IPD_cm = 6.50f; // interpupillary distance 
-	return IPD_cm * 100;
+void APawnMain::DebugHUDAddTime()
+{
+	
+	DebugTimeRemaining += 1;
+	if ((DebugTimeRemaining % 10 == 0) && PlayerHUD->IsValidLowLevelFast())
+	{
+		PlayerHUD->SetTimeRemaining(FString::FromInt(DebugTimeRemaining));
+		PlayerHUD->SetCurrentStatus(FString::FromInt(DebugTimeRemaining));
+	}
 }
 
-// Called every frame
-
-/* todo: implement elsewhere */
+/* Called every frame:
+ * todo: implement elsewhere */
 void APawnMain::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
-	
-	/* check if we moved */
 	if (this->DetectMovement()) {
 		this->OnMovementDetected();
 	}
+}
 
+void APawnMain::DestroyHUD()
+{
+	if (PlayerHUD)
+	{
+		PlayerHUD->RemoveFromParent();
+		PlayerHUD = nullptr;
+	}
 }
 
 void APawnMain::EndPlay(const EEndPlayReason::Type EndPlayReason)
 {
-	//UE_LOG(LogTemp, Warning, TEXT("[APawnMain::EndPlay] Destroying pawn."));
-	//APawnMain::Destroy(EEndPlayReason::Destroyed);
+	// this->DestroyHUD();
 }
 
 void APawnMain::Reset()
@@ -185,11 +269,10 @@ void APawnMain::Reset()
 	Super::Reset();
 }
 
-
-
 void APawnMain::OnOverlapBegin(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 {
-	
+	// if (GEngine) GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Red, FString::Printf(TEXT("[APawnMain::OnOverlapBegin()] Hit something!")));
+
 }
 
 void APawnMain::OnOverlapEnd(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex)

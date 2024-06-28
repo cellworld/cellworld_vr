@@ -140,7 +140,6 @@ FString UExperimentUtils::StartEpisodeRequestToJsonString(FStartEpisodeRequest s
 	return jsonString;
 }
 
-
 FString UExperimentUtils::WorldInfoToJsonString(FWorldInfo structInput) {
 	FString jsonString;
 	FJsonObjectConverter::UStructToJsonObjectString(structInput, jsonString, 0, 0, 0);
@@ -220,7 +219,7 @@ FString UExperimentUtils::StepToJsonString(FStep Step) {
 	return jsonString;
 }
 
-FLocation UExperimentUtils::VrToCanonical(const FVector VectorIn, const float MapLengthIn, const int WorldScaleIn) {
+FLocation UExperimentUtils::VrToCanonical(const FVector VectorIn, const float MapLengthIn, const float WorldScaleIn) {
 	FLocation LocationOut;
 	LocationOut.x = ((VectorIn.X) / (MapLengthIn * WorldScaleIn));
 	LocationOut.y = VectorIn.Y / (-MapLengthIn * WorldScaleIn);
@@ -234,7 +233,6 @@ FVector UExperimentUtils::CanonicalToVr(const FLocation LocationIn, const float 
 	VectorOut.Z = 0; // will need to be changed 
 	return VectorOut;
 }
-
 
 int UExperimentUtils::updateFrame(int Frame)
 {
@@ -292,7 +290,7 @@ TArray<FLocation> UExperimentUtils::OcclusionsParseAllLocations(const FString Oc
 	// Deserialize the JSON string into a JSON array
 	if (!FJsonSerializer::Deserialize(Reader, JsonArray))
 	{ 
-		UE_LOG(LogTemp, Fatal, TEXT("[UExperimentUtils::OcclusionsParseAllLocations] Failed to parse deserialize JsonArray"))
+		UE_LOG(LogTemp, Fatal, TEXT("[UExperimentUtils::OcclusionsParseAllLocations] Failed to parse deserialize JsonArray. Response: %s"),*OcclusionLocationsIn);
 		return LocationList;
 	}
 	// Iterate over the array

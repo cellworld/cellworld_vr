@@ -1,13 +1,16 @@
 #include "GameModeMain.h"
-#include "GameFramework/PlayerStart.h"
+#include "EngineUtils.h"
 #include "PawnMain.h" 
 #include "GameStateMain.h"
 #include "PawnDebug.h"
 #include "PredatorController/AIControllerPredator.h"
-#include "ExperimentPlugin.h"
 #include "AsyncLoadingScreenLibrary.h"
 #include "MouseKeyboardPlayerController.h"
 #include "PlayerControllerVR.h"
+#include "Kismet/GameplayStatics.h"
+#include "GameInstanceMain.h"
+#include "cellworld_vr/cellworld_vr.h"
+#include "Misc/OutputDeviceNull.h"
 
 AGameModeMain::AGameModeMain()
 {
@@ -20,17 +23,11 @@ AGameModeMain::AGameModeMain()
 		DefaultPawnClass = APawnMain::StaticClass(); 
 		PlayerControllerClass = APlayerControllerVR::StaticClass();
 	}
-	 
-	/* Assign default game state */
 	GameStateClass = AGameStateMain::StaticClass();
-
-	/* standard defaults */
+	
 	PrimaryActorTick.bStartWithTickEnabled = true;
 	PrimaryActorTick.bCanEverTick = true;
 }
-
-/* to do: UFUNCTION() getexperimentservicemonitor()->StartEpisode()*/
-/* to do: UFUNCTION() getexperimentservicemonitor()->StopEpisode()*/
 
 void AGameModeMain::SpawnExperimentServiceMonitor()
 {
@@ -60,33 +57,58 @@ void AGameModeMain::EndGame()
 	UE_LOG(LogTemp, Warning, TEXT("[ AGameModeMain::EndGame()] Force quit."));
 	FGenericPlatformMisc::RequestExit(false);
 }
+
+AActor* AGameModeMain::GetLevelActorFromName(const FName& ActorNameIn)
+{
+	// Assuming this code is within a member function of an actor or game mode
+	for (TActorIterator<AActor> ActorItr(GetWorld()); ActorItr; ++ActorItr)
+	{
+		AActor* FoundActor = *ActorItr;
+		if (FoundActor->GetName() == ActorNameIn)
+		{
+			UE_LOG(LogTemp, Warning, TEXT("Found actor: %s"), *FoundActor->GetName());
+			return FoundActor;
+		}
+	}
+	return nullptr;
+}
+
 /* 
 * Updates GameInstance with HP keys. Will use variables inside GameInstanceMain.h 
 * to find, load, and process the HP keys. 
 */
-bool AGameModeMain::InitializeHPKeys() {
-	return false;
-}
 
 void AGameModeMain::SpawnAndPossessPlayer(FVector spawn_location, FRotator spawn_rotation)
 {
+	if (!bUseVR)
+	{
+		return;
+	}
+	
+	if (GEngine) GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Red, FString::Printf(TEXT("[AGameModeMain::SpawnAndPossessPlayer]!")));
+
 	/* to do: remove, no need for this if player start is present in map. if it isn''t, location will be taken care of by experiment service */
 
 	if(!GetWorld() || !GetWorld()->GetFirstPlayerController()) { UE_DEBUG_BREAK(); return; }
 
 	FActorSpawnParameters SpawnParams;
 	SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButAlwaysSpawn;
-	APawnMain* SpawnedPawn = GetWorld()->SpawnActor<APawnMain>(APawnMain::StaticClass(), spawn_location, spawn_rotation, SpawnParams);
-	if (!SpawnedPawn) return;
+	PlayerPawn = GetWorld()->SpawnActor<APawnMain>(DefaultPawnClass, spawn_location, spawn_rotation, SpawnParams);
+	if (!PlayerPawn) return;
 
 	// Find the player controller
-	APlayerControllerVR* PlayerController = Cast<APlayerControllerVR>(GetWorld()->GetFirstPlayerController());
+	APlayerController* PlayerController = Cast<APlayerControllerVR>(GetWorld()->GetFirstPlayerController());
 	if (PlayerController)
 	{
 		// Possess the spawned pawn
-		PlayerController->Possess(SpawnedPawn);
+		PlayerController->Possess(PlayerPawn);
 	}
-	//EAutoReceiveInput::Type::Player0;
+}
+
+// todo: should ESMonitor be attached to each individual pawn? 
+bool AGameModeMain::AttachClientToPlayer(TObjectPtr<UMessageClient> ClientIn, TObjectPtr<APawnMain> PawnIn)
+{
+	return false;
 }
 
 void AGameModeMain::InitGame(const FString& MapName, const FString& Options, FString& ErrorMessage)
@@ -110,7 +132,7 @@ void AGameModeMain::SpawnGetCLMonitorComponentActor()
 	GetCLMonitorComponentActor = Cast<AGeCLMonitorComponentActor>(GetWorld()->SpawnActor(AGetCLMonitorComponentActor::StaticClass(), &TempLoc, &TempRot, SpawnInfo));*/
 }
 /* spawn all logging actors, some may contain threads but they handle themselves. 
-* right now, theres only one, but im gonna call this function to maintain consitency.
+* right now, there's only one, but im gonna call this function to maintain consitency.
 */
 void AGameModeMain::SpawnAllLoggingActor()
 {
@@ -131,14 +153,36 @@ void AGameModeMain::StopLoadingScreen()
 void AGameModeMain::StartPlay()
 {
 	Super::StartPlay();
-	UE_LOG(LogTemp, Warning, TEXT("[AGameModeMain::StartPlay()] Starting game!"));
-
+	UE_LOG(LogExperiment, Warning, TEXT("[AGameModeMain::StartPlay()] Starting game!"));
+	
 	/* spawn player */
-	//AGameModeMain::SpawnAndPossessPlayer(FVector(380, -1790, 0), FRotator::ZeroRotator);
-
-	//AGameModeMain::SpawnAllLoggingActor();
+	FLocation SpawnLocation;
+	SpawnLocation.x = 0.0f;
+	SpawnLocation.y = 0.4f;
+	const FVector SpawnLocationVR = UExperimentUtils::CanonicalToVr(SpawnLocation,235.185,4.0f);
+	this->SpawnAndPossessPlayer(SpawnLocationVR, FRotator::ZeroRotator); 
+	// FName NameTemp = "BP_Habitat_Actor_2";
+	// AActor* LevelActorBase = this->GetLevelActorFromName(NameTemp);
+	// if (LevelActorBase->IsValidLowLevelFast())
+	// {
+	// 	UE_LOG(LogExperiment, Warning, TEXT("[AGameModeMain::StartPlay()] Found level actor! %s"),*LevelActorBase->GetName());
+	// }else{ LevelActorBase = nullptr; }
+	
+	// UGameInstanceMain* GameInstance = Cast<UGameInstanceMain>(UGameplayStatics::GetGameInstance(GetWorld()));
+	// if (GameInstance->IsValidLowLevelFast())
+	// {
+	// 	const FVector WorldScaleVector = GameInstance->GetLevelScale(nullptr);
+	// 	if (WorldScaleVector != FVector::ZeroVector) { GameInstance->SetWorldScale(WorldScaleVector.X); }
+	// 	else { UE_LOG(LogExperiment, Warning, TEXT("[AGameModeMain::StartPlay()] WorldScaleVector not valid!")); }
+	// 	
+	// } else {
+	// 	UE_LOG(LogExperiment, Warning, TEXT("[AGameModeMain::StartPlay()] GameInstanceMain NOT found!"));
+	// 	GameInstance = nullptr;
+	// }
+	//
 	if (bSpawnExperimentService) { AGameModeMain::SpawnExperimentServiceMonitor(); }
-	else { UE_LOG(LogTemp, Warning, TEXT("[AGameModeMain::StartPlay()] Not spawning Experiment Service!")); }
+
+	else { UE_LOG(LogExperiment, Warning, TEXT("[AGameModeMain::StartPlay()] Not spawning Experiment Service!")); }
 	
 	AGameModeMain::StopLoadingScreen();
 
@@ -147,7 +191,11 @@ void AGameModeMain::StartPlay()
 void AGameModeMain::EndPlay(const EEndPlayReason::Type EndPlayReason)
 {
 	Super::EndPlay(EndPlayReason);
-	this->ExperimentStopEpisode();
+	if (bSpawnExperimentService && this->ExperimentServiceMonitor->IsValidLowLevelFast())
+	{
+		this->ExperimentStopEpisode();
+		this->ExperimentStopExperiment(ExperimentServiceMonitor->ExperimentNameActive);
+	}
 }
 
 void AGameModeMain::Tick(float DeltaTime)
@@ -156,25 +204,22 @@ void AGameModeMain::Tick(float DeltaTime)
 }
 
 bool AGameModeMain::ExperimentStartEpisode() { 
-	if (!ExperimentServiceMonitor) { return false; }
-	return ExperimentServiceMonitor->StartEpisode();  
+	if (!IsValid(ExperimentServiceMonitor)) { return false; }
+	return ExperimentServiceMonitor->StartEpisode(ExperimentServiceMonitor->Client, ExperimentServiceMonitor->ExperimentInfo.ExperimentNameActive);  
 }
 
 bool AGameModeMain::ExperimentStopEpisode() {
-	if (!ExperimentServiceMonitor) { return false; }
-	
-	// make sure the actor isn't already in queue for being destroyed 
-	//if (ExperimentServiceMonitor->IsPendingKill()) 
 	if (!IsValid(ExperimentServiceMonitor))
 	{ 
-		UE_LOG(LogTemp, Warning, TEXT("[AGameModeMain::ExperimentStopEpisode()] Failed to destroy, Already pending kill.")); 
+		UE_LOG(LogExperiment, Warning, TEXT("[AGameModeMain::ExperimentStopEpisode()] Failed to destroy, Already pending kill.")); 
 		return false; 
 	}
 	return ExperimentServiceMonitor->StopEpisode(); 
 }
 
-bool AGameModeMain::ExperimentStopExperiment(FString ExperimentName)
+bool AGameModeMain::ExperimentStopExperiment(const FString ExperimentNameIn)
 {
-	if (!ExperimentServiceMonitor) { return false; }
+	if (!IsValid(ExperimentServiceMonitor)) { return false; }
+	ExperimentServiceMonitor->StopExperiment(ExperimentNameIn);
 	return false;
 }
