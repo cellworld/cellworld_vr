@@ -1,7 +1,4 @@
 #include "PredatorController/ExperimentServiceMonitor.h"
-
-#include "ParticleHelper.h"
-#include "EntitySystem/MovieSceneEntitySystemRunner.h"
 #include "GameInstanceMain.h"
 #include "cellworld_vr/cellworld_vr.h"
 #include "PredatorController/AIControllerPredator.h"
@@ -127,23 +124,6 @@ bool AExperimentServiceMonitor::StopExperiment(const FString& ExperimentNameIn) 
 	return true; 
 }
 
-URequest* AExperimentServiceMonitor::SendFinishExperimentRequest(const FString& ExperimentNameIn)
-{
-	// if (!Client) { return nullptr; }
-	// FFinishExperimentRequest RequestBody;
-	// RequestBody.experiment_name = ExperimentNameIn;
-	//
-	// FString RequestString = UExperimentUtils::FinishExperimentRequestToJsonString(RequestBody);
-	// StopExperimentRequest = Client->SendRequest("finish_experiment", RequestString, TimeOut);
-	//
-	// if (!StopExperimentRequest) { return nullptr; }
-	//
-	// StopExperimentRequest->ResponseReceived.AddDynamic(this, &AExperimentServiceMonitor::HandleStopExperimentResponse); // uses same one as start/stop
-	// StopExperimentRequest->TimedOut.AddDynamic(this, &AExperimentServiceMonitor::HandleStopExperimentTimedOut);
-
-	return nullptr;
-}
-
 void AExperimentServiceMonitor::HandleStopExperimentResponse(const FString ResponseIn)
 {
 	UE_LOG(LogTemp, Warning, TEXT("[AExperimentServiceMonitor::HandleFinishExperimentResponse] %s"), *ResponseIn);
@@ -234,14 +214,12 @@ bool AExperimentServiceMonitor::ValidateExperimentName(const FString& Experiment
 	return true;
 }
 
-
 /* stop experiment service episode stream */
 bool AExperimentServiceMonitor::StopEpisode() 
 {
 	if (!this->ValidateClient(Client)) { UE_LOG(LogExperiment, Error, TEXT("[AExperimentServiceMonitor::StopEpisode() ] Can't stop episode, Experiment Service client not valid.")); return false; }
 	if (!this->ValidateExperimentName(ExperimentInfo.ExperimentNameActive)) { UE_LOG(LogExperiment, Error, TEXT("[AExperimentServiceMonitor::StopEpisode() ] Can't stop episode, experiment name not valid.")); return false; }
 
-	// if (!bInExperiment) { UE_LOG(LogTemp, Error, TEXT("[AExperimentServiceMonitor::StopEpisode() ] Can't stop episode, no active experiment.")); return false; }
 	if (ExperimentInfo.Status != EExperimentStatus::InEpisode) {
 		UE_LOG(LogExperiment, Error, TEXT("[AExperimentServiceMonitor::StopEpisode() ] Can't stop episode, no active episode. ENUM"));
 		return false;
@@ -644,7 +622,6 @@ void AExperimentServiceMonitor::HandleGetOcclusionsResponse(const FString Respon
 	// }
 	
 	OcclusionsStruct.SetCurrentLocationsByIndex(OcclusionIDsTemp);
-	// OcclusionsStruct.SpawnAll(GetWorld(), false, false, FVector(4.0, 4.0, 10.0f));
 	OcclusionsStruct.SetVisibilityArr(OcclusionIDsTemp, false, true);
 	if (!GetOcclusionsRequest->IsValidLowLevelFast())
 	{

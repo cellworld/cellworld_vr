@@ -107,13 +107,13 @@ public:
 			SpawnOcclusion->SetActorEnableCollision(bEnableCollisonIn);
 			OcclusionAllArr.Add(SpawnOcclusion);
 		}
-		UE_LOG(LogExperiment, Warning, TEXT("[FOcclusions.SpawnAll] OK."))
+		UE_LOG(LogExperiment, Warning, TEXT("[FOcclusions.SpawnAll] OK."));
 		bSpawnedAll = true;
 		return true;
 	}
 
 	void SetAllHidden(){
-		UE_LOG(LogExperiment,Warning,TEXT("[]"))
+		UE_LOG(LogExperiment,Warning,TEXT("[FOcclusions.SetAllHidden]"));
 		for (AOcclusion* Occlusion : OcclusionAllArr) {
 			Occlusion->SetActorHiddenInGame(true);
 			Occlusion->SetActorEnableCollision(false);
@@ -317,8 +317,6 @@ public:
 		void HandleStartExperimentTimedOut();
 	UFUNCTION()
 		URequest* SendStartExperimentRequest(UMessageClient* ClientIn, FString ExperimentNameIn);
-	UFUNCTION()
-		URequest* SendFinishExperimentRequest(const FString& ExperimentNameIn);
 	UFUNCTION()
 		void HandleStopExperimentResponse(const FString ResponseIn);
 	UFUNCTION()
