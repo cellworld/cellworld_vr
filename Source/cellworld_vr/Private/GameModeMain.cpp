@@ -25,13 +25,6 @@ AGameModeMain::AGameModeMain()
 	}
 	GameStateClass = AGameStateMain::StaticClass();
 	
-	// look for components based in BP 
-	// static ConstructorHelpers::FObjectFinder<UHUDExperiment> PlayerHUD(TEXT("/Script/UMGEditor.WidgetBlueprint'/Game/Interfaces/BP_HUDExperiment.BP_HUDExperiment'"));
-	// if (PlayerHUD.Succeeded()) {
-	// 	HUDClass = PlayerHUD.Object;
-	// }
-	// HUDClass = UHUDExperiment::StaticClass();
-
 	PrimaryActorTick.bStartWithTickEnabled = true;
 	PrimaryActorTick.bCanEverTick = true;
 }
@@ -211,14 +204,11 @@ void AGameModeMain::Tick(float DeltaTime)
 }
 
 bool AGameModeMain::ExperimentStartEpisode() { 
-	if (!ExperimentServiceMonitor && !ExperimentServiceMonitor->Client) { return false; }
-	return ExperimentServiceMonitor->StartEpisode(ExperimentServiceMonitor->Client, ExperimentServiceMonitor->ExperimentNameActive);  
+	if (!IsValid(ExperimentServiceMonitor)) { return false; }
+	return ExperimentServiceMonitor->StartEpisode(ExperimentServiceMonitor->Client, ExperimentServiceMonitor->ExperimentInfo.ExperimentNameActive);  
 }
 
 bool AGameModeMain::ExperimentStopEpisode() {
-	if (!ExperimentServiceMonitor) { return false; }
-	// make sure the actor isn't already in queue for being destroyed 
-	//if (ExperimentServiceMonitor->IsPendingKill()) 
 	if (!IsValid(ExperimentServiceMonitor))
 	{ 
 		UE_LOG(LogExperiment, Warning, TEXT("[AGameModeMain::ExperimentStopEpisode()] Failed to destroy, Already pending kill.")); 

@@ -255,7 +255,6 @@ public:
 		FString subject_name = "";
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Experiment)
 		int duration; 
-	
 };
 
 USTRUCT(Blueprintable)
@@ -399,3 +398,5 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Experiment)
 	TArray<AActor*> Columns;
 };
+
+

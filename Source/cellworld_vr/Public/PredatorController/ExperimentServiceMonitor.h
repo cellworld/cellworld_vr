@@ -10,11 +10,48 @@
 #include "PredatorController/CharacterPredator.h"
 #include "PawnMain.h"
 #include "PawnDebug.h"
+#include "ExperimentPlugin/Public/Structs.h"
 #include "ExperimentComponents/Occlusion.h"
 #include "DrawDebugHelpers.h"
+#include "cellworld_vr/cellworld_vr.h"
 #include "ExperimentServiceMonitor.generated.h"
 
-USTRUCT()
+UENUM(Blueprintable)
+enum class EExperimentStatus : uint8
+{
+	// client is in an active experiment/episode (can be both - maybe ill change to no) 
+	InExperiment		  	 UMETA(DisplayName = "InExperiment"),
+	InEpisode			  	 UMETA(DisplayName = "InEpisode"),
+
+	// 'waiting room' flags - waiting for XYZ to start 
+	WaitingExperiment	  	 UMETA(DisplayName = "WaitingExperiment"),
+	WaitingEpisode		  	 UMETA(DisplayName = "WaitingEpisode"),
+
+	// error flags
+	FailedStartExperiment 	 UMETA(DisplayName = "FailedStartExperiment"),
+	FailedStartEpisode    	 UMETA(DisplayName = "FailedStartEpisode"),
+	
+	// completion flags
+	FinishedExperiment	  	 UMETA(DisplayName = "FinishedExperiment"),
+	FinishedEpisode		  	 UMETA(DisplayName = "FinishedEpisode"),
+
+	// failed flags
+	FailedFinishedExperiment UMETA(DisplayName = "FailedFinishedExperiment"),
+	FailedFinishEpisode		 UMETA(DisplayName = "FailedFinishEpisode"), 
+
+	// is the client done? Yes? Ok lets disconnect and tell subject thanks for coming
+	WaitingFinishSuccess     UMETA(DisplayName = "WaitingFinishSuccess"),
+	WaitingFinishError	     UMETA(DisplayName = "WaitingFinishError"),
+
+	// handle timeouts
+	TimedOutExperiment	     UMETA(DisplayName="TimedOutExperiment"),
+	TimedOutEpisode		     UMETA(DisplayName="TimedOutEpisode"),
+	
+	// there's always stuff we don't expect, right? 
+	Unknown				     UMETA(DisplayName = "Unknown"),
+};
+
+USTRUCT(Blueprintable)
 struct FOcclusions
 {
 	GENERATED_USTRUCT_BODY()
@@ -22,52 +59,70 @@ public:
 
 	FOcclusions() { OcclusionAllArr = {}; }
 
-	bool bLocationsLoaded = false; 
-	bool bCurrentLocationsLoaded = false; 
-	TArray<AOcclusion*> OcclusionAllArr;
-	TArray<AOcclusion*> CurrentVisibleArr; 
+	UPROPERTY(EditAnywhere)
+		bool bAllLocationsLoaded = false; 
+	UPROPERTY(EditAnywhere)
+		bool bCurrentLocationsLoaded = false;
+	UPROPERTY(EditAnywhere)
+		bool bSpawnedAll = false;
 
-	TArray<FLocation> OcclusionAllLocationsArr;
-	TArray<int32> OcclusionIDsIntArr;
+	UPROPERTY(EditAnywhere)
+		TArray<AOcclusion*> OcclusionAllArr {};
+	UPROPERTY(EditAnywhere)
+		TArray<AOcclusion*> CurrentVisibleArr {}; 
+	UPROPERTY(EditAnywhere)
+		TArray<FLocation> AllLocations {};
+	UPROPERTY(EditAnywhere)
+		TArray<int32> OcclusionIDsIntArr {};
 
 	/* canonical */
-	void SetAllLocations(const TArray<FLocation> LocationsIn) {
-		OcclusionAllLocationsArr = LocationsIn; 
-		bLocationsLoaded = true;
+	void SetAllLocations(const FString& LocationsIn) {
+		UE_LOG(LogExperiment,Warning,TEXT("[FOcclusions.SetAllLocations] Locations: %s"),*LocationsIn);
+		AllLocations = UExperimentUtils::OcclusionsParseAllLocations(LocationsIn); 
+		bAllLocationsLoaded = true;
 	}
 
-	void SetCurrentLocationsByIndex(TArray<int32> OcclusionIndexIn) {
+	void SetCurrentLocationsByIndex(const TArray<int32>& OcclusionIndexIn) {
 		OcclusionIDsIntArr = OcclusionIndexIn; 
 		bCurrentLocationsLoaded = true;
 	}
 
-	bool SpawnAll(UWorld* WorldRefIn, const bool bVisibilityIn, const bool bEnableCollisonIn, const FVector WorldScaleVecIn) {
-		if (OcclusionAllLocationsArr.Num() < 1) { UE_LOG(LogTemp, Error, TEXT("FOcclusions.SpawnAll() Failed. OcclusionAllLocationsArr is empty."));  return false; }
-		if (!WorldRefIn) { UE_LOG(LogTemp, Error, TEXT("[FOcclusions.SpawnAll()] Failed due to invalid UWorld object.")); return false; }
-		FRotator Rotation(0.0f, 0.0f, 0.0f); // Desired spawn rotation
+	bool SpawnAll(UWorld* WorldRefIn, const bool bHiddenInGameIn, const bool bEnableCollisonIn, const FVector WorldScaleVecIn) {
+
+		if (AllLocations.Num() < 1) { UE_LOG(LogExperiment, Error, TEXT("FOcclusions.SpawnAll() Failed. OcclusionAllLocationsArr is empty."));  return false; }
+		if (!WorldRefIn) { UE_LOG(LogExperiment, Error, TEXT("[FOcclusions.SpawnAll()] Failed due to invalid UWorld object.")); return false; }
+
+		const FRotator Rotation(0.0f, 0.0f, 0.0f); // Desired spawn rotation
 		const float ScaleOffset = 0.99157164105; 
 		const float MapLength = 235.185290;
 		FActorSpawnParameters SpawnParams;
-		for (int i = 0; i < OcclusionAllLocationsArr.Num(); i++) {
-			AOcclusion* MyMeshActor = WorldRefIn->SpawnActor<AOcclusion>(
+		for (int i = 0; i < AllLocations.Num(); i++) {
+			AOcclusion* SpawnOcclusion = WorldRefIn->SpawnActor<AOcclusion>(
 				AOcclusion::StaticClass(),
-				UExperimentUtils::CanonicalToVr(OcclusionAllLocationsArr[i], MapLength, WorldScaleVecIn.X*ScaleOffset), // todo: make scale dynamic
+				UExperimentUtils::CanonicalToVr(AllLocations[i], MapLength, WorldScaleVecIn.X*ScaleOffset), // todo: make scale dynamic
 				Rotation,
 				SpawnParams);
-			
-			MyMeshActor->SetActorScale3D(WorldScaleVecIn*ScaleOffset); 
-			MyMeshActor->SetActorHiddenInGame(bVisibilityIn);
-			MyMeshActor->SetActorEnableCollision(bEnableCollisonIn);
-
-			OcclusionAllArr.Add(MyMeshActor);
+			SpawnOcclusion->SetActorScale3D(WorldScaleVecIn*ScaleOffset); 
+			SpawnOcclusion->SetActorHiddenInGame(bHiddenInGameIn);
+			SpawnOcclusion->SetActorEnableCollision(bEnableCollisonIn);
+			OcclusionAllArr.Add(SpawnOcclusion);
 		}
-
+		UE_LOG(LogExperiment, Warning, TEXT("[FOcclusions.SpawnAll] OK."))
+		bSpawnedAll = true;
 		return true;
 	}
 
-	void SetVisibilityAll(const bool bVisibilityIn) {
+	void SetAllHidden(){
+		UE_LOG(LogExperiment,Warning,TEXT("[]"))
 		for (AOcclusion* Occlusion : OcclusionAllArr) {
 			Occlusion->SetActorHiddenInGame(true);
+			Occlusion->SetActorEnableCollision(false);
+		}
+	}
+
+	void SetVisibilityAll(const bool bHiddenInGameIn) {
+		for (AOcclusion* Occlusion : OcclusionAllArr) {
+			Occlusion->SetActorHiddenInGame(bHiddenInGameIn);
 			Occlusion->SetActorEnableCollision(false);
 		}
 	}
@@ -90,27 +145,28 @@ public:
 	}
 };
 
-UENUM()
-enum class EExperimentStatus : uint8
+USTRUCT(Blueprintable)
+struct FExperimentInfo
 {
-	// client is in an active experiment/episode (can be both - maybe ill change to no) 
-	InExperiment,
-	InEpisode,
-
-	// 'waiting room' flags - waiting for XYZ to start 
-	WaitingExperiment,
-	WaitingEpisode,
+	GENERATED_BODY()
+public: 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = ExperimentInfo)
+		EExperimentStatus Status = EExperimentStatus::WaitingExperiment;
 	
-	// completion flags
-	FinishedExperiment,
-	FinishedEpisode,
-
-	// is the client done? Yes? Ok lets disconnect and tell subject thanks for coming
-	WaitingFinishSuccess,
-	WaitingFinishError,
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = ExperimentInfo)
+		FStartExperimentRequest StartExperimentRequestBody;
 	
-	// there's always stuff we don't expect, right? 
-	Unknown,
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = ExperimentInfo)
+		FStartEpisodeRequest StartEpisodeRequestBody;
+	
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = ExperimentInfo)
+		FStartExperimentResponse StartExperimentResponse;
+	
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = ExperimentInfo)
+		FStartEpisodeResponse StartEpisodeResponse;
+	
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = ExperimentInfo)
+		FString ExperimentNameActive = "";
 };
 
 UCLASS()
@@ -122,8 +178,11 @@ public:
 	AExperimentServiceMonitor();
 
 	/* ==== main experiment service components ==== */
+	
 	UPROPERTY()
 		TObjectPtr<UMessageClient> Client;
+
+	/* routes */
 	UPROPERTY()
 		TObjectPtr<UMessageRoute> MessageRoutePredator;
 	UPROPERTY()
@@ -137,6 +196,14 @@ public:
 	UPROPERTY()
 		TObjectPtr<UMessageRoute> TrackingServiceRoutePredator; 
 	UPROPERTY()
+		TObjectPtr<UMessageRoute> RouteOnEpisodeStarted;
+	UPROPERTY()
+		TObjectPtr<UMessageRoute> RoutePredator;
+	UPROPERTY()
+		TObjectPtr<UMessageRoute> RouteAgent;
+
+	/* ==== requests ==== */
+	UPROPERTY()
 		TObjectPtr<URequest> StartExperimentRequest;
 	UPROPERTY()
 		TObjectPtr<URequest> StartEpisodeRequest;
@@ -147,13 +214,9 @@ public:
 	UPROPERTY()
 		TObjectPtr<URequest> SubscribeRequest;
 	UPROPERTY()
-		TObjectPtr<UMessageRoute> RoutePredator;
-	UPROPERTY()
-		TObjectPtr<UMessageRoute> RouteAgent;
-	UPROPERTY()
-		TObjectPtr<UMessageRoute> RouteOnEpisodeStarted;
+		TObjectPtr<URequest> GetOcclusionsRequest;
 
-	// const FString header_experiment_service			= "predator_step";
+	/* headers */
 	const FString header_prey_location		    = "prey_step";
 	const FString header_predator_location		= "predator_step";
 	const FString experiment_name               = "test_experiment";
@@ -168,6 +231,9 @@ public:
 	const int ServerPort	      = 4970;
 
 	/* ==== status stuff ==== */
+	UPROPERTY()
+		FExperimentInfo ExperimentInfo {};
+	
 	bool bCanUpdatePreyPosition      = false;
 	bool bConnectedTrackingService	 = false; 
 	bool bConnectedExperimentService = false; 
@@ -185,6 +251,8 @@ public:
 
 	/* functions called by GameMode and Blueprints */
 	static UMessageClient* CreateNewClient();
+	static bool ValidateClient(UMessageClient* ClientIn);
+	static bool ValidateExperimentName(const FString& ExperimentNameIn);
 	static bool Disconnect(UMessageClient* ClientIn);
 	
 	bool StartExperiment(const FString& ExperimentNameIn);
