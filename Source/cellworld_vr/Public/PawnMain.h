@@ -2,10 +2,9 @@
 #include "CoreMinimal.h"
 #include "Components/CustomCharacterMovementComponent.h"
 #include "Components/StaticMeshComponent.h"
+#include "GameFramework/Pawn.h"
 #include "Components/WidgetComponent.h"
 #include "Interfaces/HUDExperiment.h"
-#include "GameFramework/Pawn.h"
-#include "CoreMinimal.h"
 #include "HeadMountedDisplay.h"
 #include "Containers/Array.h" 
 #include "GameFramework/CharacterMovementComponent.h" // test 

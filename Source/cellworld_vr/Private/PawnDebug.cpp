@@ -146,7 +146,7 @@ void APawnDebug::MoveForward(float AxisValue)
 		{
 			FVector CameraForwardVector = this->Camera->GetForwardVector();
 			CameraForwardVector.Z = 0.0;
-			this->UpdateMovementComponent(CameraForwardVector * AxisValue * 7.5, /*force*/ true);
+			this->UpdateMovementComponent(CameraForwardVector * AxisValue * 1, /*force*/ true);
 		}
 	}
 }
@@ -158,7 +158,7 @@ void APawnDebug::MoveRight(float AxisValue)
 		{
 			FVector CameraRightVector = this->Camera->GetRightVector();
 			CameraRightVector.Z = 0.0;
-			this->UpdateMovementComponent(CameraRightVector * AxisValue * 7.5, /* force */true);
+			this->UpdateMovementComponent(CameraRightVector * AxisValue * 1, /* force */true);
 		}
 	}
 }

@@ -39,22 +39,30 @@ bool AExperimentServiceMonitor::ValidateLevel(UWorld* InWorld, const FString InL
 /* todo: make this take input ACharacter and spawn that one*/
 bool AExperimentServiceMonitor::SpawnAndPossessPredator() {
 
-	if (!GetWorld()) { UE_LOG(LogTemp, Fatal, TEXT("[AExperimentServiceMonitor::SpawnAndPossessPredator()] GetWorld() failed!")); return false; }
+	if (!GetWorld())
+	{
+		UE_LOG(LogTemp, Fatal, TEXT("[AExperimentServiceMonitor::SpawnAndPossessPredator()] GetWorld() failed!")); return false;
+	}
 
 	// Define spawn parameters
 	FActorSpawnParameters SpawnParams;
 	SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButAlwaysSpawn;
 
 	// Specify the location and rotation for the new actor
-	FVector Location(-2426.0f, 1264.0f, 90.0f); // Change to desired spawn location
 	FRotator Rotation(0.0f, 0.0f, 0.0f); // Change to desired spawn rotation
-
+	FLocation SpawnLocation;
+	SpawnLocation.x = 0.5;
+	SpawnLocation.y = 0.5;
+	FVector SpawnVector = UExperimentUtils::CanonicalToVr(SpawnLocation,MapLength,WorldScale);
 	// Spawn the character
-	CharacterPredator = GetWorld()->SpawnActor<ACharacterPredator>(ACharacterPredator::StaticClass(), Location, Rotation, SpawnParams);
+	PredatorBasic = GetWorld()->SpawnActor<APredatorBasic>(APredatorBasic::StaticClass(), SpawnVector, Rotation, SpawnParams);
 
 	// Ensure the character was spawned
-	if (!CharacterPredator) { UE_LOG(LogTemp, Fatal, TEXT("[AExperimentServiceMonitor::SpawnAndPossessPredator()] Spawn ACharacterPredator Failed!")); return false; }
-	return false;
+	if (!PredatorBasic)
+	{
+		UE_LOG(LogTemp, Fatal, TEXT("[AExperimentServiceMonitor::SpawnAndPossessPredator()] Spawn ACharacterPredator Failed!")); return false;
+	}
+	return true;
 }
 
 /* stop connection for ClientIn */
@@ -407,15 +415,12 @@ void AExperimentServiceMonitor::UpdatePredator(FMessage message)
 
 	if (Client == nullptr) { return; }
 	FrameCount++;
-	FStep step = UExperimentUtils::JsonStringToStep(message.body); 
-	FVector new_location_ue = UExperimentUtils::CanonicalToVr(step.location,MapLength, WorldScale); // ue --> unreal engine units 
+	const FStep step = UExperimentUtils::JsonStringToStep(message.body); 
+	const FVector new_location_ue = UExperimentUtils::CanonicalToVr(step.location,MapLength, WorldScale); // ue --> unreal engine units 
 	
 	GEngine->AddOnScreenDebugMessage(1, 5.0f, FColor::Green, FString::Printf(TEXT("New location: %f %f %f"), new_location_ue.X, new_location_ue.Y, new_location_ue.Z));
-	
-	AAIControllerPredator* AIControllerPredator = Cast<AAIControllerPredator>(CharacterPredator->GetController());
-	if (!AIControllerPredator) { return; }
-	
-	AIControllerPredator->GetBlackboardComponent()->SetValueAsVector(TEXT("TargetLocation"), new_location_ue);
+	PredatorBasic->SetActorLocation(new_location_ue);
+	PredatorBasic->SetActorRotation(FRotator(0.0,step.rotation,0.0f));
 	bCanUpdatePreyPosition = true;
 }
 
@@ -439,8 +444,8 @@ void AExperimentServiceMonitor::UpdatePreyPosition(const FVector vector)
 
 	/* send message to ES */
 	FMessage message = UMessageClient::NewMessage(header_prey_location, body);
-	if (Client->IsConnected()) {
-		Client->SendMessage(message);
+	if (TrackingClient->IsConnected()) {
+		TrackingClient->SendMessage(message);
 	}
 
 	/* don't overload server with messages before it is done processing previous prey update. */
@@ -457,7 +462,8 @@ void AExperimentServiceMonitor::HandleTrackingServiceMessage(FMessage message)
 this class (ExperimentServiceMonitor) will end up here */
 void AExperimentServiceMonitor::HandleTrackingServiceUnroutedMessage(FMessage message)
 {
-	if (GEngine) GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Red, FString::Printf(TEXT("tracking unrouted: (%s) %s"), *message.header, *message.body));
+	// if (GEngine) GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Red,
+	// 	FString::Printf(TEXT("tracking unrouted: (%s) %s"), *message.header, *message.body));
 }
 
 void HandleUnroutedExperiment(FMessage message) {
@@ -467,7 +473,8 @@ void HandleUnroutedExperiment(FMessage message) {
 
 void AExperimentServiceMonitor::HandleUnroutedMessage(FMessage message)
 {
-	if (GEngine) GEngine->AddOnScreenDebugMessage(-1, 1.0f, FColor::Red, FString::Printf(TEXT("tracking unrouted: (%s) %s"), *message.header, *message.body));
+	if (GEngine) GEngine->AddOnScreenDebugMessage(-1, 1.0f, FColor::Red,
+		FString::Printf(TEXT("tracking unrouted: (%s) %s"), *message.header, *message.body));
 }
 
 /* todo: finish this */
@@ -573,7 +580,6 @@ void AExperimentServiceMonitor::HandleSubscribeToServerResponse(FString MessageI
 		SubscribeRequest->TimedOut.RemoveAll(this);
 	}
 	
-	// if(!this->RoutePredatorMessages()) { printScreen("[AExperimentServiceMonitor::Test()] Failed to route."); }
 }
 
 void AExperimentServiceMonitor::HandleSubscribeToServerTimedOut()
@@ -720,7 +726,10 @@ void AExperimentServiceMonitor::HandleOcclusionLocation(const FMessage MessageIn
 }
 
 bool AExperimentServiceMonitor::ConnectToServer(UMessageClient* ClientIn, const int MaxAttemptsIn, const FString& IPAddressIn, const int PortIn) {
-	if (!ClientIn) { printScreen("[AExperimentServiceMonitor::ConnectToServer()] ClientIn is false!"); return false;  }
+	if (!ClientIn->IsValidLowLevel())
+	{
+		printScreen("[AExperimentServiceMonitor::ConnectToServer()] ClientIn is false!"); return false;
+	}
 	uint8 AttemptCurr = 0;
 
 	while (AttemptCurr < MaxAttemptsIn) {
@@ -739,15 +748,13 @@ bool AExperimentServiceMonitor::ConnectToServer(UMessageClient* ClientIn, const 
 
 bool AExperimentServiceMonitor::RoutePredatorMessages()
 {
-	if (!Client) {printScreen("[AExperimentServiceMonitor::RoutePredatorMessages()] Client not valid."); return false;}
+	if (!TrackingClient) {printScreen("[AExperimentServiceMonitor::RoutePredatorMessages()] Client not valid."); return false;}
 	
-	Client->UnroutedMessageEvent.AddDynamic(this,&AExperimentServiceMonitor::HandleUnroutedMessage);
-	RoutePredator = Client->AddRoute("predator_step");
-	RouteOnEpisodeStarted = Client->AddRoute(on_episode_started_header); // todo: make sure I can delete 
+	TrackingClient->UnroutedMessageEvent.AddDynamic(this,&AExperimentServiceMonitor::HandleUnroutedMessage);
+	MessageRoutePredator = TrackingClient->AddRoute("predator_step");
 
-	if (!RoutePredator) {printScreen("[AExperimentServiceMonitor::RoutePredatorMessages()] Route not valid."); return false; }
-	// RoutePredator->MessageReceived.AddDynamic(this,&AExperimentServiceMonitor::HandleUpdatePredator);
-	RouteOnEpisodeStarted->MessageReceived.AddDynamic(this, &AExperimentServiceMonitor::HandleUpdatePredator);
+	if (!MessageRoutePredator) {printScreen("[AExperimentServiceMonitor::RoutePredatorMessages()] RoutePredatorStep not valid."); return false; }
+	MessageRoutePredator->MessageReceived.AddDynamic(this,&AExperimentServiceMonitor::HandleUpdatePredator);
 
 	printScreen("[AExperimentServiceMonitor::RoutePredatorMessages()] OK");
 	return true;
@@ -758,10 +765,14 @@ bool AExperimentServiceMonitor::Test() {
 	/* connect tracking service */
 
 	Client = AExperimentServiceMonitor::CreateNewClient();
+	TrackingClient = AExperimentServiceMonitor::CreateNewClient();
 	constexpr int AttemptsMax = 5; 
 	if (!this->ConnectToServer(Client, AttemptsMax, ServerIPMessage, ServerPort)) { printScreen("ConnectToServer() failed."); return false; }
+	if (!this->SubscribeToServer(Client)) { printScreen("[AExperimentServiceMonitor::Test] Sending SERVER Subscribe request: OK."); }
 
-	if (!this->SubscribeToServer(Client)) { printScreen("[AExperimentServiceMonitor::Test] Sending Subscribe request: OK."); }
+	if (!this->ConnectToServer(TrackingClient, AttemptsMax, ServerIPMessage, TrackingPort)) { printScreen("Connect to Tracking: failed."); return false; }
+	if (!this->SubscribeToServer(TrackingClient)) { printScreen("[AExperimentServiceMonitor::Test] Sending TRACKING Subscribe request: OK."); }
+
 	else {printScreen("[AExperimentServiceMonitor::Test] Sending subscribe request: Failed."); }
 
 	/* Bind to Pawn's OnMovementDetected() */
@@ -774,10 +785,10 @@ bool AExperimentServiceMonitor::Test() {
 	return true;
 }
 
-
 void AExperimentServiceMonitor::HandleUpdatePredator(FMessage MessageIn)
 {
-	printScreen("[AExperimentServiceMonitor::HandleUpdatePredator]" + MessageIn.body);
+	this->UpdatePredator(MessageIn);
+	printScreen("[AExperimentServiceMonitor::HandleUpdatePredator]");
 }
 
 /* main stuff happens here */
@@ -785,6 +796,14 @@ void AExperimentServiceMonitor::BeginPlay()
 {
 	Super::BeginPlay();
 	printScreen("[AExperimentServiceMonitor::BeginPlay()] BeginPlay()");
+	if(this->SpawnAndPossessPredator())
+	{
+		UE_LOG(LogExperiment, Warning, TEXT("Spaned predator: OK"));
+	}else
+	{
+		UE_LOG(LogExperiment, Warning, TEXT("Spaned predator: FAILED"));
+		UE_DEBUG_BREAK();
+	}
 	Test(); 
 }
 

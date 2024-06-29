@@ -13,6 +13,7 @@
 #include "ExperimentPlugin/Public/Structs.h"
 #include "ExperimentComponents/Occlusion.h"
 #include "DrawDebugHelpers.h"
+#include "PredatorBasic.h"
 #include "cellworld_vr/cellworld_vr.h"
 #include "ExperimentServiceMonitor.generated.h"
 
@@ -146,6 +147,19 @@ public:
 };
 
 USTRUCT(Blueprintable)
+struct FExperimentHeaders
+{
+	GENERATED_BODY()
+	/* headers */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = ExperimentHeaders)
+	FString PreyStep     = "prey_step";
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = ExperimentHeaders)
+	FString PredatorStep = "predator_step";
+};
+
+
+USTRUCT(Blueprintable)
 struct FExperimentInfo
 {
 	GENERATED_BODY()
@@ -181,6 +195,8 @@ public:
 	
 	UPROPERTY()
 		TObjectPtr<UMessageClient> Client;
+	UPROPERTY()
+		TObjectPtr<UMessageClient> TrackingClient;
 
 	/* routes */
 	UPROPERTY()
@@ -198,7 +214,7 @@ public:
 	UPROPERTY()
 		TObjectPtr<UMessageRoute> RouteOnEpisodeStarted;
 	UPROPERTY()
-		TObjectPtr<UMessageRoute> RoutePredator;
+		TObjectPtr<UMessageRoute> RoutePredatorStep;
 	UPROPERTY()
 		TObjectPtr<UMessageRoute> RouteAgent;
 
@@ -229,10 +245,13 @@ public:
 	// const FString ServerIPMessage = "192.168.137.111"; // static laptop lab 
 	const FString ServerIPMessage = "127.0.0.1";		  // localhost  
 	const int ServerPort	      = 4970;
+	const int TrackingPort	      = 4790;
 
 	/* ==== status stuff ==== */
 	UPROPERTY()
 		FExperimentInfo ExperimentInfo {};
+	UPROPERTY()
+		FExperimentHeaders ExperimentHeaders; 
 	
 	bool bCanUpdatePreyPosition      = false;
 	bool bConnectedTrackingService	 = false; 
@@ -248,6 +267,8 @@ public:
 	/* ==== setup ==== */
 	bool SpawnAndPossessPredator();
 	ACharacter* CharacterPredator = nullptr;
+	UPROPERTY()
+	TObjectPtr<APredatorBasic> PredatorBasic = nullptr;
 
 	/* functions called by GameMode and Blueprints */
 	static UMessageClient* CreateNewClient();
