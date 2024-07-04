@@ -34,6 +34,7 @@ public:
 	void RestartGame();
 	void QuitGame();
 	APlayerController* GetGenericController();
+	bool HUDResetTimer(float DurationIn) const;
 	bool CreateAndInitializeWidget();
 	void DestroyHUD();
 
@@ -49,7 +50,14 @@ public:
 	virtual void Tick(float DeltaTime) override;
 	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 	virtual void Reset() override;
+	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
+	UPROPERTY() UCharacterMovementComponent* OurMovementComponentChar;
+	void UpdateMovementComponent(FVector InputVector, bool bForce);
+	void MoveForward(float AxisValue);
+	void MoveRight(float AxisValue);
+	void Turn(float AxisValue);
+	void LookUp(float AxisValue);
 	/* === properties === */
 	//UPROPERTY(VisibleDefaultsOnly, meta = (Category = "Default"))
 	class UCameraComponent* Camera;
@@ -67,7 +75,7 @@ public:
 	UPROPERTY()
 	class UHUDExperiment* PlayerHUD = nullptr;
 	
-	void SetupPlayerInputComponent(class UInputComponent* InInputComponent);
+	// void SetupPlayerInputComponent(class UInputComponent* InInputComponent);
 
 	/* overlap events */
 	UFUNCTION()
@@ -81,12 +89,15 @@ public:
 
 	/* Movement Component */
 	FHitResult OutHit;
-	ETeleportType TeleportType = ETeleportType::None;
+	ETeleportType TeleportType = ETeleportType::TeleportPhysics;
 
 	/* helpers for camera stuff */
 	UCameraComponent* GetCameraComponent();
 	void StartExperiment();
 	void StartEpisode();
+	void ValidateHMD();
+	bool DetectMovementVR();
+	bool DetectMovementWASD();
 
 private: 
 	const float _capsule_radius      = 30.0f;

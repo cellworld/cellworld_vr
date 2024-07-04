@@ -14,13 +14,12 @@ APawnDebug::APawnDebug()
 
 	/* create collision component */
 	CapsuleComponent = CreateDefaultSubobject<UCapsuleComponent>(TEXT("RootComponent"));
-	RootComponent = CapsuleComponent;
-	
 	CapsuleComponent->SetMobility(EComponentMobility::Movable);
 	CapsuleComponent->InitCapsuleSize(5.0, 30.0f); // (radius,half-height in cm) 16" width, 6' tall 
 	CapsuleComponent->SetCollisionProfileName(TEXT("Pawn"));
 	CapsuleComponent->OnComponentBeginOverlap.AddDynamic(this, &APawnDebug::OnOverlapBegin); // overlap events
-	CapsuleComponent->OnComponentEndOverlap.AddDynamic(this, &APawnDebug::OnOverlapEnd); // overlap events 
+	CapsuleComponent->OnComponentEndOverlap.AddDynamic(this, &APawnDebug::OnOverlapEnd); // overlap events
+	RootComponent = CapsuleComponent;
 
 	/* create camera component as root so pawn moves with camera */
 	Camera = CreateDefaultSubobject<UCameraComponent>(TEXT("ActualCamera"));
@@ -94,6 +93,7 @@ void APawnDebug::ResetOrigin()
 void APawnDebug::BeginPlay()
 {
 	Super::BeginPlay();
+
 }
 
 // Called every frame

@@ -42,6 +42,39 @@ public:
 
 };
 
+UENUM(Blueprintable)
+enum class EExperimentStatus : uint8
+{
+	// client is in an active experiment/episode (can be both - maybe ill change to no) 
+	InExperiment		  	 UMETA(DisplayName = "InExperiment"),
+	InEpisode			  	 UMETA(DisplayName = "InEpisode"),
+
+	// episode failed - time ran out  
+	FailedEpisodeTimer	     UMETA(DisplayName = "FailedEpisodeTimer"),
+
+	// 'waiting room' flags - waiting for XYZ to start 
+	WaitingExperiment	  	 UMETA(DisplayName = "WaitingExperiment"),
+	WaitingEpisode		  	 UMETA(DisplayName = "WaitingEpisode"),
+	WaitingFinishSuccess     UMETA(DisplayName = "WaitingFinishSuccess"),
+	WaitingFinishError	     UMETA(DisplayName = "WaitingFinishError"),
+	
+	// completion flags
+	FinishedExperiment	  	 UMETA(DisplayName = "FinishedExperiment"),
+	FinishedEpisode		  	 UMETA(DisplayName = "FinishedEpisode"),
+
+	// error flags
+	ErrorStartExperiment 	 UMETA(DisplayName = "FailedStartExperiment"),
+	ErrorStartEpisode    	 UMETA(DisplayName = "FailedStartEpisode"),
+	ErrorFinishedExperiment  UMETA(DisplayName = "FailedFinishedExperiment"),
+	ErrorFinishEpisode		 UMETA(DisplayName = "FailedFinishEpisode"),
+	ErrorTimedOutExperiment	 UMETA(DisplayName="TimedOutExperiment"),
+	ErrorTimedOutEpisode	 UMETA(DisplayName="TimedOutEpisode"),
+	
+	// there's always stuff we don't expect, right? 
+	Unknown				     UMETA(DisplayName = "Unknown"),
+};
+
+
 USTRUCT(Blueprintable)
 struct FLocation
 {
@@ -272,7 +305,7 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Experiment)
 		FString subject_name = "vr_dude";
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Experiment)
-		int duration = 0; // Tmax 30 min (convert to seconds)
+		int duration; // Tmax 30 min (convert to seconds)
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Experiment)
 		TArray<FString> rewards_cells;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Experiment)

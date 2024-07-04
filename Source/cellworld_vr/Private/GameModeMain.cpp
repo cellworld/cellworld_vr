@@ -14,15 +14,11 @@
 
 AGameModeMain::AGameModeMain()
 {
-	/* Get PawnMain to spawn */
-	if (!bUseVR){
-		DefaultPawnClass = APawnDebug::StaticClass(); 
-		PlayerControllerClass = AMouseKeyboardPlayerController::StaticClass();
-	}
-	else { 
-		DefaultPawnClass = APawnMain::StaticClass(); 
-		PlayerControllerClass = APlayerControllerVR::StaticClass();
-	}
+	// vr or WASD? 
+	if (bUseVR){ PlayerControllerClass = APlayerControllerVR::StaticClass(); }
+	else { PlayerControllerClass = AMouseKeyboardPlayerController::StaticClass(); }
+	
+	DefaultPawnClass = APawnMain::StaticClass();
 	GameStateClass = AGameStateMain::StaticClass();
 	
 	PrimaryActorTick.bStartWithTickEnabled = true;
@@ -44,11 +40,8 @@ void AGameModeMain::SpawnExperimentServiceMonitor()
 		// Spawn the character
 		ExperimentServiceMonitor = GetWorld()->SpawnActor<AExperimentServiceMonitor>(AExperimentServiceMonitor::StaticClass(), Location, Rotation, SpawnParams);
 
-		//// Ensure the character was spawned
-		//if (!ExperimentServiceMonitor)
-		//{
-		//	UE_DEBUG_BREAK();
-		//}
+		ExperimentServiceMonitor->ExperimentInfo.OnExperimentStatusChangedEvent.AddDynamic(this, &AGameModeMain::OnExperimentStatusChanged);
+
 	}
 }
 
@@ -80,10 +73,10 @@ AActor* AGameModeMain::GetLevelActorFromName(const FName& ActorNameIn)
 
 void AGameModeMain::SpawnAndPossessPlayer(FVector spawn_location, FRotator spawn_rotation)
 {
-	if (!bUseVR)
-	{
-		return;
-	}
+	// if (!bUseVR)
+	// {
+	// 	return;
+	// }
 	
 	if (GEngine) GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Red, FString::Printf(TEXT("[AGameModeMain::SpawnAndPossessPlayer]!")));
 
@@ -94,13 +87,16 @@ void AGameModeMain::SpawnAndPossessPlayer(FVector spawn_location, FRotator spawn
 	FActorSpawnParameters SpawnParams;
 	SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButAlwaysSpawn;
 	PlayerPawn = GetWorld()->SpawnActor<APawnMain>(DefaultPawnClass, spawn_location, spawn_rotation, SpawnParams);
-	if (!PlayerPawn) return;
+	if (!PlayerPawn)
+	{
+		if (GEngine) GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Red, FString::Printf(TEXT("[AGameModeMain::SpawnAndPossessPlayer] Cast failed!")));
+		return;
+	};
 
 	// Find the player controller
-	APlayerController* PlayerController = Cast<APlayerControllerVR>(GetWorld()->GetFirstPlayerController());
+	APlayerController* PlayerController = GetWorld()->GetFirstPlayerController();
 	if (PlayerController)
 	{
-		// Possess the spawned pawn
 		PlayerController->Possess(PlayerPawn);
 	}
 }
@@ -150,6 +146,46 @@ void AGameModeMain::StopLoadingScreen()
 	UAsyncLoadingScreenLibrary::StopLoadingScreen();
 }
 
+void AGameModeMain::OnUpdateHUDTimer(){
+
+	float TimeRemaining = 0.0f;
+	if (ExperimentServiceMonitor->IsValidLowLevelFast() && ExperimentServiceMonitor->TimerHandle.IsValid()){
+		TimeRemaining = ExperimentServiceMonitor->GetTimeRemaining();
+	}else{
+		if (GEngine) GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Red, FString::Printf(TEXT("[AGameModeMain::OnUpdateHUDTimer()] Error with getting time from ESM.")));
+		return;
+	}
+
+	if (PlayerPawn->IsValidLowLevelFast() && PlayerPawn->PlayerHUD->IsValidLowLevelFast())
+	{
+		PlayerPawn->PlayerHUD->SetTimeRemaining(FString::FromInt(FMath::FloorToInt(TimeRemaining+1))); // counter the round down
+		if (GEngine) GEngine->AddOnScreenDebugMessage(-1, 3.0f, FColor::Green,
+			FString::Printf(TEXT("[AGameModeMain::OnUpdateHUDTimer()] Setting timer from game mode! %0.5f -> %i"),TimeRemaining,FMath::FloorToInt(TimeRemaining+1)));
+	}else
+	{
+		if (GEngine) GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Red, FString::Printf(TEXT("[AGameModeMain::OnUpdateHUDTimer()] ERROR setting timer from game mode!.")));
+	}
+}
+
+void AGameModeMain::OnExperimentStatusChanged(const EExperimentStatus ExperimentStatusIn)
+{
+	// Get an enum from wherever you get it in your code, and set it into a member, in this example that is SurfaceType.
+
+	const TEnumAsByte<EExperimentStatus> ExperimentStatusInByted = ExperimentStatusIn;
+	const FString EnumAsString = UEnum::GetValueAsString(ExperimentStatusInByted.GetValue());
+
+	int32 Index;
+	if (EnumAsString.FindChar(TEXT(':'), Index))
+	{
+		PlayerPawn->PlayerHUD->SetCurrentStatus(EnumAsString.Mid(Index + 2));
+	}
+}
+
+void AGameModeMain::OnTimerFinished()
+{
+	if (GEngine) GEngine->AddOnScreenDebugMessage(-1, 3.0f, FColor::Red, FString::Printf(TEXT("[AGameModeMain::OnTimerFinished()]!")));
+}
+
 void AGameModeMain::StartPlay()
 {
 	Super::StartPlay();
@@ -159,8 +195,13 @@ void AGameModeMain::StartPlay()
 	FLocation SpawnLocation;
 	SpawnLocation.x = 0.0f;
 	SpawnLocation.y = 0.4f;
-	const FVector SpawnLocationVR = UExperimentUtils::CanonicalToVr(SpawnLocation,235.185,4.0f);
-	this->SpawnAndPossessPlayer(SpawnLocationVR, FRotator::ZeroRotator); 
+	FVector SpawnLocationVR = UExperimentUtils::CanonicalToVr(SpawnLocation,235.185,4.0f);
+	SpawnLocationVR.Z += 100; 
+	this->SpawnAndPossessPlayer(SpawnLocationVR, FRotator::ZeroRotator);
+	FTimerHandle TimerHUDUpdate;
+	
+	GetWorldTimerManager().SetTimer(TimerHUDUpdate, this, &AGameModeMain::OnUpdateHUDTimer, 0.5f, true, -1.0f);
+
 	// FName NameTemp = "BP_Habitat_Actor_2";
 	// AActor* LevelActorBase = this->GetLevelActorFromName(NameTemp);
 	// if (LevelActorBase->IsValidLowLevelFast())

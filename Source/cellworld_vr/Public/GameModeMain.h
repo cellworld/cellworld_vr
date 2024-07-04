@@ -26,7 +26,7 @@ public:
 	
 	/* debug */
 	TObjectPtr<UClass> PawnClassToSpawn;
-	TObjectPtr<APawn> PlayerPawn;
+	TObjectPtr<APawnMain> PlayerPawn;
 	FVector InitialPlayerLocation;
 	FRotator InitialPlayerRotation;
 
@@ -39,13 +39,23 @@ public:
 	/* Spawns Sensors */
 	void SpawnGetCLMonitorComponentActor();
 
+	/* timers */
+	FTimerHandle TimerHandleUpdateHUD; 
+
 	/* spawn everything */
 	void SpawnAllLoggingActor(); 
 
 	/* controls loading screen */
 	void StartLoadingScreen();
-	void StopLoadingScreen(); 
-	
+	void StopLoadingScreen();
+
+	/* player HUD bindings to ExperimentServiceMonitor */
+	void OnUpdateHUDTimer();
+	UFUNCTION()
+		void OnExperimentStatusChanged(EExperimentStatus ExperimentStatusIn);
+
+	void OnTimerFinished();
+
 	/* to store waypoint info  */
 	virtual void InitGame(const FString& MapName, const FString& Options, FString& ErrorMessage) override;
 	virtual void InitGameState();

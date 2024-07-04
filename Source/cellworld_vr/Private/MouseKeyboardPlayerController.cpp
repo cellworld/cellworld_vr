@@ -14,9 +14,8 @@ void AMouseKeyboardPlayerController::BeginPlay()
 	AGameModeMain* GameMode;
 	if (GetWorld()) {
 		GameMode = (AGameModeMain*)GetWorld()->GetAuthGameMode();
-		PossessedPawn = Cast<APawnDebug>(GetPawn());
+		PossessedPawn = Cast<APawnMain>(UGameplayStatics::GetPlayerPawn(GetWorld(), 0));
 	}
-	return;
 }
 
 // Called to bind functionality to input
@@ -45,15 +44,15 @@ void AMouseKeyboardPlayerController::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
-	if (!PossessedPawn) {
-		PossessedPawn = Cast<APawnDebug>(GetPawn());
+	if (!PossessedPawn->IsValidLowLevelFast()) {
+		PossessedPawn = Cast<APawnMain>(UGameplayStatics::GetPlayerPawn(GetWorld(), 0));
 	}
 }
 
 void AMouseKeyboardPlayerController::ResetOrigin()
 {
 	if (PossessedPawn) {
-		PossessedPawn->ResetOrigin();
+		// PossessedPawn->ResetOrigin();
 	}
 }
 

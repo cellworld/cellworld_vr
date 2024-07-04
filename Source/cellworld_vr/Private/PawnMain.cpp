@@ -9,6 +9,7 @@
 #include "HeadMountedDisplayFunctionLibrary.h"
 #include "IXRTrackingSystem.h"
 #include "cellworld_vr/cellworld_vr.h"
+#include "Components/EditableTextBox.h"
 #include "Engine/GameEngine.h"
 #include "GameFramework/PlayerController.h"
 #include "GameFramework/CharacterMovementComponent.h" // test 
@@ -42,7 +43,7 @@ APawnMain::APawnMain() : Super()
 	Camera = CreateDefaultSubobject<UCameraComponent>(TEXT("ActualCamera"));
 	Camera->SetMobility(EComponentMobility::Movable);
 	Camera->SetRelativeLocation(FVector(0.0f,0.0f,-_capsule_half_height)); // todo: make sure this is OK
-	Camera->bUsePawnControlRotation = true;
+	Camera->bUsePawnControlRotation = false; // todo: add flag, true for VR
 	Camera->SetupAttachment(RootComponent);
 
 	/* create HUD widget and attach to camera */
@@ -54,6 +55,7 @@ APawnMain::APawnMain() : Super()
 	HUDWidgetComponent->SetRelativeScale3D(FVector(0.25f,0.25f,0.25f));
 	HUDWidgetComponent->SetRelativeRotation(FRotator(0.0f,-180.0f,0.0f));
 	HUDWidgetComponent->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	HUDWidgetComponent->SetWidgetSpace(EWidgetSpace::Screen);
 	HUDWidgetComponent->SetDrawSize(FVector2d(1080,720));
 	
 	/*Create Motion Controllers*/
@@ -72,6 +74,16 @@ APawnMain::APawnMain() : Super()
 	MotionControllerRight->MotionSource = FName("Right");
 	MotionControllerRight->SetVisibility(false, false);
 	MotionControllerRight->SetupAttachment(RootComponent);
+
+	/* create instance of our movement component */
+	OurMovementComponentChar = CreateDefaultSubobject<UCharacterMovementComponent>(TEXT("CharacterMovementComponent"));
+	OurMovementComponentChar->MaxStepHeight = 100.0f;
+	OurMovementComponentChar->MaxWalkSpeed = 5000.0f;
+	OurMovementComponentChar->MaxAcceleration = 5000.0f;
+	OurMovementComponentChar->BrakingDecelerationWalking = 4'000.0f;
+	OurMovementComponentChar->bDeferUpdateMoveComponent = false;
+	OurMovementComponentChar->SetActive(true);
+	OurMovementComponentChar->UpdatedComponent = RootComponent;
 
 	const FSoftClassPath PlayerHUDClassRef(TEXT("/Script/UMGEditor.WidgetBlueprint'/Game/Interfaces/BP_HUDExperiment.BP_HUDExperiment_C'"));
 	if (TSubclassOf<UHUDExperiment> HUDClass = PlayerHUDClassRef.TryLoadClass<UHUDExperiment>()){
@@ -102,15 +114,43 @@ void APawnMain::StartEpisode()
 	return; 
 }
 
+void APawnMain::ValidateHMD()
+{
+	return;
+	// todo: get PC, if PCVR, set UseVR flag = true;
+	// todo idea 2: get flag from GameMode (check if it was set first, then do PC approach)
+}
+
+bool APawnMain::DetectMovementVR()
+{
+	return false;
+}
+
+bool APawnMain::DetectMovementWASD()
+{
+	return false;
+}
+
+// todo: attach as delegate to a timer 
 bool APawnMain::DetectMovement()
 {
 	bool _blocation_updated = false;
-
-	if (!UHeadMountedDisplayFunctionLibrary::IsHeadMountedDisplayEnabled()) { return false; }
-
 	FVector NewLocation;
 	FRotator NewRotation;
-	UHeadMountedDisplayFunctionLibrary::GetOrientationAndPosition(NewRotation, NewLocation);
+	
+	if (UHeadMountedDisplayFunctionLibrary::IsHeadMountedDisplayEnabled())
+	{
+		UHeadMountedDisplayFunctionLibrary::GetOrientationAndPosition(NewRotation, NewLocation);
+		this->UpdateRoomScaleLocation();
+	}
+	else{ // using WASD
+		if (GetWorld() && GetWorld()->GetFirstPlayerController())
+		{
+			NewLocation = GetWorld()->GetFirstPlayerController()->GetPawn()->GetActorLocation();
+		}		
+	}
+
+	// check if we changed (will likely delete later)
 	if (!NewLocation.Equals(_old_location, 2)) {
 		_blocation_updated = true;
 		_old_location = NewLocation;
@@ -118,7 +158,7 @@ bool APawnMain::DetectMovement()
 	else {
 		_blocation_updated = false; 
 	}
-	_new_location = NewLocation;
+	
 	return _blocation_updated;
 }
 
@@ -135,14 +175,7 @@ void APawnMain::UpdateRoomScaleLocation()
 	AddActorWorldOffset(DeltaLocation, false, nullptr, ETeleportType::TeleportPhysics);
 	VROrigin->AddWorldOffset(-DeltaLocation, false, nullptr, ETeleportType::TeleportPhysics);
 	this->CapsuleComponent->SetWorldLocation(CameraLocation); 
-
-	const FVector LocOrigin = VROrigin->GetComponentLocation();
-	const FVector LocCamera = Camera->GetComponentLocation();
-
-// 	if (GEngine) GEngine->AddOnScreenDebugMessage(-1, 0.5f, FColor::Green, FString::Printf(TEXT("Delta : %f, %f, %f"), DeltaLocation.X, DeltaLocation.Y, DeltaLocation.Z));
-// 	if (GEngine) GEngine->AddOnScreenDebugMessage(-1, 0.5f, FColor::Magenta, FString::Printf(TEXT("Capsule : %f, %f, %f"), CapsuleLocation.X, CapsuleLocation.Y, CapsuleLocation.Z));
-// 	if (GEngine) GEngine->AddOnScreenDebugMessage(-1, 0.5f, FColor::Cyan, FString::Printf(TEXT("Origin : %f, %f, %f"), LocOrigin.X, LocOrigin.Y, LocOrigin.Z));
-// 	if (GEngine) GEngine->AddOnScreenDebugMessage(-1, 0.5f, FColor::Blue, FString::Printf(TEXT("Camera: %f, %f, %f"), LocCamera.X, LocCamera.Y, LocCamera.Z));
+	
 }
 
 void APawnMain::OnMovementDetected()
@@ -189,6 +222,16 @@ APlayerController* APawnMain::GetGenericController()
 	return PlayerControllerOut;
 }
 
+bool APawnMain::HUDResetTimer(const float DurationIn) const
+{
+	if (!PlayerHUD->IsValidLowLevelFast())
+	{
+		return false;
+	}
+	PlayerHUD->SetTimeRemaining(LexToString(DurationIn));
+	return true;
+}
+
 bool APawnMain::CreateAndInitializeWidget()
 {
 	if (!PlayerHUDClass->IsValidLowLevelFast()) { return false; }
@@ -209,6 +252,12 @@ bool APawnMain::CreateAndInitializeWidget()
 		UE_DEBUG_BREAK();
 		return false;
 	}
+
+	// if (!UHeadMountedDisplayFunctionLibrary::IsHeadMountedDisplayConnected())
+	// {
+	// 	PlayerHUD->AddToViewport();
+	// }
+
 	
 	PlayerHUD->Init();
 	// this->HUDWidgetComponent->SetWidget(PlayerHUD);
@@ -247,6 +296,9 @@ void APawnMain::Tick(float DeltaTime)
 	Super::Tick(DeltaTime);
 	if (this->DetectMovement()) {
 		this->OnMovementDetected();
+		const FVector LocOrigin = VROrigin->GetComponentLocation();
+		const FVector LocCamera = Camera->GetComponentLocation();
+		const FVector LocCapsule = CapsuleComponent->GetComponentLocation();
 	}
 }
 
@@ -268,6 +320,70 @@ void APawnMain::Reset()
 {
 	Super::Reset();
 }
+
+void APawnMain::UpdateMovementComponent(FVector InputVector, bool bForce)
+{
+	/* Apply movement, called by MoveForward() or MoveRight().
+	FVector InputVector (scaled 0-1) */
+
+	/*
+	Note: Felix, 8/30/2023
+	Could be more elegant,OurMovementComponentChar->AddInputVector() and then
+	OurMovementComponentChar->GetLastInputVector() is the ideal way to use it.
+	This would prevent having to pass FVector InputVector into UpdateMovementComponent().
+	OurMovementComponentChar->ConsumeInputVector() also returns 0.
+	For now, we have this working.
+	*/
+	//this->RootComponent->AddWorldOffset(InputVector);
+	OurMovementComponentChar->SafeMoveUpdatedComponent(
+		InputVector,
+		OurMovementComponentChar->UpdatedComponent->GetComponentQuat(),
+		bForce,
+		OutHit,
+		TeleportType);
+}
+
+void APawnMain::MoveForward(float AxisValue)
+{
+	if (AxisValue != 0.0f) {
+		if (OurMovementComponentChar && (OurMovementComponentChar->UpdatedComponent == RootComponent))
+		{
+			FVector CameraForwardVector = this->Camera->GetForwardVector();
+			CameraForwardVector.Z = 0.0;
+			this->UpdateMovementComponent(CameraForwardVector * AxisValue * 1, /*force*/ true);
+		}
+	}
+}
+
+void APawnMain::MoveRight(float AxisValue)
+{
+	if (AxisValue != 0.0f) {
+		if (OurMovementComponentChar && (OurMovementComponentChar->UpdatedComponent == RootComponent))
+		{
+			FVector CameraRightVector = this->Camera->GetRightVector();
+			CameraRightVector.Z = 0.0;
+			this->UpdateMovementComponent(CameraRightVector * AxisValue * 1, /* force */true);
+		}
+	}
+}
+
+/* doesn't work with VR */
+void APawnMain::Turn(float AxisValue)
+{
+	FRotator NewRotation = this->Camera->GetRelativeRotation();
+	NewRotation.Yaw += AxisValue;
+	this->Camera->SetRelativeRotation(NewRotation);
+}
+
+/* doesn't work with VR */
+void APawnMain::LookUp(float AxisValue)
+{
+	FRotator NewRotation = this->Camera->GetRelativeRotation();
+	NewRotation.Pitch += AxisValue;
+	this->Camera->SetRelativeRotation(NewRotation);
+}
+
+
 
 void APawnMain::OnOverlapBegin(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 {

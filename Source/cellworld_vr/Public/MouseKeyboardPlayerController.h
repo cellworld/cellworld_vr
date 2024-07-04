@@ -3,6 +3,7 @@
 #include "CoreMinimal.h"
 #include "GameFramework/PlayerController.h"
 #include "PawnDebug.h"
+#include "PawnMain.h"
 #include "MouseKeyboardPlayerController.generated.h"
 
 /**
@@ -34,6 +35,7 @@ public:
 	void Jump();
 
 	/* pawn to control */
-	APawnDebug* PossessedPawn;
+	UPROPERTY()
+	APawnMain* PossessedPawn;
 
 };

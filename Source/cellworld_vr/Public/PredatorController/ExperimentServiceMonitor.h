@@ -17,39 +17,57 @@
 #include "cellworld_vr/cellworld_vr.h"
 #include "ExperimentServiceMonitor.generated.h"
 
-UENUM(Blueprintable)
-enum class EExperimentStatus : uint8
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnExperimentStatusChanged, EExperimentStatus, ExperimentStatusIn);
+//
+// UENUM(Blueprintable)
+// enum class EExperimentStatus : uint8
+// {
+// 	// client is in an active experiment/episode (can be both - maybe ill change to no) 
+// 	InExperiment		  	 UMETA(DisplayName = "InExperiment"),
+// 	InEpisode			  	 UMETA(DisplayName = "InEpisode"),
+//
+// 	// episode failed - time ran out  
+// 	FailedEpisodeTimer	     UMETA(DisplayName = "FailedEpisodeTimer"),
+//
+// 	// 'waiting room' flags - waiting for XYZ to start 
+// 	WaitingExperiment	  	 UMETA(DisplayName = "WaitingExperiment"),
+// 	WaitingEpisode		  	 UMETA(DisplayName = "WaitingEpisode"),
+// 	WaitingFinishSuccess     UMETA(DisplayName = "WaitingFinishSuccess"),
+// 	WaitingFinishError	     UMETA(DisplayName = "WaitingFinishError"),
+// 	
+// 	// completion flags
+// 	FinishedExperiment	  	 UMETA(DisplayName = "FinishedExperiment"),
+// 	FinishedEpisode		  	 UMETA(DisplayName = "FinishedEpisode"),
+//
+// 	// error flags
+// 	ErrorStartExperiment 	 UMETA(DisplayName = "FailedStartExperiment"),
+// 	ErrorStartEpisode    	 UMETA(DisplayName = "FailedStartEpisode"),
+// 	ErrorFinishedExperiment  UMETA(DisplayName = "FailedFinishedExperiment"),
+// 	ErrorFinishEpisode		 UMETA(DisplayName = "FailedFinishEpisode"),
+// 	ErrorTimedOutExperiment	 UMETA(DisplayName="TimedOutExperiment"),
+// 	ErrorTimedOutEpisode	 UMETA(DisplayName="TimedOutEpisode"),
+// 	
+// 	// there's always stuff we don't expect, right? 
+// 	Unknown				     UMETA(DisplayName = "Unknown"),
+// };
+
+USTRUCT(Blueprintable)
+struct FExperimentTimer
 {
-	// client is in an active experiment/episode (can be both - maybe ill change to no) 
-	InExperiment		  	 UMETA(DisplayName = "InExperiment"),
-	InEpisode			  	 UMETA(DisplayName = "InEpisode"),
+	GENERATED_USTRUCT_BODY()
+public:
+	FExperimentTimer()
+	{
+		
+	}
 
-	// 'waiting room' flags - waiting for XYZ to start 
-	WaitingExperiment	  	 UMETA(DisplayName = "WaitingExperiment"),
-	WaitingEpisode		  	 UMETA(DisplayName = "WaitingEpisode"),
-
-	// error flags
-	FailedStartExperiment 	 UMETA(DisplayName = "FailedStartExperiment"),
-	FailedStartEpisode    	 UMETA(DisplayName = "FailedStartEpisode"),
+	void Start(const float DurationIn)
+	{
+			
+	}
 	
-	// completion flags
-	FinishedExperiment	  	 UMETA(DisplayName = "FinishedExperiment"),
-	FinishedEpisode		  	 UMETA(DisplayName = "FinishedEpisode"),
-
-	// failed flags
-	FailedFinishedExperiment UMETA(DisplayName = "FailedFinishedExperiment"),
-	FailedFinishEpisode		 UMETA(DisplayName = "FailedFinishEpisode"), 
-
-	// is the client done? Yes? Ok lets disconnect and tell subject thanks for coming
-	WaitingFinishSuccess     UMETA(DisplayName = "WaitingFinishSuccess"),
-	WaitingFinishError	     UMETA(DisplayName = "WaitingFinishError"),
-
-	// handle timeouts
-	TimedOutExperiment	     UMETA(DisplayName="TimedOutExperiment"),
-	TimedOutEpisode		     UMETA(DisplayName="TimedOutEpisode"),
+	FTimerHandle Handle;
 	
-	// there's always stuff we don't expect, right? 
-	Unknown				     UMETA(DisplayName = "Unknown"),
 };
 
 USTRUCT(Blueprintable)
@@ -158,12 +176,12 @@ struct FExperimentHeaders
 	FString PredatorStep = "predator_step";
 };
 
-
 USTRUCT(Blueprintable)
 struct FExperimentInfo
 {
 	GENERATED_BODY()
-public: 
+public:
+	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = ExperimentInfo)
 		EExperimentStatus Status = EExperimentStatus::WaitingExperiment;
 	
@@ -181,6 +199,14 @@ public:
 	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = ExperimentInfo)
 		FString ExperimentNameActive = "";
+
+	FOnExperimentStatusChanged OnExperimentStatusChangedEvent;
+	
+	void SetStatus(const EExperimentStatus ExperimentStatusIn){
+		UE_LOG(LogExperiment, Warning, TEXT("[SetStatus] New Status set!"));
+		Status = ExperimentStatusIn;
+		OnExperimentStatusChangedEvent.Broadcast(ExperimentStatusIn);
+	}
 };
 
 UCLASS()
@@ -191,6 +217,15 @@ class CELLWORLD_VR_API AExperimentServiceMonitor : public AActor
 public:	
 	AExperimentServiceMonitor();
 
+	/* DEBUG */
+	uint32 frames_timer = 0;
+	uint32 frames_tick = 0;
+	uint32 frames_prey_out = 0;
+	uint32 frames_predator_in = 0;
+	float TimeElapsedTick = 0.0f; 
+	FTimerHandle TimerHandle;
+	FTimerManager TimerManager;
+	
 	/* ==== main experiment service components ==== */
 	
 	UPROPERTY()
@@ -298,10 +333,18 @@ public:
 	void on_episode_finished();
 	
 	/* ==== delegates ==== */
+	UPROPERTY()
+		FOnExperimentStatusChanged OnExperimentStatusChangedEvent;
+	
+	UFUNCTION()
+		void OnStatusChanged(const EExperimentStatus ExperimentStatusIn);
 
 	/* update predator stuff */
 	UFUNCTION()
 		void HandleUpdatePredator(FMessage MessageIn);
+	
+	void OnTimerFinished();
+	float GetTimeRemaining();
 
 	/* experiment service */
 	UFUNCTION()
