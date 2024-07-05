@@ -292,7 +292,11 @@ bool AExperimentServiceMonitor::StopEpisode()
 	StopEpisodeRequest->TimedOut.AddDynamic(this, &AExperimentServiceMonitor::HandleStopEpisodeRequestTimedOut);
 	ExperimentInfo.SetStatus(EExperimentStatus::FinishedEpisode);
 
-	if (!this->RemoveDelegatesPredatorRoute()) { printScreen("Failed to Remove delegates from MessageRoutePredator!"); }
+	if (!this->RemoveDelegatesPredatorRoute())
+	{
+		printScreen("Failed to Remove delegates from MessageRoutePredator!");
+	}
+	
 	printScreen("[AExperimentServiceMonitor::StopEpisode()] OK");
 	return true;
 }
@@ -343,8 +347,11 @@ void AExperimentServiceMonitor::HandleStartEpisodeRequestResponse(const FString 
 	// 		printScreen("[AExperimentServiceMonitor::HandleStartEpisodeRequestResponse] Failed.");
 	// 	}
 	// }else { printScreen("[AExperimentServiceMonitor::HandleStartEpisodeRequestResponse] Send Subscribe to TRACKING: Failed."); }
-
+	
 	this->ResetTrackingAgent();
+	if (!this->RemoveDelegatesPredatorRoute() || !this->RoutePredatorMessages()){
+		printScreen("[AExperimentServiceMonitor::HandleStartEpisodeRequestResponse] Failed.");
+	}
 	
 	this->SendGetOcclusionLocationsRequest();
 }
@@ -395,6 +402,7 @@ void AExperimentServiceMonitor::HandleStopEpisodeRequestResponse(const FString r
 		StopEpisodeRequest = nullptr;
 		printScreen("Removing delegates: StopEpisodeRequest");
 	}else{printScreen("Removing delegates: StopEpisodeRequest not valid!");}
+
 	
 	// if (StopEpisodeRequest){
 	// 	StopEpisodeRequest->ResponseReceived.RemoveAll(this);
@@ -432,7 +440,7 @@ void AExperimentServiceMonitor::HandleStartExperimentResponse(const FString Resp
 		*ExperimentInfo.StartExperimentResponse.experiment_name);
 	
 	ExperimentInfo.SetStatus(EExperimentStatus::InExperiment);
-	// this->StartEpisode(Client, ExperimentInfo.ExperimentNameActive);
+	// this->StartEpisode(Client, ExperimentInfo.ExperimentNameActive); // only used to debug VR 
 }
 
 void AExperimentServiceMonitor::HandleStartExperimentTimedOut()
@@ -574,11 +582,11 @@ void AExperimentServiceMonitor::HandleSubscribeToTrackingResponse(FString Respon
 {
 	printScreen("[AExperimentServiceMonitor::HandleSubscribeToTrackingResponse] " + Response);
 	
-	if (SubscribeRequest->IsValidLowLevelFast())
+	if (TrackingSubscribeRequest->IsValidLowLevelFast())
 	{
-		SubscribeRequest->ResponseReceived.RemoveAll(this);
-		SubscribeRequest->TimedOut.RemoveAll(this);
-		SubscribeRequest = nullptr;
+		TrackingSubscribeRequest->ResponseReceived.RemoveAll(this);
+		TrackingSubscribeRequest->TimedOut.RemoveAll(this);
+		TrackingSubscribeRequest = nullptr;
 	}
 }
 
@@ -835,13 +843,14 @@ bool AExperimentServiceMonitor::RoutePredatorMessages()
 
 bool AExperimentServiceMonitor::RemoveDelegatesPredatorRoute()
 {
-	if (!MessageRoutePredator->IsValidLowLevelFast())
+	if (!MessageRoutePredator->IsValidLowLevelFast() || !TrackingClient->IsValidLowLevelFast())
 	{
-		printScreen("[AExperimentServiceMonitor::RemoveDelegatesPredatorRoute] MessageRoutePredator not valid!");
+		printScreen("[AExperimentServiceMonitor::RemoveDelegatesPredatorRoute] MessageRoutePredator or TC not valid!");
 		return false;
 	}
 
-	MessageRoutePredator->MessageReceived.RemoveDynamic(this,&AExperimentServiceMonitor::HandleUpdatePredator);
+	MessageRoutePredator->MessageReceived.RemoveDynamic(this, &AExperimentServiceMonitor::HandleUpdatePredator);
+	TrackingClient->UnroutedMessageEvent.RemoveDynamic(this, &AExperimentServiceMonitor::HandleUnroutedMessage);
 	printScreen("[AExperimentServiceMonitor::RemoveDelegatesPredatorRoute] MessageRoutePredator: Delegates Removed!");
 	return true;
 }
@@ -866,6 +875,7 @@ bool AExperimentServiceMonitor::Test() {
 
 	// this->RoutePredatorMessages();
 	// TrackingClient->UnroutedMessageEvent.AddDynamic(this, &AExperimentServiceMonitor::HandleUnroutedMessage);
+	
 	//
 	/* subscribe Agent tracking */
 	if (this->SubscribeToTracking())
@@ -886,7 +896,7 @@ bool AExperimentServiceMonitor::Test() {
 
 void AExperimentServiceMonitor::HandleUpdatePredator(FMessage MessageIn)
 {
-	// printScreen("Received predator step!");
+	printScreen("Received predator step!");
 	this->UpdatePredator(MessageIn);
 	FrameCountPredator++;
 }
