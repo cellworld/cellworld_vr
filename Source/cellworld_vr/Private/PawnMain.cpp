@@ -3,7 +3,6 @@
 #include "Camera/CameraComponent.h"
 #include "Camera/PlayerCameraManager.h"
 #include "Components/CapsuleComponent.h"
-#include "Components/SphereComponent.h"
 #include "Components/SceneComponent.h"
 #include "Components/SkeletalMeshComponent.h"
 #include "HeadMountedDisplayFunctionLibrary.h"
@@ -150,16 +149,16 @@ bool APawnMain::DetectMovement()
 		}		
 	}
 
-	// check if we changed (will likely delete later)
-	if (!NewLocation.Equals(_old_location, 2)) {
-		_blocation_updated = true;
-		_old_location = NewLocation;
-	}
-	else {
-		_blocation_updated = false; 
-	}
+	// // check if we changed (will likely delete later)
+	// if (!NewLocation.Equals(_old_location, 2)) {
+	// 	_blocation_updated = true;
+	// 	_old_location = NewLocation;
+	// }
+	// else {
+	// 	_blocation_updated = false; 
+	// }
 	
-	return _blocation_updated;
+	return true;
 }
 
 void APawnMain::UpdateRoomScaleLocation()
@@ -180,22 +179,17 @@ void APawnMain::UpdateRoomScaleLocation()
 
 void APawnMain::OnMovementDetected()
 {
-	MovementDetectedEvent.Broadcast(_new_location + this->VROrigin->GetComponentLocation());
-	this->UpdateRoomScaleLocation();
+	_new_location = this->GetActorLocation();
+	FVector org = this->VROrigin->GetComponentLocation();
+	
+	MovementDetectedEvent.Broadcast(this->RootComponent->GetComponentLocation()); // todo: test with VR 
+	// MovementDetectedEvent.Broadcast(_new_location + this->VROrigin->GetComponentLocation());
+	// this->UpdateRoomScaleLocation(); // only for VR 
 }
 
 void APawnMain::ResetOrigin() 
 {
-	//UHeadMountedDisplayFunctionLibrary::SetTrackingOrigin(EHMDTrackingOrigin::Floor);
 	if (GEngine) GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Blue, FString::Printf(TEXT("Resetting origin.")));
-	//FRotator HMDRotation;
-	//FVector HMDLocation;
-	//UHeadMountedDisplayFunctionLibrary::GetOrientationAndPosition(HMDRotation, HMDLocation);
-	//Camera->SetWorldLocation(FVector(380, -1790, 80));
-	//this->SetActorLocation(FVector(380, -1790, 80));
-	//Camera->AddRelativeRotation(HMDRotation, false); // original
-	//UHeadMountedDisplayFunctionLibrary::ResetOrientationAndPosition(0.0f, EOrientPositionSelector::OrientationAndPosition);
-	//this->SetActorLocation(FVector(500.0f, -300.0f, 0.0f), false);
 }
 
 void APawnMain::RestartGame() {
@@ -294,12 +288,10 @@ void APawnMain::DebugHUDAddTime()
 void APawnMain::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
-	if (this->DetectMovement()) {
-		this->OnMovementDetected();
-		const FVector LocOrigin = VROrigin->GetComponentLocation();
-		const FVector LocCamera = Camera->GetComponentLocation();
-		const FVector LocCapsule = CapsuleComponent->GetComponentLocation();
-	}
+	this->OnMovementDetected();
+	// if (this->DetectMovement()) {
+	// 	this->OnMovementDetected();
+	// }
 }
 
 void APawnMain::DestroyHUD()

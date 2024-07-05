@@ -21,8 +21,8 @@ AGameModeMain::AGameModeMain()
 	DefaultPawnClass = APawnMain::StaticClass();
 	GameStateClass = AGameStateMain::StaticClass();
 	
-	PrimaryActorTick.bStartWithTickEnabled = true;
-	PrimaryActorTick.bCanEverTick = true;
+	PrimaryActorTick.bStartWithTickEnabled = false;
+	PrimaryActorTick.bCanEverTick = false;
 }
 
 void AGameModeMain::SpawnExperimentServiceMonitor()
@@ -127,9 +127,11 @@ void AGameModeMain::SpawnGetCLMonitorComponentActor()
 	SpawnInfo.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
 	GetCLMonitorComponentActor = Cast<AGeCLMonitorComponentActor>(GetWorld()->SpawnActor(AGetCLMonitorComponentActor::StaticClass(), &TempLoc, &TempRot, SpawnInfo));*/
 }
+
 /* spawn all logging actors, some may contain threads but they handle themselves. 
 * right now, there's only one, but im gonna call this function to maintain consitency.
 */
+
 void AGameModeMain::SpawnAllLoggingActor()
 {
 	/* eye-tracker */
@@ -148,29 +150,30 @@ void AGameModeMain::StopLoadingScreen()
 
 void AGameModeMain::OnUpdateHUDTimer(){
 
-	float TimeRemaining = 0.0f;
+	float TimeRemaining = -1.0f;
 	if (ExperimentServiceMonitor->IsValidLowLevelFast() && ExperimentServiceMonitor->TimerHandle.IsValid()){
 		TimeRemaining = ExperimentServiceMonitor->GetTimeRemaining();
 	}else{
-		if (GEngine) GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Red, FString::Printf(TEXT("[AGameModeMain::OnUpdateHUDTimer()] Error with getting time from ESM.")));
-		return;
+		TimeRemaining = -1.0f;
+		// GetWorldTimerManager().ClearTimer(TimerHUDUpdate);
+		// if (GEngine) GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Red,
+		// 	FString::Printf(TEXT("[AGameModeMain::OnUpdateHUDTimer()] Error with getting time from ESM.")));
 	}
 
 	if (PlayerPawn->IsValidLowLevelFast() && PlayerPawn->PlayerHUD->IsValidLowLevelFast())
 	{
 		PlayerPawn->PlayerHUD->SetTimeRemaining(FString::FromInt(FMath::FloorToInt(TimeRemaining+1))); // counter the round down
-		if (GEngine) GEngine->AddOnScreenDebugMessage(-1, 3.0f, FColor::Green,
-			FString::Printf(TEXT("[AGameModeMain::OnUpdateHUDTimer()] Setting timer from game mode! %0.5f -> %i"),TimeRemaining,FMath::FloorToInt(TimeRemaining+1)));
+		// if (GEngine) GEngine->AddOnScreenDebugMessage(-1, 3.0f, FColor::Green,
+		// 	FString::Printf(TEXT("[AGameModeMain::OnUpdateHUDTimer()] Setting timer from game mode! %0.5f -> %i"),TimeRemaining,FMath::FloorToInt(TimeRemaining+1)));
 	}else
 	{
 		if (GEngine) GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Red, FString::Printf(TEXT("[AGameModeMain::OnUpdateHUDTimer()] ERROR setting timer from game mode!.")));
 	}
+
 }
 
 void AGameModeMain::OnExperimentStatusChanged(const EExperimentStatus ExperimentStatusIn)
 {
-	// Get an enum from wherever you get it in your code, and set it into a member, in this example that is SurfaceType.
-
 	const TEnumAsByte<EExperimentStatus> ExperimentStatusInByted = ExperimentStatusIn;
 	const FString EnumAsString = UEnum::GetValueAsString(ExperimentStatusInByted.GetValue());
 
@@ -198,7 +201,6 @@ void AGameModeMain::StartPlay()
 	FVector SpawnLocationVR = UExperimentUtils::CanonicalToVr(SpawnLocation,235.185,4.0f);
 	SpawnLocationVR.Z += 100; 
 	this->SpawnAndPossessPlayer(SpawnLocationVR, FRotator::ZeroRotator);
-	FTimerHandle TimerHUDUpdate;
 	
 	GetWorldTimerManager().SetTimer(TimerHUDUpdate, this, &AGameModeMain::OnUpdateHUDTimer, 0.5f, true, -1.0f);
 
@@ -221,6 +223,7 @@ void AGameModeMain::StartPlay()
 	// 	GameInstance = nullptr;
 	// }
 	//
+	
 	if (bSpawnExperimentService) { AGameModeMain::SpawnExperimentServiceMonitor(); }
 
 	else { UE_LOG(LogExperiment, Warning, TEXT("[AGameModeMain::StartPlay()] Not spawning Experiment Service!")); }
@@ -237,6 +240,10 @@ void AGameModeMain::EndPlay(const EEndPlayReason::Type EndPlayReason)
 		this->ExperimentStopEpisode();
 		this->ExperimentStopExperiment(ExperimentServiceMonitor->ExperimentNameActive);
 	}
+
+	// remove all timers from this object
+	GetWorldTimerManager().ClearAllTimersForObject(this);
+	
 }
 
 void AGameModeMain::Tick(float DeltaTime)
@@ -246,10 +253,12 @@ void AGameModeMain::Tick(float DeltaTime)
 
 bool AGameModeMain::ExperimentStartEpisode() { 
 	if (!IsValid(ExperimentServiceMonitor)) { return false; }
-	return ExperimentServiceMonitor->StartEpisode(ExperimentServiceMonitor->Client, ExperimentServiceMonitor->ExperimentInfo.ExperimentNameActive);  
+	return ExperimentServiceMonitor->StartEpisode(ExperimentServiceMonitor->Client,
+		ExperimentServiceMonitor->ExperimentInfo.ExperimentNameActive);  
 }
 
 bool AGameModeMain::ExperimentStopEpisode() {
+	
 	if (!IsValid(ExperimentServiceMonitor))
 	{ 
 		UE_LOG(LogExperiment, Warning, TEXT("[AGameModeMain::ExperimentStopEpisode()] Failed to destroy, Already pending kill.")); 

@@ -50,7 +50,7 @@ public:
 	/* controller mode selection (VR or Mouse + Keyboard) */
 	int ControllerMode = 0; // default to VR unless stated in config.txt
 
-	AActor* GetLevelActorFromName(const FName& NameIn);
+	// AActor* GetLevelActorFromName(const FName& NameIn);
 	const FVector GetLevelScale(AActor* LevelActor);
 	void SetWorldScale(float WorldScaleIn);
 	UPROPERTY(EditAnywhere)

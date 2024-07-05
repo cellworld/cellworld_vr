@@ -2,7 +2,8 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
-#include "UObject/ObjectPtr.h" 
+#include "UObject/ObjectPtr.h"
+#include "Tools/GenericClock.h"
 #include "ExperimentPlugin.h"
 #include "MessageClient.h"
 #include "TCPMessages.h"
@@ -96,7 +97,7 @@ public:
 
 	/* canonical */
 	void SetAllLocations(const FString& LocationsIn) {
-		UE_LOG(LogExperiment,Warning,TEXT("[FOcclusions.SetAllLocations] Locations: %s"),*LocationsIn);
+		// UE_LOG(LogExperiment,Warning,TEXT("[FOcclusions.SetAllLocations] Locations: %s"),*LocationsIn);
 		AllLocations = UExperimentUtils::OcclusionsParseAllLocations(LocationsIn); 
 		bAllLocationsLoaded = true;
 	}
@@ -132,7 +133,7 @@ public:
 	}
 
 	void SetAllHidden(){
-		UE_LOG(LogExperiment,Warning,TEXT("[]"))
+		UE_LOG(LogExperiment,Warning,TEXT("[FOcclusions.SetAllHidden()]"))
 		for (AOcclusion* Occlusion : OcclusionAllArr) {
 			Occlusion->SetActorHiddenInGame(true);
 			Occlusion->SetActorEnableCollision(false);
@@ -218,11 +219,12 @@ public:
 	AExperimentServiceMonitor();
 
 	/* DEBUG */
-	uint32 frames_timer = 0;
-	uint32 frames_tick = 0;
-	uint32 frames_prey_out = 0;
-	uint32 frames_predator_in = 0;
-	float TimeElapsedTick = 0.0f; 
+	bool bTimerRunning = false;
+	GenericClock::FStopWatch StopWatch;
+	const float TimerFrequency = 0.5; 
+	float TimeElapsedTick = 0.0f;
+	uint32 FrameCountPrey = 0;
+	uint32 FrameCountPredator = 0; 
 	FTimerHandle TimerHandle;
 	FTimerManager TimerManager;
 	
@@ -265,6 +267,8 @@ public:
 	UPROPERTY()
 		TObjectPtr<URequest> SubscribeRequest;
 	UPROPERTY()
+		TObjectPtr<URequest> TrackingSubscribeRequest;
+	UPROPERTY()
 		TObjectPtr<URequest> GetOcclusionsRequest;
 
 	/* headers */
@@ -275,10 +279,10 @@ public:
 	const FString on_episode_started_header     = "on_episode_started";
 	
 	/* ==== server stuff ==== */
-	// const FString ServerIPMessage = "172.30.127.68";   // alternate 
 	// const FString ServerIPMessage = "192.168.137.8";   // lab new
 	// const FString ServerIPMessage = "192.168.137.111"; // static laptop lab 
-	const FString ServerIPMessage = "127.0.0.1";		  // localhost  
+	// const FString ServerIPMessage = "127.0.0.1";		  // localhost  
+	const FString ServerIPMessage = "10.0.0.77";		  // home eth
 	const int ServerPort	      = 4970;
 	const int TrackingPort	      = 4790;
 
@@ -301,7 +305,7 @@ public:
 
 	/* ==== setup ==== */
 	bool SpawnAndPossessPredator();
-	ACharacter* CharacterPredator = nullptr;
+	// ACharacter* CharacterPredator = nullptr;
 	UPROPERTY()
 	TObjectPtr<APredatorBasic> PredatorBasic = nullptr;
 
@@ -319,32 +323,38 @@ public:
 	UFUNCTION(BlueprintCallable, Category = Experiment)
 		bool StopEpisode();
 
+	UFUNCTION(BlueprintCallable, Category = Experiment)
+		bool StartTimerEpisode(const float DurationIn, FTimerHandle TimerHandleIn);
+
 	/* ==== helper functions  ==== */
 	bool ValidateLevel(UWorld* InWorld, const FString InLevelName);
 	bool GetPlayerPawn();
 	void SelfDestruct(const FString InErrorMessage);
-	bool SubscribeToServer(TObjectPtr<UMessageClient> ClientIn);
-	void RequestRemoveDelegates(URequest* RequestIn);
 
-	/* event functions */
-	void on_experiment_started();
-	void on_experiment_finished();
-	void on_episode_started();
-	void on_episode_finished();
+	UFUNCTION(BlueprintCallable, Category = Experiment)
+		void HandleSubscribeToTrackingResponse(FString Response);
+	UFUNCTION(BlueprintCallable, Category = Experiment)
+		void HandleSubscribeToTrackingTimedOut();
+	UFUNCTION(BlueprintCallable, Category = Experiment)
+		bool SubscribeToTracking();
+	UFUNCTION(BlueprintCallable, Category = Experiment)
+		bool SubscribeToServer(UMessageClient* ClientIn);
+	UFUNCTION(BlueprintCallable, Category = Experiment)
+		void RequestRemoveDelegates(URequest* RequestIn);
 	
 	/* ==== delegates ==== */
 	UPROPERTY()
 		FOnExperimentStatusChanged OnExperimentStatusChangedEvent;
-	
 	UFUNCTION()
 		void OnStatusChanged(const EExperimentStatus ExperimentStatusIn);
 
 	/* update predator stuff */
 	UFUNCTION()
 		void HandleUpdatePredator(FMessage MessageIn);
-	
-	void OnTimerFinished();
-	float GetTimeRemaining();
+	UFUNCTION()
+		void OnTimerFinished();
+	UFUNCTION()
+		float GetTimeRemaining();
 
 	/* experiment service */
 	UFUNCTION()
@@ -352,27 +362,17 @@ public:
 	UFUNCTION()
 		void HandleSubscribeToServerTimedOut();
 	UFUNCTION()
-		void HandleTrackingServiceMessagePredator(FMessage message);
-	UFUNCTION()
-		void HandleTrackingServiceMessagePrey(FMessage message);
-	UFUNCTION()
-		void HandleExperimentServiceResponse(const FString message);
-	UFUNCTION()
-		void HandleExperimentServiceResponseTimedOut();
-
-	/* tracking service */
-	UFUNCTION()
-		void HandleTrackingServiceResponse(const FString message);
-	UFUNCTION()
-		void HandleTrackingServiceResponseTimedOut();
-	UFUNCTION()
 		void HandleStartEpisodeRequestResponse(const FString response);
+	UFUNCTION()
+		bool ResetTrackingAgent();
 	UFUNCTION()
 		void HandleStartEpisodeRequestTimedOut();
 	UFUNCTION()
 		void HandleStopEpisodeRequestResponse(const FString response);
 	UFUNCTION()
 		void HandleStopEpisodeRequestTimedOut();
+	
+	/* tracking service */
 
 	/* Experiment */
 	UFUNCTION()
@@ -395,10 +395,6 @@ public:
 		void UpdatePreyPosition(const FVector Location);
 
 	/* other */
-	UFUNCTION()
-		void HandleTrackingServiceMessage(FMessage message);
-	UFUNCTION()
-		void HandleTrackingServiceUnroutedMessage(FMessage message);
 	UFUNCTION()
 		void HandleUnroutedMessage(FMessage message);
 	UFUNCTION()
@@ -434,9 +430,12 @@ public:
 		void HandleGetOcclusionsTimedOut();
 	UFUNCTION()
 		void HandleOcclusionLocation(const FMessage MessageIn);
-	
-	static bool ConnectToServer(UMessageClient* ClientIn, const int MaxAttemptsIn, const FString& IPAddressIn, const int PortIn);
-	bool RoutePredatorMessages();
+	UFUNCTION()
+		static bool ConnectToServer(UMessageClient* ClientIn, const int MaxAttemptsIn, const FString& IPAddressIn, const int PortIn);
+	UFUNCTION()
+		bool RoutePredatorMessages();
+	UFUNCTION()
+		bool RemoveDelegatesPredatorRoute();
 
 	bool Test();
 

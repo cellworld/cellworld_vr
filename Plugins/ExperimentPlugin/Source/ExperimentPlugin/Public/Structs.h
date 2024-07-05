@@ -60,7 +60,9 @@ enum class EExperimentStatus : uint8
 	
 	// completion flags
 	FinishedExperiment	  	 UMETA(DisplayName = "FinishedExperiment"),
-	FinishedEpisode		  	 UMETA(DisplayName = "FinishedEpisode"),
+	FinishedEpisodeSuccess   UMETA(DisplayName = "FinishedEpisodeSuccess"),
+	FinishedEpisode   UMETA(DisplayName = "FinishedEpisode"),
+	
 
 	// error flags
 	ErrorStartExperiment 	 UMETA(DisplayName = "FailedStartExperiment"),

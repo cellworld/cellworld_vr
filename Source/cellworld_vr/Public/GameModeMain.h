@@ -40,7 +40,9 @@ public:
 	void SpawnGetCLMonitorComponentActor();
 
 	/* timers */
-	FTimerHandle TimerHandleUpdateHUD; 
+	FTimerHandle TimerHandleUpdateHUD;
+	FTimerHandle TimerHUDUpdate;
+
 
 	/* spawn everything */
 	void SpawnAllLoggingActor(); 
@@ -66,12 +68,16 @@ public:
 	/* functions for door and experiment control */
 	UPROPERTY(BlueprintReadWrite)
 		AExperimentServiceMonitor* ExperimentServiceMonitor = nullptr;
+
 	UFUNCTION(BlueprintCallable, Category = Experiment)
 		void SpawnExperimentServiceMonitor();
+
 	UFUNCTION(BlueprintCallable, Category = Experiment)
 		bool ExperimentStartEpisode(); 
+
 	UFUNCTION(BlueprintCallable, Category = Experiment)
 		bool ExperimentStopEpisode();
+
 	UFUNCTION(BlueprintCallable, Category = Experiment)
 		bool ExperimentStopExperiment(const FString ExperimentNameIn);
 };

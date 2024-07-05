@@ -102,7 +102,6 @@ public:
 	FOnMessageReceived MessageReceived;
 };
 
-
 UCLASS(Blueprintable)
 class URequest: public UObject {
 	GENERATED_BODY()
