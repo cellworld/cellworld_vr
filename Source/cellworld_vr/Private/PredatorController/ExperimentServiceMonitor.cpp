@@ -347,12 +347,16 @@ void AExperimentServiceMonitor::HandleStartEpisodeRequestResponse(const FString 
 	// 		printScreen("[AExperimentServiceMonitor::HandleStartEpisodeRequestResponse] Failed.");
 	// 	}
 	// }else { printScreen("[AExperimentServiceMonitor::HandleStartEpisodeRequestResponse] Send Subscribe to TRACKING: Failed."); }
+
+	if (!this->ResetTrackingAgent())
+	{
+		printScreen("Failed to reset agent!");
+	}
 	
-	this->ResetTrackingAgent();
 	if (!this->RemoveDelegatesPredatorRoute() || !this->RoutePredatorMessages()){
 		printScreen("[AExperimentServiceMonitor::HandleStartEpisodeRequestResponse] Failed.");
 	}
-	
+
 	this->SendGetOcclusionLocationsRequest();
 }
 
@@ -736,6 +740,12 @@ void AExperimentServiceMonitor::HandleGetOcclusionsResponse(const FString Respon
 	GetWorldTimerManager().SetTimer(TimerHandle, this, &AExperimentServiceMonitor::OnTimerFinished,
 	float(ExperimentInfo.StartExperimentResponse.duration), false, -1.0f);
 	bTimerRunning = true;
+
+	if (!this->ResetTrackingAgent())
+	{
+		printScreen("COULDNT RESET!");
+	}
+
 	this->RequestRemoveDelegates(GetOcclusionsRequest);
 }
 
@@ -903,11 +913,12 @@ void AExperimentServiceMonitor::HandleUpdatePredator(FMessage MessageIn)
 
 void AExperimentServiceMonitor::OnTimerFinished()
 {
-	// printScreen("pred fps: " + LexToString(FrameCountPredator/TimerFrequency) + " | "
-	// 	+ FString::FromInt(FrameCountPredator) + "/" + LexToString(TimerFrequency) );
-	//
-	// printScreen("prey fps: " + LexToString(FrameCountPrey/TimerFrequency) + " | "
-	// 	+ FString::FromInt(FrameCountPrey) + "/" + LexToString(TimerFrequency));
+	const float duration = (float)ExperimentInfo.StartExperimentResponse.duration;
+	printScreen("pred fps: " + LexToString(FrameCountPredator/duration) + " | "
+		+ FString::FromInt(FrameCountPredator) + "/" + LexToString(duration) );
+	
+	printScreen("prey fps: " + LexToString(FrameCountPrey/duration) + " | "
+		+ FString::FromInt(FrameCountPrey) + "/" + LexToString(duration));
 	
 	// FrameCountPredator = 0;
 	// FrameCountPrey = 0;
