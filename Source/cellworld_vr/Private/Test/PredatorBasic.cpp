@@ -5,10 +5,11 @@
 
 APredatorBasic::APredatorBasic() : Super()
 {
+	UE_LOG(LogExperiment, Log, TEXT("[APredatorBasic::APredatorBasic()]"));
 	// Set this actor to call Tick() every frame. You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = false;
 
-	this->SetActorRotation(FRotator::ZeroRotator);
+	SetActorRotation(FRotator::ZeroRotator);
 	
 	// Create a sphere component
 	// SphereMeshComponent = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("RootComponent"));

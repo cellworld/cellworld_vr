@@ -39,7 +39,7 @@ void APlayerControllerVR::StartExperiment()
 	if (PossessedPawn)
 	{
 		UE_DEBUG_BREAK();
-		PossessedPawn->StartExperiment();
+		// PossessedPawn->StartExperiment();
 	}
 }
 

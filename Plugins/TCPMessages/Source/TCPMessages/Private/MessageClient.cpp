@@ -104,7 +104,7 @@ bool UMessageClient::Send(const FString& MessageString) {
 
 URequest* UMessageClient::Subscribe()
 {
-	return SendRequest("!subscribe", "",5.0f);
+	return SendRequest("!subscribe", "",-1.0f);
 }
 
 URequest* UMessageClient::Ping()

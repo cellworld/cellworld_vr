@@ -209,7 +209,7 @@ public:
 		OnExperimentStatusChangedEvent.Broadcast(ExperimentStatusIn);
 	}
 };
-
+	
 UCLASS()
 class CELLWORLD_VR_API AExperimentServiceMonitor : public AActor
 { 
@@ -229,7 +229,6 @@ public:
 	FTimerManager TimerManager;
 	
 	/* ==== main experiment service components ==== */
-	
 	UPROPERTY()
 		TObjectPtr<UMessageClient> Client;
 	UPROPERTY()
@@ -279,10 +278,11 @@ public:
 	const FString on_episode_started_header     = "on_episode_started";
 	
 	/* ==== server stuff ==== */
-	// const FString ServerIPMessage = "192.168.137.8";   // lab new
+	
+	const FString ServerIPMessage = "172.26.176.129";   // lab pc new
 	// const FString ServerIPMessage = "192.168.137.111"; // static laptop lab 
 	// const FString ServerIPMessage = "127.0.0.1";		  // localhost  
-	const FString ServerIPMessage = "10.0.0.77";		  // home eth
+	// const FString ServerIPMessage = "10.0.0.77";		  // home eth
 	const int ServerPort	      = 4970;
 	const int TrackingPort	      = 4790;
 
@@ -331,23 +331,24 @@ public:
 	bool GetPlayerPawn();
 	void SelfDestruct(const FString InErrorMessage);
 
-	UFUNCTION(BlueprintCallable, Category = Experiment)
-		void HandleSubscribeToTrackingResponse(FString Response);
-	UFUNCTION(BlueprintCallable, Category = Experiment)
-		void HandleSubscribeToTrackingTimedOut();
-	UFUNCTION(BlueprintCallable, Category = Experiment)
-		bool SubscribeToTracking();
-	UFUNCTION(BlueprintCallable, Category = Experiment)
-		bool SubscribeToServer(UMessageClient* ClientIn);
-	UFUNCTION(BlueprintCallable, Category = Experiment)
-		void RequestRemoveDelegates(URequest* RequestIn);
 	
 	/* ==== delegates ==== */
 	UPROPERTY()
 		FOnExperimentStatusChanged OnExperimentStatusChangedEvent;
 	UFUNCTION()
 		void OnStatusChanged(const EExperimentStatus ExperimentStatusIn);
-
+	
+	UFUNCTION(BlueprintCallable, Category = Experiment)
+		bool SubscribeToTracking();
+	UFUNCTION(BlueprintCallable, Category = Experiment)
+		void HandleSubscribeToTrackingResponse(FString Response);
+	UFUNCTION(BlueprintCallable, Category = Experiment)
+		void HandleSubscribeToTrackingTimedOut();
+	UFUNCTION(BlueprintCallable, Category = Experiment)
+		bool SubscribeToServer(UMessageClient* ClientIn);
+	UFUNCTION(BlueprintCallable, Category = Experiment)
+		void RequestRemoveDelegates(URequest* RequestIn);
+	
 	/* update predator stuff */
 	UFUNCTION()
 		void HandleUpdatePredator(FMessage MessageIn);
