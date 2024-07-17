@@ -500,9 +500,8 @@ void AExperimentServiceMonitor::UpdatePreyPosition(const FVector vector)
 	// ExperimentInfo.StartExperimentRequestBody.duration - GetWorldTimerManager().GetTimerRemaining(TimerHandle); 
 	
 	/* send message to ES */
-	const FMessage MessageOut = UMessageClient::NewMessage(header_prey_location,
+	const FMessage MessageOut = UMessageClient::NewMessage(ExperimentHeaders.PreyStep,
 		UExperimentUtils::StepToJsonString(send_step));
-
 	
 	if (!TrackingClient->SendMessage(MessageOut)){
 		printScreen("[AExperimentServiceMonitor::UpdatePreyPosition] Send prey step: FAILED");
@@ -510,22 +509,6 @@ void AExperimentServiceMonitor::UpdatePreyPosition(const FVector vector)
 		UE_LOG(LogExperiment,Log,
 			TEXT("[AExperimentServiceMonitor::UpdatePreyPosition] Send prey step: OK  (%s)"), *MessageOut.header);
 	}
-	
-	/*
-	const FMessage MessageOut = UMessageClient::NewMessage(header_prey_location,
-		UExperimentUtils::StepToJsonString(send_step));
-
-	if (!Client->IsValidLowLevelFast())
-	{
-		printScreen("[AExperimentServiceMonitor::UpdatePreyPosition] Tracking not connected!");
-		return;
-	}
-	
-	if (Client->SendMessage(MessageOut)){
-		printScreen("[AExperimentServiceMonitor::UpdatePreyPosition] sent prey step!");
-	}else {
-		printScreen("[AExperimentServiceMonitor::UpdatePreyPosition] Failed to send prey step!");
-	}*/
 }
 
 void HandleUnroutedExperiment(FMessage message) {
@@ -850,7 +833,7 @@ bool AExperimentServiceMonitor::RoutePredatorMessages()
 		return false;
 	}
 	
-	MessageRoutePredator = TrackingClient->AddRoute("predator_step");
+	MessageRoutePredator = TrackingClient->AddRoute(ExperimentHeaders.PredatorStep);
 	if (!MessageRoutePredator) {printScreen("[AExperimentServiceMonitor::RoutePredatorMessages()] RoutePredatorStep not valid."); return false; }
 
 	MessageRoutePredator->MessageReceived.AddDynamic(this, &AExperimentServiceMonitor::HandleUpdatePredator);
@@ -902,7 +885,7 @@ bool AExperimentServiceMonitor::Test() {
 	}else { printScreen("[AExperimentServiceMonitor::Test] Send Subscribe to TRACKING: Failed."); }
 
 	/* Bind to Pawn's OnMovementDetected() */
-	// if (!this->GetPlayerPawn()) { printScreen("Player Pawn NOT found!"); return false; }
+	if (!this->GetPlayerPawn()) { printScreen("Player Pawn NOT found!"); return false; }
 	
 	/* start experiment  */
 	StartExperimentRequest = this->SendStartExperimentRequest(Client, "ExperimentNameIn");
@@ -913,7 +896,6 @@ bool AExperimentServiceMonitor::Test() {
 
 void AExperimentServiceMonitor::HandleUpdatePredator(FMessage MessageIn)
 {
-	printScreen("Received predator step!");
 	this->UpdatePredator(MessageIn);
 	FrameCountPredator++;
 }
