@@ -273,6 +273,11 @@ public:
 	/* ==== server stuff ==== */
 	
 	// const FString ServerIPMessage = "172.26.176.129";   // lab pc new
+<<<<<<< HEAD
+=======
+	// const FString ServerIPMessage = "172.23.126.101";   // vr backpack wsl
+	const FString ServerIPMessage = "192.168.137.13";   // vr backpack win11
+>>>>>>> 268f97b (updated)
 	// const FString ServerIPMessage = "192.168.137.111"; // static laptop lab 
 	// const FString ServerIPMessage = "127.0.0.1";		  // localhost  
 	// const FString ServerIPMessage = "10.0.0.77";		  // home eth
@@ -322,16 +327,19 @@ public:
 
 	/* ==== helper functions  ==== */
 	bool ValidateLevel(UWorld* InWorld, const FString InLevelName);
-	bool GetPlayerPawn();
-	void SelfDestruct(const FString InErrorMessage);
 
+	UFUNCTION()
+		bool GetPlayerPawn();
+	UPROPERTY()
+		TObjectPtr<APawnMain> PlayerPawn; 
+	UFUNCTION()
+		void SelfDestruct(const FString InErrorMessage);
 	
 	/* ==== delegates ==== */
 	UPROPERTY()
 		FOnExperimentStatusChanged OnExperimentStatusChangedEvent;
 	UFUNCTION()
 		void OnStatusChanged(const EExperimentStatus ExperimentStatusIn);
-	
 	UFUNCTION(BlueprintCallable, Category = Experiment)
 		bool SubscribeToTracking();
 	UFUNCTION(BlueprintCallable, Category = Experiment)

@@ -174,17 +174,32 @@ void APawnMain::UpdateRoomScaleLocation()
 	AddActorWorldOffset(DeltaLocation, false, nullptr, ETeleportType::TeleportPhysics);
 	VROrigin->AddWorldOffset(-DeltaLocation, false, nullptr, ETeleportType::TeleportPhysics);
 	this->CapsuleComponent->SetWorldLocation(CameraLocation); 
-	
 }
 
 void APawnMain::OnMovementDetected()
 {
+	UE_LOG(LogExperiment, Log, TEXT("[APawnMain::OnMovementDetected()] Called!"));
 	_new_location = this->GetActorLocation();
 	FVector org = this->VROrigin->GetComponentLocation();
 	
 	MovementDetectedEvent.Broadcast(this->RootComponent->GetComponentLocation()); // todo: test with VR 
 	// MovementDetectedEvent.Broadcast(_new_location + this->VROrigin->GetComponentLocation());
 	// this->UpdateRoomScaleLocation(); // only for VR 
+}
+
+void APawnMain::StartMovementDetection()
+{
+	UE_LOG(LogExperiment,Log, TEXT("[APawnMain::StartMovementDetection] Stopped Timer bound to TimerHandleDetectMovement"));
+	GetWorldTimerManager().SetTimer(TimerHandleDetectMovement, this, &APawnMain::OnMovementDetected,
+		DetectMovementTimerTimeStep, true, -1.0f);
+	bDetectMovementTimerOn = true;
+}
+
+void APawnMain::StopMovementDetection()
+{
+	UE_LOG(LogExperiment,Log, TEXT("[APawnMain::StopMovementDetection] Stopped Timer bound to TimerHandleDetectMovement"));
+	GetWorldTimerManager().ClearTimer(TimerHandleDetectMovement);
+	bDetectMovementTimerOn = false;
 }
 
 void APawnMain::ResetOrigin() 
@@ -288,10 +303,11 @@ void APawnMain::DebugHUDAddTime()
 void APawnMain::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
-	this->OnMovementDetected();
-	// if (this->DetectMovement()) {
-	// 	this->OnMovementDetected();
-	// }
+	if (!bDetectMovementTimerOn)
+	{
+		this->StopMovementDetection();
+		// this->OnMovementDetected();
+	}
 }
 
 void APawnMain::DestroyHUD()

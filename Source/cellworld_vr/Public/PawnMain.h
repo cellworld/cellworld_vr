@@ -28,7 +28,18 @@ public:
 	APawnMain();
 	
 	UPROPERTY()
-	FOnMovementDetected MovementDetectedEvent; 
+		FOnMovementDetected MovementDetectedEvent;
+	UPROPERTY()
+		bool bDetectMovementTimerOn = false;
+	UPROPERTY()
+		float DetectMovementTimerTimeStep = 0.008; // 110 Hz
+	UPROPERTY()
+		FTimerHandle TimerHandleDetectMovement;
+	UFUNCTION()
+		void StartMovementDetection();
+	UFUNCTION()
+		void StopMovementDetection();
+	
 
 	void ResetOrigin();
 	void RestartGame();

@@ -214,11 +214,12 @@ bool AExperimentServiceMonitor::StartEpisode(UMessageClient* ClientIn, const FSt
 	if (!this->ValidateClient(ClientIn)) { UE_LOG(LogTemp, Error, TEXT("Can't start episode, client not valid.")); return false; }
 	if (!this->ValidateExperimentName(ExperimentNameIn)) { UE_LOG(LogTemp, Error, TEXT("Can't start episode, experiment name not valid.")); return false; }
 	if (ExperimentInfo.Status != EExperimentStatus::WaitingEpisode
-		&& ExperimentInfo.Status != EExperimentStatus::InExperiment)
+		|| ExperimentInfo.Status == EExperimentStatus::InEpisode)
 	{
 		UE_LOG(LogExperiment, Log, TEXT("Can't start episode, no active experiment ENUM."));
 		return false;
 	}
+	
 	FStartEpisodeRequest RequestBody;
 	RequestBody.experiment_name = ExperimentInfo.ExperimentNameActive;
 	
@@ -230,8 +231,22 @@ bool AExperimentServiceMonitor::StartEpisode(UMessageClient* ClientIn, const FSt
 	StartEpisodeRequest->ResponseReceived.AddDynamic(this, &AExperimentServiceMonitor::HandleStartEpisodeRequestResponse);
 	StartEpisodeRequest->TimedOut.AddDynamic(this, &AExperimentServiceMonitor::HandleStartEpisodeRequestTimedOut);
 
-	ExperimentInfo.SetStatus(EExperimentStatus::WaitingEpisode);
+	// ExperimentInfo.SetStatus(EExperimentStatus::WaitingEpisode);
 	printScreen("[SendStartEpisodeRequest()] WaitingEpisode!");
+
+	// re-enable predator messages - we don't want to flood the player/engine/logs 
+	if (!this->RoutePredatorMessages())
+	{
+		UE_DEBUG_BREAK();
+		UE_LOG(LogExperiment, Error,
+			TEXT("[AExperimentServiceMonitor::StartEpisode] Failed to Route predator messages "));
+	}
+	
+	// start collecting movement info
+	if (IsValid(PlayerPawn))
+	{
+		PlayerPawn->StartMovementDetection();
+	}
 
 	return true;
 }
@@ -271,7 +286,6 @@ bool AExperimentServiceMonitor::StopEpisode()
 	if (!this->ValidateClient(Client))
 	{
 		UE_LOG(LogExperiment, Error, TEXT("[AExperimentServiceMonitor::StopEpisode()] Can't stop episode, Experiment Service client not valid."));
-		UE_DEBUG_BREAK();
 		return false;
 	}
 	
@@ -307,8 +321,11 @@ bool AExperimentServiceMonitor::StopEpisode()
 	{
 		printScreen("Failed to Remove delegates from MessageRoutePredator!");
 	}
-	
-	printScreen("[AExperimentServiceMonitor::StopEpisode()] OK");
+
+	if (IsValid(PlayerPawn))
+	{
+		PlayerPawn->StopMovementDetection();
+	}
 	return true;
 }
 
@@ -349,24 +366,10 @@ void AExperimentServiceMonitor::HandleStartEpisodeRequestResponse(const FString 
 
 	ExperimentInfo.SetStatus(EExperimentStatus::InEpisode);
 
-	// printScreen("[AExperimentServiceMonitor::HandleStartEpisodeRequestResponse] Calling routes and sub.");
-	// if (this->SubscribeToTracking())
-	// {
-	// 	printScreen("[AExperimentServiceMonitor::HandleStartEpisodeRequestResponse] Send Subscribe to TRACKING: OK.");
-	// 	if (!this->RoutePredatorMessages())
-	// 	{
-	// 		printScreen("[AExperimentServiceMonitor::HandleStartEpisodeRequestResponse] Failed.");
-	// 	}
-	// }else { printScreen("[AExperimentServiceMonitor::HandleStartEpisodeRequestResponse] Send Subscribe to TRACKING: Failed."); }
-
 	if (!this->ResetTrackingAgent())
 	{
 		printScreen("Failed to reset agent!");
 	}
-	// todo: set back up 
-	// if (!this->RemoveDelegatesPredatorRoute() || !this->RoutePredatorMessages()){
-	// 	printScreen("[AExperimentServiceMonitor::HandleStartEpisodeRequestResponse] Failed.");
-	// }
 
 	this->SendGetOcclusionLocationsRequest();
 }
@@ -418,14 +421,6 @@ void AExperimentServiceMonitor::HandleStopEpisodeRequestResponse(const FString r
 		printScreen("Removing delegates: StopEpisodeRequest");
 	}else{printScreen("Removing delegates: StopEpisodeRequest not valid!");}
 
-	
-	// if (StopEpisodeRequest){
-	// 	StopEpisodeRequest->ResponseReceived.RemoveAll(this);
-	// 	StopEpisodeRequest->TimedOut.RemoveAll(this);
-	// 	// StopEpisodeRequest  = nullptr;
-	// 	// StartEpisodeRequest = nullptr;
-	// 	printScreen(FString("[AExperimentServiceMonitor::HandleStopEpisodeRequestResponse] Removed delegates."));
-	// }
 }
 
 /* handle experiment service timeout */
@@ -451,8 +446,7 @@ void AExperimentServiceMonitor::HandleStartExperimentResponse(const FString Resp
 	UE_LOG(LogExperiment, Warning, TEXT("[AExperimentServiceMonitor::HandleStartExperimentResponse] Experiment name: %s"),
 		*ExperimentInfo.StartExperimentResponse.experiment_name);
 	
-	ExperimentInfo.SetStatus(EExperimentStatus::InExperiment);
-	// this->StartEpisode(Client, ExperimentInfo.ExperimentNameActive); // only used to debug VR 
+	ExperimentInfo.SetStatus(EExperimentStatus::WaitingEpisode);
 }
 
 void AExperimentServiceMonitor::HandleStartExperimentTimedOut()
@@ -549,7 +543,7 @@ bool AExperimentServiceMonitor::GetPlayerPawn()
 
 	// Attempt to cast to APawnMain or APawnDebug and assign to PlayerPawn if successful.
 	if (Cast<APawnMain>(Pawn)) {
-		APawnMain* PlayerPawn = Cast<APawnMain>(Pawn); // Assuming PlayerPawn is a member of type APawn* or APawnMain*
+		PlayerPawn = Cast<APawnMain>(Pawn); // Assuming PlayerPawn is a member of type APawn* or APawnMain*
 		UE_LOG(LogTemp, Log, TEXT("[AExperimentServiceMonitor::GetPlayerPawn()] APawnMain found and assigned."));
 		PlayerPawn->MovementDetectedEvent.AddDynamic(this, &AExperimentServiceMonitor::UpdatePreyPosition);
 	}else {
@@ -603,7 +597,6 @@ bool AExperimentServiceMonitor::SubscribeToTracking()
 	TrackingSubscribeRequest = TrackingClient->SendRequest("!subscribe","",-5.0f);
 	if (!TrackingSubscribeRequest->IsValidLowLevelFast())
 	{
-		// UE_DEBUG_BREAK();
 		printScreen("[AExperimentServiceMonitor::SubscribeToTracking] SubscribeRequest not valid!");
 		UE_LOG(LogExperiment, Fatal, TEXT("[AExperimentServiceMonitor::SubscribeToTracking] TrackingSubscribeRequest not valid."))
 		return false;
@@ -619,24 +612,6 @@ bool AExperimentServiceMonitor::SubscribeToTracking()
 /* deprecated todo: delete*/
 bool AExperimentServiceMonitor::SubscribeToServer(UMessageClient* ClientIn)
 {
-	// printScreen("[AExperimentServiceMonitor::SubscribeToServer] INSIDE!");
-	// if (!this->ValidateClient(ClientIn))
-	// {
-	// 	printScreen("[AExperimentServiceMonitor::SubscribeToServer] ClientIn not valid!");
-	// 	return false;
-	// }
-	//
-	// SubscribeRequest = ClientIn->Subscribe();
-	// if (!SubscribeRequest->IsValidLowLevelFast())
-	// {
-	// 	printScreen("[AExperimentServiceMonitor::SubscribeToServer] SubscribeRequest not valid!");
-	// 	return false;
-	// }
-	//
-	// SubscribeRequest->ResponseReceived.AddDynamic(this, &AExperimentServiceMonitor::HandleSubscribeToServerResponse);
-	// SubscribeRequest->TimedOut.AddDynamic(this, &AExperimentServiceMonitor::HandleSubscribeToServerTimedOut);
-	// printScreen("[AExperimentServiceMonitor::SubscribeToServer] SubscribeRequest bound to delegates!");
-	// return true;
 	printScreen("[AExperimentServiceMonitor::SubscribeToServer] DONT USE ME!");
 	return false;
 }
@@ -657,14 +632,6 @@ void AExperimentServiceMonitor::RequestRemoveDelegates(URequest* RequestIn)
 void AExperimentServiceMonitor::HandleSubscribeToServerResponse(FString MessageIn)
 {
 	printScreen("[AExperimentServiceMonitor::HandleSubscribeToServerResponse] " + MessageIn);
-	
-	// if (SubscribeRequest->IsValidLowLevelFast())
-	// {
-	// 	SubscribeRequest->ResponseReceived.RemoveAll(this);
-	// 	SubscribeRequest->TimedOut.RemoveAll(this);
-	// 	SubscribeRequest = nullptr;
-	// }
-	// this->RoutePredatorMessages();
 }
 
 void AExperimentServiceMonitor::HandleSubscribeToServerTimedOut()
@@ -733,10 +700,10 @@ void AExperimentServiceMonitor::HandleGetOcclusionsResponse(const FString Respon
 	float(ExperimentInfo.StartExperimentResponse.duration), false, -1.0f);
 	bTimerRunning = true;
 
-	if (!this->ResetTrackingAgent())
-	{
-		printScreen("COULDNT RESET!");
-	}
+	// if (!this->ResetTrackingAgent())
+	// {
+	// 	printScreen("COULDNT RESET!");
+	// }
 
 	this->RequestRemoveDelegates(GetOcclusionsRequest);
 }
@@ -881,7 +848,7 @@ bool AExperimentServiceMonitor::Test() {
 	if (this->SubscribeToTracking())
 	{
 		printScreen("[AExperimentServiceMonitor::Test] Send Subscribe to TRACKING: OK.");
-		this->RoutePredatorMessages();
+		// this->RoutePredatorMessages();
 	}else { printScreen("[AExperimentServiceMonitor::Test] Send Subscribe to TRACKING: Failed."); }
 
 	/* Bind to Pawn's OnMovementDetected() */
@@ -917,7 +884,8 @@ void AExperimentServiceMonitor::OnTimerFinished()
 	if (ExperimentInfo.Status == EExperimentStatus::InEpisode)
 	{
 		this->StopEpisode();
-		ExperimentInfo.SetStatus(EExperimentStatus::FailedEpisodeTimer);
+		// ExperimentInfo.SetStatus(EExperimentStatus::WaitingEpisode);
+		ExperimentInfo.SetStatus(EExperimentStatus::FailedEpisodeTimer); // todo: make permanent, handle later 
 	}
 }
 
@@ -964,6 +932,7 @@ void AExperimentServiceMonitor::EndPlay(const EEndPlayReason::Type EndPLayReason
 	
 	/* clear delegates */
 	UE_LOG(LogExperiment,Log,TEXT("[AExperimentServiceMonitor::EndPlay] Removing delegates!"))
+
 	if (StartExperimentRequest->IsValidLowLevelFast()) { this->RequestRemoveDelegates(StartExperimentRequest); }
 	else{printScreen("StartExperimentRequest not valid");}
 	
@@ -977,18 +946,18 @@ void AExperimentServiceMonitor::EndPlay(const EEndPlayReason::Type EndPLayReason
 	{
 		MessageRoutePredator->MessageReceived.RemoveAll(this);
 		printScreen("MessageRoutePredator: Removed delegates.");
-	}else{printScreen("MessageRoutePredator: not valid, could not remove delegates.");}
+	} else{printScreen("MessageRoutePredator: not valid, could not remove delegates.");}
 
 	if (this->RemoveDelegatesPredatorRoute()) { printScreen("MessageRoutePredator: Removed delegates.");
 	}else{printScreen("MessageRoutePredator: not valid, could not remove delegates.");}
 	
-	// TrackingClient->Disconnect();
-	// Client->Disconnect();
+	if (this->ValidateClient(TrackingClient))
+	{
+		TrackingClient->SendRequest("!unsubscribe", "",-5.0f);
+		TrackingClient->Disconnect(); 
+	}else{ printScreen("Agent tracking: disconnect failed!"); }
 
-	// if (/*Client->IsValidLowLevelFast() && */IsValid(Client) && Client->IsConnected())
-	// {
-	// 	if (Client->Disconnect()) { printScreen("Disconnect success."); }
-	// 	else{printScreen("Failed to disconnect.");}
-	// }
+	if (this->ValidateClient(Client)) { Client->Disconnect(); }
+	else{ printScreen("Experiment Service Client: disconnect failed!"); }
 
 }

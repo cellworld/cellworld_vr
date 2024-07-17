@@ -163,11 +163,10 @@ void AGameModeMain::OnUpdateHUDTimer(){
 	if (PlayerPawn->IsValidLowLevelFast() && PlayerPawn->PlayerHUD->IsValidLowLevelFast())
 	{
 		PlayerPawn->PlayerHUD->SetTimeRemaining(FString::FromInt(FMath::FloorToInt(TimeRemaining+1))); // counter the round down
-		// if (GEngine) GEngine->AddOnScreenDebugMessage(-1, 3.0f, FColor::Green,
-		// 	FString::Printf(TEXT("[AGameModeMain::OnUpdateHUDTimer()] Setting timer from game mode! %0.5f -> %i"),TimeRemaining,FMath::FloorToInt(TimeRemaining+1)));
 	}else
 	{
-		if (GEngine) GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Red, FString::Printf(TEXT("[AGameModeMain::OnUpdateHUDTimer()] ERROR setting timer from game mode!.")));
+		if (GEngine) GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Red,
+			FString::Printf(TEXT("[AGameModeMain::OnUpdateHUDTimer()] ERROR setting timer from game mode!.")));
 	}
 
 }
