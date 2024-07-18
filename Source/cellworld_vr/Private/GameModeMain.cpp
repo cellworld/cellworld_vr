@@ -73,10 +73,10 @@ AActor* AGameModeMain::GetLevelActorFromName(const FName& ActorNameIn)
 
 void AGameModeMain::SpawnAndPossessPlayer(FVector spawn_location, FRotator spawn_rotation)
 {
-	// if (!bUseVR)
-	// {
-	// 	return;
-	// }
+	if (!bUseVR)
+	{
+		spawn_location.Z += 100; 
+	}
 	
 	if (GEngine) GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Red, FString::Printf(TEXT("[AGameModeMain::SpawnAndPossessPlayer]!")));
 
@@ -86,6 +86,7 @@ void AGameModeMain::SpawnAndPossessPlayer(FVector spawn_location, FRotator spawn
 
 	FActorSpawnParameters SpawnParams;
 	SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButAlwaysSpawn;
+	
 	PlayerPawn = GetWorld()->SpawnActor<APawnMain>(DefaultPawnClass, spawn_location, spawn_rotation, SpawnParams);
 	if (!PlayerPawn)
 	{
@@ -93,7 +94,8 @@ void AGameModeMain::SpawnAndPossessPlayer(FVector spawn_location, FRotator spawn
 		return;
 	};
 
-	// Find the player controller
+	
+	
 	APlayerController* PlayerController = GetWorld()->GetFirstPlayerController();
 	if (PlayerController)
 	{
@@ -197,12 +199,16 @@ void AGameModeMain::StartPlay()
 	FLocation SpawnLocation;
 	SpawnLocation.x = 0.0f;
 	SpawnLocation.y = 0.4f;
-	FVector SpawnLocationVR = UExperimentUtils::CanonicalToVr(SpawnLocation,235.185,4.0f);
-	SpawnLocationVR.Z += 100; 
-	this->SpawnAndPossessPlayer(SpawnLocationVR, FRotator::ZeroRotator);
-	
+	FVector SpawnLocationVR = UExperimentUtils::CanonicalToVr(SpawnLocation,235.185,6.0f);
+	// this->SpawnAndPossessPlayer(SpawnLocationVR, FRotator::ZeroRotator);
 	GetWorldTimerManager().SetTimer(TimerHUDUpdate, this, &AGameModeMain::OnUpdateHUDTimer, 0.5f, true, -1.0f);
 
+	// if (PlayerPawn->IsValidLowLevelFast())
+	// {
+	// 	if (bUseVR) { PlayerPawn->Camera->bUsePawnControlRotation = true; }
+	// 	else{PlayerPawn->Camera->bUsePawnControlRotation = false; }
+	// }
+	
 	// FName NameTemp = "BP_Habitat_Actor_2";
 	// AActor* LevelActorBase = this->GetLevelActorFromName(NameTemp);
 	// if (LevelActorBase->IsValidLowLevelFast())

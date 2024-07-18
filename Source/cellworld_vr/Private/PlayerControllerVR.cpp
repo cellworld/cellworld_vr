@@ -18,7 +18,6 @@ void APlayerControllerVR::BeginPlay()
 		//AGameModeMain* GameMode = (AGameModeMain*)GetWorld()->GetAuthGameMode();
 		PossessedPawn = Cast<APawnMain>(GetPawn());
 	}
-	return;
 }
 
 // Called to bind functionality to input

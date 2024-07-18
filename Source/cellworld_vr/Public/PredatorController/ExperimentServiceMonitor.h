@@ -278,7 +278,7 @@ public:
 	// const FString ServerIPMessage = "192.168.137.111"; // static laptop lab 
 	// const FString ServerIPMessage = "127.0.0.1";		  // localhost  
 	// const FString ServerIPMessage = "10.0.0.77";		  // home eth
-	const FString ServerIPMessage = "172.30.127.68";		  // home wsl
+	// const FString ServerIPMessage = "172.30.127.68";		  // home wsl
 	const int ServerPort	      = 4970;
 	const int TrackingPort	      = 4790;
 
@@ -297,7 +297,7 @@ public:
 	float map_length      = 5100;
 	int FrameCount        = 0; // todo: will probably delete 
 	const float MapLength = 235.185;
-	float WorldScale      = 4.0f; 
+	float WorldScale      = 6.0f; 
 
 	/* ==== setup ==== */
 	bool SpawnAndPossessPredator();
@@ -353,6 +353,8 @@ public:
 		void HandleUpdatePredator(FMessage MessageIn);
 	UFUNCTION()
 		void OnTimerFinished();
+	UFUNCTION()
+		bool StopTimer();
 	UFUNCTION()
 		float GetTimeRemaining();
 

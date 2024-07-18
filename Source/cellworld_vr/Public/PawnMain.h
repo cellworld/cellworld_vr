@@ -45,6 +45,7 @@ public:
 	void RestartGame();
 	void QuitGame();
 	APlayerController* GetGenericController();
+	bool bUseVR = false; 
 	bool HUDResetTimer(float DurationIn) const;
 	bool CreateAndInitializeWidget();
 	void DestroyHUD();
@@ -113,8 +114,7 @@ public:
 private: 
 	const float _capsule_radius      = 30.0f;
 	const float _player_height       = 175.0f; // 1.75 m
-	const float _capsule_half_height = _player_height / 2;
-	const FVector _camera_location = FVector(0.0f, 0.0f, _capsule_half_height);
+	const float _capsule_half_height = 50.0f;
 
 	FVector current_location; 
 	FVector HMDPosition;
