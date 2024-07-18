@@ -28,7 +28,10 @@ public:
 	APawnMain();
 	
 	UPROPERTY()
-	FOnMovementDetected MovementDetectedEvent; 
+	FOnMovementDetected MovementDetectedEvent;
+
+	UPROPERTY(EditAnywhere)
+		bool bUseVR = false;
 
 	void ResetOrigin();
 	void RestartGame();
@@ -44,6 +47,7 @@ public:
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
+	
 	//AGameModeMain* GameMode = nullptr; 
 
 public:

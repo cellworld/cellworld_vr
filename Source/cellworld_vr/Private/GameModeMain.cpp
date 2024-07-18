@@ -41,7 +41,6 @@ void AGameModeMain::SpawnExperimentServiceMonitor()
 		ExperimentServiceMonitor = GetWorld()->SpawnActor<AExperimentServiceMonitor>(AExperimentServiceMonitor::StaticClass(), Location, Rotation, SpawnParams);
 
 		ExperimentServiceMonitor->ExperimentInfo.OnExperimentStatusChangedEvent.AddDynamic(this, &AGameModeMain::OnExperimentStatusChanged);
-
 	}
 }
 
@@ -73,17 +72,16 @@ AActor* AGameModeMain::GetLevelActorFromName(const FName& ActorNameIn)
 
 void AGameModeMain::SpawnAndPossessPlayer(FVector spawn_location, FRotator spawn_rotation)
 {
-	// if (!bUseVR)
-	// {
-	// 	return;
-	// }
+	// add some height for WASD player 
+	if (!bUseVR) { spawn_location.Z += 100; }
 	
-	if (GEngine) GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Red, FString::Printf(TEXT("[AGameModeMain::SpawnAndPossessPlayer]!")));
-
+	if (GEngine) GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Red,
+		FString::Printf(TEXT("[AGameModeMain::SpawnAndPossessPlayer]!")));
+	
 	/* to do: remove, no need for this if player start is present in map. if it isn''t, location will be taken care of by experiment service */
-
+	
 	if(!GetWorld() || !GetWorld()->GetFirstPlayerController()) { UE_DEBUG_BREAK(); return; }
-
+	
 	FActorSpawnParameters SpawnParams;
 	SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButAlwaysSpawn;
 	PlayerPawn = GetWorld()->SpawnActor<APawnMain>(DefaultPawnClass, spawn_location, spawn_rotation, SpawnParams);
@@ -92,12 +90,22 @@ void AGameModeMain::SpawnAndPossessPlayer(FVector spawn_location, FRotator spawn
 		if (GEngine) GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Red, FString::Printf(TEXT("[AGameModeMain::SpawnAndPossessPlayer] Cast failed!")));
 		return;
 	};
-
+	
 	// Find the player controller
 	APlayerController* PlayerController = GetWorld()->GetFirstPlayerController();
-	if (PlayerController)
+	if (!PlayerController->IsValidLowLevelFast())
 	{
-		PlayerController->Possess(PlayerPawn);
+		UE_LOG(LogExperiment, Error, TEXT("[AGameModeMain::SpawnAndPossessPlayer] could not find PC! "));
+		return;
+	}
+	// possess with the appropriate PC 
+	if (bUseVR)
+	{
+		APlayerControllerVR* PlayerControllerVR = Cast<APlayerControllerVR>(PlayerController);
+		if (PlayerControllerVR->IsValidLowLevelFast()){ PlayerController->Possess(PlayerPawn); }
+	} else {
+		AMouseKeyboardPlayerController* PlayerControllerWASD = Cast<AMouseKeyboardPlayerController>(PlayerController);
+		if (PlayerControllerWASD->IsValidLowLevelFast()) { PlayerController->Possess(PlayerPawn); }	
 	}
 }
 
@@ -199,33 +207,14 @@ void AGameModeMain::StartPlay()
 	SpawnLocation.x = 0.0f;
 	SpawnLocation.y = 0.4f;
 	FVector SpawnLocationVR = UExperimentUtils::CanonicalToVr(SpawnLocation,235.185,4.0f);
-	SpawnLocationVR.Z += 100; 
+
+	// if (!bUseVR) { SpawnLocationVR.Z += 100; } 
+
 	this->SpawnAndPossessPlayer(SpawnLocationVR, FRotator::ZeroRotator);
 	
 	GetWorldTimerManager().SetTimer(TimerHUDUpdate, this, &AGameModeMain::OnUpdateHUDTimer, 0.5f, true, -1.0f);
 
-	// FName NameTemp = "BP_Habitat_Actor_2";
-	// AActor* LevelActorBase = this->GetLevelActorFromName(NameTemp);
-	// if (LevelActorBase->IsValidLowLevelFast())
-	// {
-	// 	UE_LOG(LogExperiment, Warning, TEXT("[AGameModeMain::StartPlay()] Found level actor! %s"),*LevelActorBase->GetName());
-	// }else{ LevelActorBase = nullptr; }
-	
-	// UGameInstanceMain* GameInstance = Cast<UGameInstanceMain>(UGameplayStatics::GetGameInstance(GetWorld()));
-	// if (GameInstance->IsValidLowLevelFast())
-	// {
-	// 	const FVector WorldScaleVector = GameInstance->GetLevelScale(nullptr);
-	// 	if (WorldScaleVector != FVector::ZeroVector) { GameInstance->SetWorldScale(WorldScaleVector.X); }
-	// 	else { UE_LOG(LogExperiment, Warning, TEXT("[AGameModeMain::StartPlay()] WorldScaleVector not valid!")); }
-	// 	
-	// } else {
-	// 	UE_LOG(LogExperiment, Warning, TEXT("[AGameModeMain::StartPlay()] GameInstanceMain NOT found!"));
-	// 	GameInstance = nullptr;
-	// }
-	//
-	
 	if (bSpawnExperimentService) { AGameModeMain::SpawnExperimentServiceMonitor(); }
-
 	else { UE_LOG(LogExperiment, Warning, TEXT("[AGameModeMain::StartPlay()] Not spawning Experiment Service!")); }
 	
 	AGameModeMain::StopLoadingScreen();

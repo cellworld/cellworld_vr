@@ -863,8 +863,9 @@ bool AExperimentServiceMonitor::Test() {
 	TrackingClient = AExperimentServiceMonitor::CreateNewClient();
 
 	/* connect tracking service */
-	constexpr int AttemptsMax = 5;
-	UE_LOG(LogExperiment,Log,TEXT("[AExperimentServiceMonitor::Test()] Attempting to connect to Experiment Service Client."));
+	constexpr int AttemptsMax = 1;
+	UE_LOG(LogExperiment, Log, TEXT("%i"), AttemptsMax)
+	UE_LOG(LogExperiment, Log,TEXT("[AExperimentServiceMonitor::Test()] Attempting to connect to Experiment Service Client."));
 	if (!this->ConnectToServer(Client, AttemptsMax, ServerIPMessage, ServerPort))
 	{
 		printScreen("[AExperimentServiceMonitor::Test] Connect SERVER failed."); return false;

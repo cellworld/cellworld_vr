@@ -262,6 +262,7 @@ void UMessageClient::Tick(float DeltaTime) {
 			}
 		}
 	}
+	
 	TArray<FString> RequestsIds;
 	PendingRequests.GetKeys(RequestsIds);
 	for (auto &RequestId:RequestsIds)

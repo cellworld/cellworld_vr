@@ -275,8 +275,8 @@ public:
 	// const FString ServerIPMessage = "172.26.176.129";   // lab pc new
 	// const FString ServerIPMessage = "192.168.137.111"; // static laptop lab 
 	// const FString ServerIPMessage = "127.0.0.1";		  // localhost  
-	// const FString ServerIPMessage = "10.0.0.77";		  // home eth
-	const FString ServerIPMessage = "172.30.127.68";		  // home wsl
+	const FString ServerIPMessage = "10.0.0.77";		  // home eth
+	// const FString ServerIPMessage = "172.30.127.68";		  // home wsl
 	const int ServerPort	      = 4970;
 	const int TrackingPort	      = 4790;
 

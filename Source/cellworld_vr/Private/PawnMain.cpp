@@ -148,15 +148,6 @@ bool APawnMain::DetectMovement()
 			NewLocation = GetWorld()->GetFirstPlayerController()->GetPawn()->GetActorLocation();
 		}		
 	}
-
-	// // check if we changed (will likely delete later)
-	// if (!NewLocation.Equals(_old_location, 2)) {
-	// 	_blocation_updated = true;
-	// 	_old_location = NewLocation;
-	// }
-	// else {
-	// 	_blocation_updated = false; 
-	// }
 	
 	return true;
 }
@@ -168,23 +159,34 @@ void APawnMain::UpdateRoomScaleLocation()
 	FVector CameraLocation = Camera->GetComponentLocation();
 	CameraLocation.Z = 0.0f;
 
-	FVector DeltaLocation = Camera->GetComponentLocation() - CapsuleLocation;
+	FVector DeltaLocation = CameraLocation - CapsuleLocation;
 	DeltaLocation.Z = 0.0f;
 	
 	AddActorWorldOffset(DeltaLocation, false, nullptr, ETeleportType::TeleportPhysics);
 	VROrigin->AddWorldOffset(-DeltaLocation, false, nullptr, ETeleportType::TeleportPhysics);
 	this->CapsuleComponent->SetWorldLocation(CameraLocation); 
-	
 }
 
 void APawnMain::OnMovementDetected()
 {
-	_new_location = this->GetActorLocation();
-	FVector org = this->VROrigin->GetComponentLocation();
-	
-	MovementDetectedEvent.Broadcast(this->RootComponent->GetComponentLocation()); // todo: test with VR 
-	// MovementDetectedEvent.Broadcast(_new_location + this->VROrigin->GetComponentLocation());
-	// this->UpdateRoomScaleLocation(); // only for VR 
+	FVector FinalLocation = {}; 
+	if (bUseVR)
+	{
+		FVector HMDLocation = {};
+		FRotator HMDRotation = {};
+		UHeadMountedDisplayFunctionLibrary::GetOrientationAndPosition(HMDRotation, HMDLocation);
+		FinalLocation = HMDLocation + this->VROrigin->GetComponentLocation();
+		this->UpdateRoomScaleLocation(); // todo: test with VR
+	}else
+	{
+		FinalLocation = this->RootComponent->GetComponentLocation();
+	}
+		
+	MovementDetectedEvent.Broadcast(FinalLocation); 
+	// if (GEngine) GEngine->AddOnScreenDebugMessage(-1, 15.0f,
+	// 	FColor::Cyan, FString::Printf(TEXT("Loc: %0.2f, %0.2f, %0.2f"),
+	// 		FinalLocation.X, FinalLocation.Y, FinalLocation.Z));
+
 }
 
 void APawnMain::ResetOrigin() 
@@ -246,18 +248,12 @@ bool APawnMain::CreateAndInitializeWidget()
 		UE_DEBUG_BREAK();
 		return false;
 	}
-
-	// if (!UHeadMountedDisplayFunctionLibrary::IsHeadMountedDisplayConnected())
-	// {
-	// 	PlayerHUD->AddToViewport();
-	// }
-
 	
 	PlayerHUD->Init();
 	// this->HUDWidgetComponent->SetWidget(PlayerHUD);
-	// PlayerHUD->AddToViewport();
+	if (!bUseVR) { PlayerHUD->AddToViewport(); }
 	if (GEngine) GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Emerald,
-		FString::Printf(TEXT("[APawnMain::CreateAndInitializeWidget()] OK.")));
+		FString::Printf(TEXT("[APawnMain::CreateAndInitializeWidget()] OK. Using VR? %i"),bUseVR));
 	return true;
 }
 
@@ -270,11 +266,26 @@ void APawnMain::BeginPlay()
 	{
 		PlayerHUD = Cast<UHUDExperiment>(HUDWidget);
 	}
+
+	AGameModeBase* GameModeTemp = GetWorld()->GetAuthGameMode();
+
+	GameMode = Cast<AGameModeMain>(GameModeTemp);
+	if (GameMode->IsValidLowLevelFast())
+	{
+		bUseVR = GameMode->bUseVR; 
+	}
+
+	if (bUseVR)
+	{
+		this->Camera->bUsePawnControlRotation = false;
+	}else
+	{
+		this->Camera->bUsePawnControlRotation = false;
+	}
 }
 
 void APawnMain::DebugHUDAddTime()
 {
-	
 	DebugTimeRemaining += 1;
 	if ((DebugTimeRemaining % 10 == 0) && PlayerHUD->IsValidLowLevelFast())
 	{
