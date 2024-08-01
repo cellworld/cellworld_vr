@@ -352,8 +352,6 @@ public:
 	UFUNCTION()
 		URequest* SendStartExperimentRequest(UMessageClient* ClientIn, FString ExperimentNameIn);
 	UFUNCTION()
-		URequest* SendFinishExperimentRequest(const FString& ExperimentNameIn);
-	UFUNCTION()
 		void HandleStopExperimentResponse(const FString ResponseIn);
 	UFUNCTION()
 		void HandleStopExperimentTimedOut();
