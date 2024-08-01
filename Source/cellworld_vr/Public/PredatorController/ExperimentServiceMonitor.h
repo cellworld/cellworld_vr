@@ -2,7 +2,8 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
-#include "UObject/ObjectPtr.h" 
+#include "UObject/ObjectPtr.h"
+#include "Tools/GenericClock.h"
 #include "ExperimentPlugin.h"
 #include "MessageClient.h"
 #include "TCPMessages.h"
@@ -13,42 +14,29 @@
 #include "ExperimentPlugin/Public/Structs.h"
 #include "ExperimentComponents/Occlusion.h"
 #include "DrawDebugHelpers.h"
+#include "PredatorBasic.h"
 #include "cellworld_vr/cellworld_vr.h"
 #include "ExperimentServiceMonitor.generated.h"
 
-UENUM(Blueprintable)
-enum class EExperimentStatus : uint8
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnExperimentStatusChanged, EExperimentStatus, ExperimentStatusIn);
+
+USTRUCT(Blueprintable)
+struct FExperimentTimer
 {
-	// client is in an active experiment/episode (can be both - maybe ill change to no) 
-	InExperiment		  	 UMETA(DisplayName = "InExperiment"),
-	InEpisode			  	 UMETA(DisplayName = "InEpisode"),
+	GENERATED_USTRUCT_BODY()
+public:
+	FExperimentTimer()
+	{
+		
+	}
 
-	// 'waiting room' flags - waiting for XYZ to start 
-	WaitingExperiment	  	 UMETA(DisplayName = "WaitingExperiment"),
-	WaitingEpisode		  	 UMETA(DisplayName = "WaitingEpisode"),
-
-	// error flags
-	FailedStartExperiment 	 UMETA(DisplayName = "FailedStartExperiment"),
-	FailedStartEpisode    	 UMETA(DisplayName = "FailedStartEpisode"),
+	void Start(const float DurationIn)
+	{
+			
+	}
 	
-	// completion flags
-	FinishedExperiment	  	 UMETA(DisplayName = "FinishedExperiment"),
-	FinishedEpisode		  	 UMETA(DisplayName = "FinishedEpisode"),
-
-	// failed flags
-	FailedFinishedExperiment UMETA(DisplayName = "FailedFinishedExperiment"),
-	FailedFinishEpisode		 UMETA(DisplayName = "FailedFinishEpisode"), 
-
-	// is the client done? Yes? Ok lets disconnect and tell subject thanks for coming
-	WaitingFinishSuccess     UMETA(DisplayName = "WaitingFinishSuccess"),
-	WaitingFinishError	     UMETA(DisplayName = "WaitingFinishError"),
-
-	// handle timeouts
-	TimedOutExperiment	     UMETA(DisplayName="TimedOutExperiment"),
-	TimedOutEpisode		     UMETA(DisplayName="TimedOutEpisode"),
+	FTimerHandle Handle;
 	
-	// there's always stuff we don't expect, right? 
-	Unknown				     UMETA(DisplayName = "Unknown"),
 };
 
 USTRUCT(Blueprintable)
@@ -77,7 +65,7 @@ public:
 
 	/* canonical */
 	void SetAllLocations(const FString& LocationsIn) {
-		UE_LOG(LogExperiment,Warning,TEXT("[FOcclusions.SetAllLocations] Locations: %s"),*LocationsIn);
+		// UE_LOG(LogExperiment,Warning,TEXT("[FOcclusions.SetAllLocations] Locations: %s"),*LocationsIn);
 		AllLocations = UExperimentUtils::OcclusionsParseAllLocations(LocationsIn); 
 		bAllLocationsLoaded = true;
 	}
@@ -95,6 +83,7 @@ public:
 		const FRotator Rotation(0.0f, 0.0f, 0.0f); // Desired spawn rotation
 		const float ScaleOffset = 0.99157164105; 
 		const float MapLength = 235.185290;
+		
 		FActorSpawnParameters SpawnParams;
 		for (int i = 0; i < AllLocations.Num(); i++) {
 			AOcclusion* SpawnOcclusion = WorldRefIn->SpawnActor<AOcclusion>(
@@ -107,13 +96,13 @@ public:
 			SpawnOcclusion->SetActorEnableCollision(bEnableCollisonIn);
 			OcclusionAllArr.Add(SpawnOcclusion);
 		}
-		UE_LOG(LogExperiment, Warning, TEXT("[FOcclusions.SpawnAll] OK."));
+		UE_LOG(LogExperiment, Warning, TEXT("[FOcclusions.SpawnAll] OK."))
 		bSpawnedAll = true;
 		return true;
 	}
 
 	void SetAllHidden(){
-		UE_LOG(LogExperiment,Warning,TEXT("[FOcclusions.SetAllHidden]"));
+		UE_LOG(LogExperiment,Warning,TEXT("[FOcclusions.SetAllHidden()]"))
 		for (AOcclusion* Occlusion : OcclusionAllArr) {
 			Occlusion->SetActorHiddenInGame(true);
 			Occlusion->SetActorEnableCollision(false);
@@ -146,10 +135,23 @@ public:
 };
 
 USTRUCT(Blueprintable)
+struct FExperimentHeaders
+{
+	GENERATED_BODY()
+	/* headers */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = ExperimentHeaders)
+	FString PreyStep     = "prey_step";
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = ExperimentHeaders)
+	FString PredatorStep = "predator_step";
+};
+
+USTRUCT(Blueprintable)
 struct FExperimentInfo
 {
 	GENERATED_BODY()
-public: 
+public:
+	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = ExperimentInfo)
 		EExperimentStatus Status = EExperimentStatus::WaitingExperiment;
 	
@@ -167,8 +169,16 @@ public:
 	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = ExperimentInfo)
 		FString ExperimentNameActive = "";
-};
 
+	FOnExperimentStatusChanged OnExperimentStatusChangedEvent;
+	
+	void SetStatus(const EExperimentStatus ExperimentStatusIn){
+		UE_LOG(LogExperiment, Warning, TEXT("[SetStatus] New Status set!"));
+		Status = ExperimentStatusIn;
+		OnExperimentStatusChangedEvent.Broadcast(ExperimentStatusIn);
+	}
+};
+	
 UCLASS()
 class CELLWORLD_VR_API AExperimentServiceMonitor : public AActor
 { 
@@ -177,10 +187,32 @@ class CELLWORLD_VR_API AExperimentServiceMonitor : public AActor
 public:	
 	AExperimentServiceMonitor();
 
-	/* ==== main experiment service components ==== */
+	/* ==== server stuff ==== */
 	
+	// const FString ServerIPMessage = "172.26.176.129";  // lab pc wsl 
+	// const FString ServerIPMessage = "192.168.137.111"; // static laptop lab 
+	// const FString ServerIPMessage = "10.0.0.77";		  // crib
+	
+	const FString ServerIPMessage = "192.168.137.13";  // static vr backpack win11 PACKAGED ONLY
+	// const FString ServerIPMessage = "172.23.126.101";  // static vr backpack WSL EDITOR ONLY
+	const int ServerPort	      = 4970;
+	const int TrackingPort	      = 4790;
+	
+	/* DEBUG */
+	bool bTimerRunning = false;
+	GenericClock::FStopWatch StopWatch;
+	const float TimerFrequency = 0.5; 
+	float TimeElapsedTick = 0.0f;
+	uint32 FrameCountPrey = 0;
+	uint32 FrameCountPredator = 0; 
+	FTimerHandle TimerHandle;
+	FTimerManager TimerManager;
+	
+	/* ==== main experiment service components ==== */
 	UPROPERTY()
 		TObjectPtr<UMessageClient> Client;
+	UPROPERTY()
+		TObjectPtr<UMessageClient> TrackingClient;
 
 	/* routes */
 	UPROPERTY()
@@ -198,7 +230,7 @@ public:
 	UPROPERTY()
 		TObjectPtr<UMessageRoute> RouteOnEpisodeStarted;
 	UPROPERTY()
-		TObjectPtr<UMessageRoute> RoutePredator;
+		TObjectPtr<UMessageRoute> RoutePredatorStep;
 	UPROPERTY()
 		TObjectPtr<UMessageRoute> RouteAgent;
 
@@ -214,25 +246,15 @@ public:
 	UPROPERTY()
 		TObjectPtr<URequest> SubscribeRequest;
 	UPROPERTY()
+		TObjectPtr<URequest> TrackingSubscribeRequest;
+	UPROPERTY()
 		TObjectPtr<URequest> GetOcclusionsRequest;
-
-	/* headers */
-	const FString header_prey_location		    = "prey_step";
-	const FString header_predator_location		= "predator_step";
-	const FString experiment_name               = "test_experiment";
-	const FString predator_step_header          = "predator_step";
-	const FString on_episode_started_header     = "on_episode_started";
-	
-	/* ==== server stuff ==== */
-	// const FString ServerIPMessage = "172.30.127.68";   // alternate 
-	// const FString ServerIPMessage = "192.168.137.8";   // lab new
-	// const FString ServerIPMessage = "192.168.137.111"; // static laptop lab 
-	const FString ServerIPMessage = "127.0.0.1";		  // localhost  
-	const int ServerPort	      = 4970;
 
 	/* ==== status stuff ==== */
 	UPROPERTY()
 		FExperimentInfo ExperimentInfo {};
+	UPROPERTY()
+		FExperimentHeaders ExperimentHeaders; 
 	
 	bool bCanUpdatePreyPosition      = false;
 	bool bConnectedTrackingService	 = false; 
@@ -240,14 +262,15 @@ public:
 	bool bConnectedToServer			 = false;
 
 	/* ==== world stuff ==== */
-	float map_length      = 5100;
 	int FrameCount        = 0; // todo: will probably delete 
 	const float MapLength = 235.185;
-	float WorldScale      = 4.0f; 
+	const float PredatorScaleFactor = 0.5f; 
+	float WorldScale      = 1.0f;
 
 	/* ==== setup ==== */
 	bool SpawnAndPossessPredator();
-	ACharacter* CharacterPredator = nullptr;
+	UPROPERTY()
+		TObjectPtr<APredatorBasic> PredatorBasic = nullptr;
 
 	/* functions called by GameMode and Blueprints */
 	static UMessageClient* CreateNewClient();
@@ -263,24 +286,45 @@ public:
 	UFUNCTION(BlueprintCallable, Category = Experiment)
 		bool StopEpisode();
 
+	UFUNCTION(BlueprintCallable, Category = Experiment)
+		bool StartTimerEpisode(const float DurationIn, FTimerHandle TimerHandleIn);
+
+	UPROPERTY(EditAnywhere)
+		TObjectPtr<APawnMain> PlayerPawnActive = nullptr;
+	UPROPERTY(EditAnywhere)
+		TObjectPtr<APawnMain> PlayerPawn = nullptr;
+
 	/* ==== helper functions  ==== */
 	bool ValidateLevel(UWorld* InWorld, const FString InLevelName);
 	bool GetPlayerPawn();
+	
 	void SelfDestruct(const FString InErrorMessage);
-	bool SubscribeToServer(TObjectPtr<UMessageClient> ClientIn);
-	void RequestRemoveDelegates(URequest* RequestIn);
 
-	/* event functions */
-	void on_experiment_started();
-	void on_experiment_finished();
-	void on_episode_started();
-	void on_episode_finished();
 	
 	/* ==== delegates ==== */
-
+	UPROPERTY()
+		FOnExperimentStatusChanged OnExperimentStatusChangedEvent;
+	UFUNCTION()
+		void OnStatusChanged(const EExperimentStatus ExperimentStatusIn);
+	
+	UFUNCTION(BlueprintCallable, Category = Experiment)
+		bool SubscribeToTracking();
+	UFUNCTION(BlueprintCallable, Category = Experiment)
+		void HandleSubscribeToTrackingResponse(FString Response);
+	UFUNCTION(BlueprintCallable, Category = Experiment)
+		void HandleSubscribeToTrackingTimedOut();
+	UFUNCTION(BlueprintCallable, Category = Experiment)
+		bool SubscribeToServer(UMessageClient* ClientIn);
+	UFUNCTION(BlueprintCallable, Category = Experiment)
+		void RequestRemoveDelegates(URequest* RequestIn);
+	
 	/* update predator stuff */
 	UFUNCTION()
 		void HandleUpdatePredator(FMessage MessageIn);
+	UFUNCTION()
+		void OnTimerFinished();
+	UFUNCTION()
+		float GetTimeRemaining();
 
 	/* experiment service */
 	UFUNCTION()
@@ -288,27 +332,17 @@ public:
 	UFUNCTION()
 		void HandleSubscribeToServerTimedOut();
 	UFUNCTION()
-		void HandleTrackingServiceMessagePredator(FMessage message);
-	UFUNCTION()
-		void HandleTrackingServiceMessagePrey(FMessage message);
-	UFUNCTION()
-		void HandleExperimentServiceResponse(const FString message);
-	UFUNCTION()
-		void HandleExperimentServiceResponseTimedOut();
-
-	/* tracking service */
-	UFUNCTION()
-		void HandleTrackingServiceResponse(const FString message);
-	UFUNCTION()
-		void HandleTrackingServiceResponseTimedOut();
-	UFUNCTION()
 		void HandleStartEpisodeRequestResponse(const FString response);
+	UFUNCTION()
+		bool ResetTrackingAgent();
 	UFUNCTION()
 		void HandleStartEpisodeRequestTimedOut();
 	UFUNCTION()
 		void HandleStopEpisodeRequestResponse(const FString response);
 	UFUNCTION()
 		void HandleStopEpisodeRequestTimedOut();
+	
+	/* tracking service */
 
 	/* Experiment */
 	UFUNCTION()
@@ -317,6 +351,8 @@ public:
 		void HandleStartExperimentTimedOut();
 	UFUNCTION()
 		URequest* SendStartExperimentRequest(UMessageClient* ClientIn, FString ExperimentNameIn);
+	UFUNCTION()
+		URequest* SendFinishExperimentRequest(const FString& ExperimentNameIn);
 	UFUNCTION()
 		void HandleStopExperimentResponse(const FString ResponseIn);
 	UFUNCTION()
@@ -329,10 +365,6 @@ public:
 		void UpdatePreyPosition(const FVector Location);
 
 	/* other */
-	UFUNCTION()
-		void HandleTrackingServiceMessage(FMessage message);
-	UFUNCTION()
-		void HandleTrackingServiceUnroutedMessage(FMessage message);
 	UFUNCTION()
 		void HandleUnroutedMessage(FMessage message);
 	UFUNCTION()
@@ -368,9 +400,12 @@ public:
 		void HandleGetOcclusionsTimedOut();
 	UFUNCTION()
 		void HandleOcclusionLocation(const FMessage MessageIn);
-	
-	static bool ConnectToServer(UMessageClient* ClientIn, const int MaxAttemptsIn, const FString& IPAddressIn, const int PortIn);
-	bool RoutePredatorMessages();
+	UFUNCTION()
+		static bool ConnectToServer(UMessageClient* ClientIn, const int MaxAttemptsIn, const FString& IPAddressIn, const int PortIn);
+	UFUNCTION()
+		bool RoutePredatorMessages();
+	UFUNCTION()
+		bool RemoveDelegatesPredatorRoute();
 
 	bool Test();
 

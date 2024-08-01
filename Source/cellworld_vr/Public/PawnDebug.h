@@ -50,7 +50,7 @@ public:
 	UCapsuleComponent* CapsuleComponent;
 	class UArrowComponent* Arrow;
 	class USkeletalMeshComponent* CharacterMesh;
-	class UCharacterMovementComponent* CharMoveComp;
+	// class UCharacterMovementComponent* CharMoveComp;
 	class UMotionControllerComponent* MotionControllerLeft;
 	class UMotionControllerComponent* MotionControllerLeftAim;
 	class UMotionControllerComponent* MotionControllerRight;

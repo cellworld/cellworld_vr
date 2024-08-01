@@ -21,6 +21,7 @@ public class cellworld_vr : ModuleRules
         PublicIncludePaths.AddRange(new string[] {
             // "cellworld_vr/PredatorController",
             "cellworld_vr/Public/Interfaces",
+            "cellworld_vr/Public/Test",
             "cellworld_vr/Public"
             //"AsyncLoadingScreen/AsyncLoadingScreenLibrary.h"
         });

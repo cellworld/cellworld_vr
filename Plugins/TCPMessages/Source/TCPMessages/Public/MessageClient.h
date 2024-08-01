@@ -10,7 +10,9 @@
 USTRUCT(Blueprintable)
 struct FMessage
 {
+
 	GENERATED_BODY()
+
 public:
 
 	FMessage() {
@@ -21,9 +23,8 @@ public:
 	header(header),
 	id(FGuid::NewGuid().ToString(EGuidFormats::DigitsWithHyphens)){	}
 
-
 	static FString CleanJson(const FString& jsonString) {
-		return jsonString.Replace(TEXT("\r"), TEXT("")).Replace(TEXT("\n"), TEXT("")).Replace(TEXT("\t"), TEXT(""));
+		return jsonString.Replace(TEXT("\r"), TEXT("")).Replace(TEXT("\n"), TEXT("")).Replace(TEXT("\t"), TEXT("")).Replace(TEXT("\"iD\""), TEXT("\"id\""));
 	}
 
 	template<typename InStructType>
@@ -101,7 +102,6 @@ public:
 	UPROPERTY(BlueprintAssignable, Category = "TCPMessagesEvents")
 	FOnMessageReceived MessageReceived;
 };
-
 
 UCLASS(Blueprintable)
 class URequest: public UObject {

@@ -3,12 +3,12 @@
 #include "Camera/CameraComponent.h"
 #include "Camera/PlayerCameraManager.h"
 #include "Components/CapsuleComponent.h"
-#include "Components/SphereComponent.h"
 #include "Components/SceneComponent.h"
 #include "Components/SkeletalMeshComponent.h"
 #include "HeadMountedDisplayFunctionLibrary.h"
 #include "IXRTrackingSystem.h"
 #include "cellworld_vr/cellworld_vr.h"
+#include "Components/EditableTextBox.h"
 #include "Engine/GameEngine.h"
 #include "GameFramework/PlayerController.h"
 #include "GameFramework/CharacterMovementComponent.h" // test 
@@ -42,7 +42,7 @@ APawnMain::APawnMain() : Super()
 	Camera = CreateDefaultSubobject<UCameraComponent>(TEXT("ActualCamera"));
 	Camera->SetMobility(EComponentMobility::Movable);
 	Camera->SetRelativeLocation(FVector(0.0f,0.0f,-_capsule_half_height)); // todo: make sure this is OK
-	Camera->bUsePawnControlRotation = true;
+	Camera->bUsePawnControlRotation = false; // todo: add flag, true for VR
 	Camera->SetupAttachment(RootComponent);
 
 	/* create HUD widget and attach to camera */
@@ -54,6 +54,7 @@ APawnMain::APawnMain() : Super()
 	HUDWidgetComponent->SetRelativeScale3D(FVector(0.25f,0.25f,0.25f));
 	HUDWidgetComponent->SetRelativeRotation(FRotator(0.0f,-180.0f,0.0f));
 	HUDWidgetComponent->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	HUDWidgetComponent->SetWidgetSpace(EWidgetSpace::Screen);
 	HUDWidgetComponent->SetDrawSize(FVector2d(1080,720));
 	
 	/*Create Motion Controllers*/
@@ -72,6 +73,16 @@ APawnMain::APawnMain() : Super()
 	MotionControllerRight->MotionSource = FName("Right");
 	MotionControllerRight->SetVisibility(false, false);
 	MotionControllerRight->SetupAttachment(RootComponent);
+
+	/* create instance of our movement component */
+	OurMovementComponentChar = CreateDefaultSubobject<UCharacterMovementComponent>(TEXT("CharacterMovementComponent"));
+	OurMovementComponentChar->MaxStepHeight = 100.0f;
+	OurMovementComponentChar->MaxWalkSpeed = 5000.0f;
+	OurMovementComponentChar->MaxAcceleration = 5000.0f;
+	OurMovementComponentChar->BrakingDecelerationWalking = 4'000.0f;
+	OurMovementComponentChar->bDeferUpdateMoveComponent = false;
+	OurMovementComponentChar->SetActive(true);
+	OurMovementComponentChar->UpdatedComponent = RootComponent;
 
 	const FSoftClassPath PlayerHUDClassRef(TEXT("/Script/UMGEditor.WidgetBlueprint'/Game/Interfaces/BP_HUDExperiment.BP_HUDExperiment_C'"));
 	if (TSubclassOf<UHUDExperiment> HUDClass = PlayerHUDClassRef.TryLoadClass<UHUDExperiment>()){
@@ -102,24 +113,43 @@ void APawnMain::StartEpisode()
 	return; 
 }
 
+void APawnMain::ValidateHMD()
+{
+	return;
+	// todo: get PC, if PCVR, set UseVR flag = true;
+	// todo idea 2: get flag from GameMode (check if it was set first, then do PC approach)
+}
+
+bool APawnMain::DetectMovementVR()
+{
+	return false;
+}
+
+bool APawnMain::DetectMovementWASD()
+{
+	return false;
+}
+
+// todo: attach as delegate to a timer 
 bool APawnMain::DetectMovement()
 {
 	bool _blocation_updated = false;
-
-	if (!UHeadMountedDisplayFunctionLibrary::IsHeadMountedDisplayEnabled()) { return false; }
-
 	FVector NewLocation;
 	FRotator NewRotation;
-	UHeadMountedDisplayFunctionLibrary::GetOrientationAndPosition(NewRotation, NewLocation);
-	if (!NewLocation.Equals(_old_location, 2)) {
-		_blocation_updated = true;
-		_old_location = NewLocation;
+	
+	if (UHeadMountedDisplayFunctionLibrary::IsHeadMountedDisplayEnabled())
+	{
+		UHeadMountedDisplayFunctionLibrary::GetOrientationAndPosition(NewRotation, NewLocation);
+		this->UpdateRoomScaleLocation();
 	}
-	else {
-		_blocation_updated = false; 
+	else{ // using WASD
+		if (GetWorld() && GetWorld()->GetFirstPlayerController())
+		{
+			NewLocation = GetWorld()->GetFirstPlayerController()->GetPawn()->GetActorLocation();
+		}		
 	}
-	_new_location = NewLocation;
-	return _blocation_updated;
+	
+	return true;
 }
 
 void APawnMain::UpdateRoomScaleLocation()
@@ -129,40 +159,35 @@ void APawnMain::UpdateRoomScaleLocation()
 	FVector CameraLocation = Camera->GetComponentLocation();
 	CameraLocation.Z = 0.0f;
 
-	FVector DeltaLocation = Camera->GetComponentLocation() - CapsuleLocation;
+	FVector DeltaLocation = CameraLocation - CapsuleLocation;
 	DeltaLocation.Z = 0.0f;
 	
 	AddActorWorldOffset(DeltaLocation, false, nullptr, ETeleportType::TeleportPhysics);
 	VROrigin->AddWorldOffset(-DeltaLocation, false, nullptr, ETeleportType::TeleportPhysics);
 	this->CapsuleComponent->SetWorldLocation(CameraLocation); 
-
-	const FVector LocOrigin = VROrigin->GetComponentLocation();
-	const FVector LocCamera = Camera->GetComponentLocation();
-
-// 	if (GEngine) GEngine->AddOnScreenDebugMessage(-1, 0.5f, FColor::Green, FString::Printf(TEXT("Delta : %f, %f, %f"), DeltaLocation.X, DeltaLocation.Y, DeltaLocation.Z));
-// 	if (GEngine) GEngine->AddOnScreenDebugMessage(-1, 0.5f, FColor::Magenta, FString::Printf(TEXT("Capsule : %f, %f, %f"), CapsuleLocation.X, CapsuleLocation.Y, CapsuleLocation.Z));
-// 	if (GEngine) GEngine->AddOnScreenDebugMessage(-1, 0.5f, FColor::Cyan, FString::Printf(TEXT("Origin : %f, %f, %f"), LocOrigin.X, LocOrigin.Y, LocOrigin.Z));
-// 	if (GEngine) GEngine->AddOnScreenDebugMessage(-1, 0.5f, FColor::Blue, FString::Printf(TEXT("Camera: %f, %f, %f"), LocCamera.X, LocCamera.Y, LocCamera.Z));
 }
 
 void APawnMain::OnMovementDetected()
 {
-	MovementDetectedEvent.Broadcast(_new_location + this->VROrigin->GetComponentLocation());
-	this->UpdateRoomScaleLocation();
+	FVector FinalLocation = {}; 
+	if (bUseVR)
+	{
+		FVector HMDLocation = {};
+		FRotator HMDRotation = {};
+		UHeadMountedDisplayFunctionLibrary::GetOrientationAndPosition(HMDRotation, HMDLocation);
+		FinalLocation = HMDLocation + this->VROrigin->GetComponentLocation();
+		this->UpdateRoomScaleLocation(); // todo: test with VR
+	}else
+	{
+		FinalLocation = this->RootComponent->GetComponentLocation();
+	}
+	
+	MovementDetectedEvent.Broadcast(FinalLocation); 
 }
 
 void APawnMain::ResetOrigin() 
 {
-	//UHeadMountedDisplayFunctionLibrary::SetTrackingOrigin(EHMDTrackingOrigin::Floor);
 	if (GEngine) GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Blue, FString::Printf(TEXT("Resetting origin.")));
-	//FRotator HMDRotation;
-	//FVector HMDLocation;
-	//UHeadMountedDisplayFunctionLibrary::GetOrientationAndPosition(HMDRotation, HMDLocation);
-	//Camera->SetWorldLocation(FVector(380, -1790, 80));
-	//this->SetActorLocation(FVector(380, -1790, 80));
-	//Camera->AddRelativeRotation(HMDRotation, false); // original
-	//UHeadMountedDisplayFunctionLibrary::ResetOrientationAndPosition(0.0f, EOrientPositionSelector::OrientationAndPosition);
-	//this->SetActorLocation(FVector(500.0f, -300.0f, 0.0f), false);
 }
 
 void APawnMain::RestartGame() {
@@ -189,6 +214,16 @@ APlayerController* APawnMain::GetGenericController()
 	return PlayerControllerOut;
 }
 
+bool APawnMain::HUDResetTimer(const float DurationIn) const
+{
+	if (!PlayerHUD->IsValidLowLevelFast())
+	{
+		return false;
+	}
+	PlayerHUD->SetTimeRemaining(LexToString(DurationIn));
+	return true;
+}
+
 bool APawnMain::CreateAndInitializeWidget()
 {
 	if (!PlayerHUDClass->IsValidLowLevelFast()) { return false; }
@@ -206,15 +241,14 @@ bool APawnMain::CreateAndInitializeWidget()
 	{
 		if (GEngine) GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Red,
 			FString::Printf(TEXT("[APawnMain::CreateAndInitializeWidget()] PlayerHUD not valid.")));
-		UE_DEBUG_BREAK();
 		return false;
 	}
 	
 	PlayerHUD->Init();
 	// this->HUDWidgetComponent->SetWidget(PlayerHUD);
-	// PlayerHUD->AddToViewport();
+	if (!bUseVR) { PlayerHUD->AddToViewport(); }
 	if (GEngine) GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Emerald,
-		FString::Printf(TEXT("[APawnMain::CreateAndInitializeWidget()] OK.")));
+		FString::Printf(TEXT("[APawnMain::CreateAndInitializeWidget()] OK. Using VR? %i"),bUseVR));
 	return true;
 }
 
@@ -227,11 +261,28 @@ void APawnMain::BeginPlay()
 	{
 		PlayerHUD = Cast<UHUDExperiment>(HUDWidget);
 	}
+
+	AGameModeBase* GameModeTemp = GetWorld()->GetAuthGameMode();
+
+	GameMode = Cast<AGameModeMain>(GameModeTemp);
+	if (GameMode->IsValidLowLevelFast())
+	{
+		bUseVR = GameMode->bUseVR;
+		GameMode->PlayerPawn = this;
+	}
+
+	if (bUseVR)
+	{
+		this->Camera->bUsePawnControlRotation = false;
+	}else
+	{
+		this->Camera->bUsePawnControlRotation = false;
+	}
+
 }
 
 void APawnMain::DebugHUDAddTime()
 {
-	
 	DebugTimeRemaining += 1;
 	if ((DebugTimeRemaining % 10 == 0) && PlayerHUD->IsValidLowLevelFast())
 	{
@@ -245,9 +296,15 @@ void APawnMain::DebugHUDAddTime()
 void APawnMain::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
-	if (this->DetectMovement()) {
-		this->OnMovementDetected();
-	}
+	
+	this->OnMovementDetected();
+	// samps += 1;
+	// if (samps % 2 == 0)
+	// {
+	// }
+	// if (this->DetectMovement()) {
+	// 	this->OnMovementDetected();
+	// }
 }
 
 void APawnMain::DestroyHUD()
@@ -267,6 +324,68 @@ void APawnMain::EndPlay(const EEndPlayReason::Type EndPlayReason)
 void APawnMain::Reset()
 {
 	Super::Reset();
+}
+
+void APawnMain::UpdateMovementComponent(FVector InputVector, bool bForce)
+{
+	/* Apply movement, called by MoveForward() or MoveRight().
+	FVector InputVector (scaled 0-1) */
+
+	/*
+	Note: Felix, 8/30/2023
+	Could be more elegant,OurMovementComponentChar->AddInputVector() and then
+	OurMovementComponentChar->GetLastInputVector() is the ideal way to use it.
+	This would prevent having to pass FVector InputVector into UpdateMovementComponent().
+	OurMovementComponentChar->ConsumeInputVector() also returns 0.
+	For now, we have this working.
+	*/
+	//this->RootComponent->AddWorldOffset(InputVector);
+	OurMovementComponentChar->SafeMoveUpdatedComponent(
+		InputVector,
+		OurMovementComponentChar->UpdatedComponent->GetComponentQuat(),
+		bForce,
+		OutHit,
+		TeleportType);
+}
+
+void APawnMain::MoveForward(float AxisValue)
+{
+	if (AxisValue != 0.0f) {
+		if (OurMovementComponentChar && (OurMovementComponentChar->UpdatedComponent == RootComponent))
+		{
+			FVector CameraForwardVector = this->Camera->GetForwardVector();
+			CameraForwardVector.Z = 0.0;
+			this->UpdateMovementComponent(CameraForwardVector * AxisValue * 2, /*force*/ true);
+		}
+	}
+}
+
+void APawnMain::MoveRight(float AxisValue)
+{
+	if (AxisValue != 0.0f) {
+		if (OurMovementComponentChar && (OurMovementComponentChar->UpdatedComponent == RootComponent))
+		{
+			FVector CameraRightVector = this->Camera->GetRightVector();
+			CameraRightVector.Z = 0.0;
+			this->UpdateMovementComponent(CameraRightVector * AxisValue * 2, /* force */true);
+		}
+	}
+}
+
+/* doesn't work with VR */
+void APawnMain::Turn(float AxisValue)
+{
+	FRotator NewRotation = this->Camera->GetRelativeRotation();
+	NewRotation.Yaw += AxisValue;
+	this->Camera->SetRelativeRotation(NewRotation);
+}
+
+/* doesn't work with VR */
+void APawnMain::LookUp(float AxisValue)
+{
+	FRotator NewRotation = this->Camera->GetRelativeRotation();
+	NewRotation.Pitch += AxisValue;
+	this->Camera->SetRelativeRotation(NewRotation);
 }
 
 void APawnMain::OnOverlapBegin(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)

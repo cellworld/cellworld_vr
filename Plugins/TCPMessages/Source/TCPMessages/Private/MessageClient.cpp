@@ -104,9 +104,8 @@ bool UMessageClient::Send(const FString& MessageString) {
 
 URequest* UMessageClient::Subscribe()
 {
-	return SendRequest("!subscribe", "");
+	return SendRequest("!subscribe", "",-1.0f);
 }
-
 
 URequest* UMessageClient::Ping()
 {
@@ -263,6 +262,7 @@ void UMessageClient::Tick(float DeltaTime) {
 			}
 		}
 	}
+	
 	TArray<FString> RequestsIds;
 	PendingRequests.GetKeys(RequestsIds);
 	for (auto &RequestId:RequestsIds)

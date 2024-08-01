@@ -14,9 +14,14 @@ void AMouseKeyboardPlayerController::BeginPlay()
 	AGameModeMain* GameMode;
 	if (GetWorld()) {
 		GameMode = (AGameModeMain*)GetWorld()->GetAuthGameMode();
-		PossessedPawn = Cast<APawnDebug>(GetPawn());
+		PossessedPawn = Cast<APawnMain>(UGameplayStatics::GetPlayerPawn(GetWorld(), 0));
 	}
-	return;
+
+	if (PossessedPawn->IsValidLowLevelFast())
+	{
+		PossessedPawn->Camera->AddRelativeLocation(FVector(0.0f, 0.0f,100.0f),
+			false,nullptr, ETeleportType::TeleportPhysics);
+	}
 }
 
 // Called to bind functionality to input
@@ -45,15 +50,16 @@ void AMouseKeyboardPlayerController::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
-	if (!PossessedPawn) {
-		PossessedPawn = Cast<APawnDebug>(GetPawn());
+	if (!PossessedPawn->IsValidLowLevelFast()) {
+		UE_LOG(LogExperiment, Warning, TEXT("[AMouseKeyboardPlayerController::Tick] PossessedPawn invalid."));
+		PossessedPawn = Cast<APawnMain>(GetPawn());
 	}
 }
 
 void AMouseKeyboardPlayerController::ResetOrigin()
 {
 	if (PossessedPawn) {
-		PossessedPawn->ResetOrigin();
+		// PossessedPawn->ResetOrigin();
 	}
 }
 
