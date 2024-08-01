@@ -181,12 +181,8 @@ void APawnMain::OnMovementDetected()
 	{
 		FinalLocation = this->RootComponent->GetComponentLocation();
 	}
-		
+	
 	MovementDetectedEvent.Broadcast(FinalLocation); 
-	// if (GEngine) GEngine->AddOnScreenDebugMessage(-1, 15.0f,
-	// 	FColor::Cyan, FString::Printf(TEXT("Loc: %0.2f, %0.2f, %0.2f"),
-	// 		FinalLocation.X, FinalLocation.Y, FinalLocation.Z));
-
 }
 
 void APawnMain::ResetOrigin() 
@@ -245,7 +241,6 @@ bool APawnMain::CreateAndInitializeWidget()
 	{
 		if (GEngine) GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Red,
 			FString::Printf(TEXT("[APawnMain::CreateAndInitializeWidget()] PlayerHUD not valid.")));
-		UE_DEBUG_BREAK();
 		return false;
 	}
 	
@@ -272,7 +267,8 @@ void APawnMain::BeginPlay()
 	GameMode = Cast<AGameModeMain>(GameModeTemp);
 	if (GameMode->IsValidLowLevelFast())
 	{
-		bUseVR = GameMode->bUseVR; 
+		bUseVR = GameMode->bUseVR;
+		GameMode->PlayerPawn = this;
 	}
 
 	if (bUseVR)
@@ -282,6 +278,7 @@ void APawnMain::BeginPlay()
 	{
 		this->Camera->bUsePawnControlRotation = false;
 	}
+
 }
 
 void APawnMain::DebugHUDAddTime()
@@ -299,7 +296,12 @@ void APawnMain::DebugHUDAddTime()
 void APawnMain::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
+	
 	this->OnMovementDetected();
+	// samps += 1;
+	// if (samps % 2 == 0)
+	// {
+	// }
 	// if (this->DetectMovement()) {
 	// 	this->OnMovementDetected();
 	// }
@@ -353,7 +355,7 @@ void APawnMain::MoveForward(float AxisValue)
 		{
 			FVector CameraForwardVector = this->Camera->GetForwardVector();
 			CameraForwardVector.Z = 0.0;
-			this->UpdateMovementComponent(CameraForwardVector * AxisValue * 1, /*force*/ true);
+			this->UpdateMovementComponent(CameraForwardVector * AxisValue * 2, /*force*/ true);
 		}
 	}
 }
@@ -365,7 +367,7 @@ void APawnMain::MoveRight(float AxisValue)
 		{
 			FVector CameraRightVector = this->Camera->GetRightVector();
 			CameraRightVector.Z = 0.0;
-			this->UpdateMovementComponent(CameraRightVector * AxisValue * 1, /* force */true);
+			this->UpdateMovementComponent(CameraRightVector * AxisValue * 2, /* force */true);
 		}
 	}
 }

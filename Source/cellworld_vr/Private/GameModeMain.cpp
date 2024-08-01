@@ -30,17 +30,26 @@ void AGameModeMain::SpawnExperimentServiceMonitor()
 	if (GetWorld())
 	{
 		// Define spawn parameters
-		FActorSpawnParameters SpawnParams;
-		SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButAlwaysSpawn;
-
 		// Specify the location and rotation for the new actor
 		FVector Location(0.0f, 0.0f, 0.0f); // Change to desired spawn location
 		FRotator Rotation(0.0f, 0.0f, 0.0f); // Change to desired spawn rotation
 
-		// Spawn the character
-		ExperimentServiceMonitor = GetWorld()->SpawnActor<AExperimentServiceMonitor>(AExperimentServiceMonitor::StaticClass(), Location, Rotation, SpawnParams);
+		/* old version */
+		// FActorSpawnParameters SpawnParams;
+		// SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButAlwaysSpawn;
+		// ExperimentServiceMonitor = GetWorld()->SpawnActor<AExperimentServiceMonitor>(AExperimentServiceMonitor::StaticClass(), Location, Rotation, SpawnParams);
 
+		// Spawn the predator
+		FTransform SpawnTransformPredator = {};
+		SpawnTransformPredator.SetLocation(Location);
+		SpawnTransformPredator.SetRotation(Rotation.Quaternion());
+		ESpawnActorCollisionHandlingMethod CollisionHandlingMethod = ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButAlwaysSpawn;
+
+		ExperimentServiceMonitor = GetWorld()->SpawnActorDeferred<AExperimentServiceMonitor>(
+			AExperimentServiceMonitor::StaticClass(), SpawnTransformPredator, this, nullptr, CollisionHandlingMethod);
+		ExperimentServiceMonitor->WorldScale = this->WorldScale; 
 		ExperimentServiceMonitor->ExperimentInfo.OnExperimentStatusChangedEvent.AddDynamic(this, &AGameModeMain::OnExperimentStatusChanged);
+		ExperimentServiceMonitor->FinishSpawning(SpawnTransformPredator);
 	}
 }
 
@@ -73,7 +82,7 @@ AActor* AGameModeMain::GetLevelActorFromName(const FName& ActorNameIn)
 void AGameModeMain::SpawnAndPossessPlayer(FVector spawn_location, FRotator spawn_rotation)
 {
 	// add some height for WASD player 
-	if (!bUseVR) { spawn_location.Z += 100; }
+	if (!bUseVR) { spawn_location.Z += 100*WorldScale; }
 	
 	if (GEngine) GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Red,
 		FString::Printf(TEXT("[AGameModeMain::SpawnAndPossessPlayer]!")));
@@ -168,25 +177,27 @@ void AGameModeMain::OnUpdateHUDTimer(){
 		// 	FString::Printf(TEXT("[AGameModeMain::OnUpdateHUDTimer()] Error with getting time from ESM.")));
 	}
 
-	if (PlayerPawn->IsValidLowLevelFast() && PlayerPawn->PlayerHUD->IsValidLowLevelFast())
-	{
-		PlayerPawn->PlayerHUD->SetTimeRemaining(FString::FromInt(FMath::FloorToInt(TimeRemaining+1))); // counter the round down
-		// if (GEngine) GEngine->AddOnScreenDebugMessage(-1, 3.0f, FColor::Green,
-		// 	FString::Printf(TEXT("[AGameModeMain::OnUpdateHUDTimer()] Setting timer from game mode! %0.5f -> %i"),TimeRemaining,FMath::FloorToInt(TimeRemaining+1)));
-	}else
-	{
-		if (GEngine) GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Red, FString::Printf(TEXT("[AGameModeMain::OnUpdateHUDTimer()] ERROR setting timer from game mode!.")));
+	if (PlayerPawn->IsValidLowLevelFast()) {
+		if (PlayerPawn->PlayerHUD->IsValidLowLevelFast()) {
+			PlayerPawn->PlayerHUD->SetTimeRemaining(FString::FromInt(FMath::FloorToInt(TimeRemaining+1))); // counter the round down
+		} else {
+			if (GEngine) GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Red,
+					FString::Printf(TEXT("[AGameModeMain::OnUpdateHUDTimer()] HUD not valid.")));
+		}
+	}else{
+		if (GEngine) GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Red,
+					FString::Printf(TEXT("[AGameModeMain::OnUpdateHUDTimer()] PlayerPawn not valid.")));
 	}
-
 }
 
+// todo: bug - either playerpawn or enum as string is not valid
 void AGameModeMain::OnExperimentStatusChanged(const EExperimentStatus ExperimentStatusIn)
 {
 	const TEnumAsByte<EExperimentStatus> ExperimentStatusInByted = ExperimentStatusIn;
 	const FString EnumAsString = UEnum::GetValueAsString(ExperimentStatusInByted.GetValue());
 
-	int32 Index;
-	if (EnumAsString.FindChar(TEXT(':'), Index))
+	int32 Index; 
+	if (PlayerPawn->IsValidLowLevelFast() && EnumAsString.FindChar(TEXT(':'), Index))
 	{
 		PlayerPawn->PlayerHUD->SetCurrentStatus(EnumAsString.Mid(Index + 2));
 	}
@@ -201,16 +212,17 @@ void AGameModeMain::StartPlay()
 {
 	Super::StartPlay();
 	UE_LOG(LogExperiment, Warning, TEXT("[AGameModeMain::StartPlay()] Starting game!"));
-	
+
 	/* spawn player */
 	FLocation SpawnLocation;
 	SpawnLocation.x = 0.0f;
 	SpawnLocation.y = 0.4f;
-	FVector SpawnLocationVR = UExperimentUtils::CanonicalToVr(SpawnLocation,235.185,4.0f);
+	
+	FVector SpawnLocationVR = UExperimentUtils::CanonicalToVr(SpawnLocation,235.185,this->WorldScale);
 
-	// if (!bUseVR) { SpawnLocationVR.Z += 100; } 
+	if (!bUseVR) { SpawnLocationVR.Z += 100; } 
 
-	this->SpawnAndPossessPlayer(SpawnLocationVR, FRotator::ZeroRotator);
+	// this->SpawnAndPossessPlayer(SpawnLocationVR, FRotator::ZeroRotator);
 	
 	GetWorldTimerManager().SetTimer(TimerHUDUpdate, this, &AGameModeMain::OnUpdateHUDTimer, 0.5f, true, -1.0f);
 
@@ -218,7 +230,6 @@ void AGameModeMain::StartPlay()
 	else { UE_LOG(LogExperiment, Warning, TEXT("[AGameModeMain::StartPlay()] Not spawning Experiment Service!")); }
 	
 	AGameModeMain::StopLoadingScreen();
-
 }
 
 void AGameModeMain::EndPlay(const EEndPlayReason::Type EndPlayReason)
@@ -232,12 +243,15 @@ void AGameModeMain::EndPlay(const EEndPlayReason::Type EndPlayReason)
 
 	// remove all timers from this object
 	GetWorldTimerManager().ClearAllTimersForObject(this);
-	
 }
 
 void AGameModeMain::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
+	// if (!PlayerPawn->IsValidLowLevelFast())
+	// {
+	// 	GetWorld()->GetFirstPlayerController()
+	// }
 }
 
 bool AGameModeMain::ExperimentStartEpisode() { 

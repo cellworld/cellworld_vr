@@ -47,20 +47,20 @@ enum class EExperimentStatus : uint8
 {
 	// client is in an active experiment/episode (can be both - maybe ill change to no) 
 	InExperiment		  	 UMETA(DisplayName = "InExperiment"),
-	InEpisode			  	 UMETA(DisplayName = "InEpisode"),
+	InEpisode			  	 UMETA(DisplayName = "InEpisode"), // 1
 
 	// episode failed - time ran out  
 	FailedEpisodeTimer	     UMETA(DisplayName = "FailedEpisodeTimer"),
 
 	// 'waiting room' flags - waiting for XYZ to start 
 	WaitingExperiment	  	 UMETA(DisplayName = "WaitingExperiment"),
-	WaitingEpisode		  	 UMETA(DisplayName = "WaitingEpisode"),
+	WaitingEpisode		  	 UMETA(DisplayName = "WaitingEpisode"), // 4
 	WaitingFinishSuccess     UMETA(DisplayName = "WaitingFinishSuccess"),
-	WaitingFinishError	     UMETA(DisplayName = "WaitingFinishError"),
+	WaitingFinishError	     UMETA(DisplayName = "WaitingFinishError"), // 6
 	
 	// completion flags
 	FinishedExperiment	  	 UMETA(DisplayName = "FinishedExperiment"),
-	FinishedEpisodeSuccess   UMETA(DisplayName = "FinishedEpisodeSuccess"),
+	FinishedEpisodeSuccess   UMETA(DisplayName = "FinishedEpisodeSuccess"), //8
 	FinishedEpisode   UMETA(DisplayName = "FinishedEpisode"),
 	
 

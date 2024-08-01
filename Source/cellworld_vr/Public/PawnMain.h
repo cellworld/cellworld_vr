@@ -47,6 +47,7 @@ public:
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
+	uint32 samps = 0; 
 	
 	//AGameModeMain* GameMode = nullptr; 
 

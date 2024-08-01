@@ -27,6 +27,7 @@ public:
 	virtual void Init() override;
 	virtual void Shutdown() override;
 	virtual void StartGameInstance() override;
+	AActor* GetLevelActorFromTag(const FName& TagIn);
 
 	/* file management */
 	FString dir_project;
@@ -48,11 +49,10 @@ public:
 	bool bCanTransition = 0;
 
 	/* controller mode selection (VR or Mouse + Keyboard) */
-	int ControllerMode = 0; // default to VR unless stated in config.txt
 
 	// AActor* GetLevelActorFromName(const FName& NameIn);
-	const FVector GetLevelScale(AActor* LevelActor);
+	FVector GetLevelScale(const AActor* LevelActor);
 	void SetWorldScale(float WorldScaleIn);
 	UPROPERTY(EditAnywhere)
-	float WorldScale = 7.5f;
+	float WorldScale = 5.0f;
 };

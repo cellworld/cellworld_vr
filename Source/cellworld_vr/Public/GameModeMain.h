@@ -15,9 +15,9 @@ public:
 	
 	GENERATED_BODY()
 	virtual void EndGame();
-
+	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Debug")
-	bool bUseVR = true;
+	bool bUseVR = false;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Debug")
 	bool bSpawnExperimentService = true;
 	
@@ -26,13 +26,15 @@ public:
 	
 	/* debug */
 	TObjectPtr<UClass> PawnClassToSpawn;
-	TObjectPtr<APawnMain> PlayerPawn;
+	UPROPERTY(EditAnywhere)
+		TObjectPtr<APawnMain> PlayerPawn;
 	FVector InitialPlayerLocation;
 	FRotator InitialPlayerRotation;
 
 	/* spawning player */
-	FVector spawn_location_player  = { -1700.0,1500.000000,30.000000 };
-	FRotator spawn_rotation_player = { 0.0,0.0, 0.0 };
+	float WorldScale = 6.0f;
+	// FVector spawn_location_player  = { -1700.0,1500.000000,30.000000 };
+	// FRotator spawn_rotation_player = { 0.0,0.0, 0.0 };
 	void SpawnAndPossessPlayer(FVector spawn_location, FRotator spawn_rotation);
 	bool AttachClientToPlayer(TObjectPtr<UMessageClient> ClientIn, TObjectPtr<APawnMain> PawnIn);
 
@@ -42,7 +44,6 @@ public:
 	/* timers */
 	FTimerHandle TimerHandleUpdateHUD;
 	FTimerHandle TimerHUDUpdate;
-
 
 	/* spawn everything */
 	void SpawnAllLoggingActor(); 

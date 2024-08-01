@@ -16,6 +16,12 @@ void AMouseKeyboardPlayerController::BeginPlay()
 		GameMode = (AGameModeMain*)GetWorld()->GetAuthGameMode();
 		PossessedPawn = Cast<APawnMain>(UGameplayStatics::GetPlayerPawn(GetWorld(), 0));
 	}
+
+	if (PossessedPawn->IsValidLowLevelFast())
+	{
+		PossessedPawn->Camera->AddRelativeLocation(FVector(0.0f, 0.0f,100.0f),
+			false,nullptr, ETeleportType::TeleportPhysics);
+	}
 }
 
 // Called to bind functionality to input

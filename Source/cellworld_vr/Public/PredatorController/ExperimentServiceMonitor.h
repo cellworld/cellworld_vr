@@ -19,38 +19,6 @@
 #include "ExperimentServiceMonitor.generated.h"
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnExperimentStatusChanged, EExperimentStatus, ExperimentStatusIn);
-//
-// UENUM(Blueprintable)
-// enum class EExperimentStatus : uint8
-// {
-// 	// client is in an active experiment/episode (can be both - maybe ill change to no) 
-// 	InExperiment		  	 UMETA(DisplayName = "InExperiment"),
-// 	InEpisode			  	 UMETA(DisplayName = "InEpisode"),
-//
-// 	// episode failed - time ran out  
-// 	FailedEpisodeTimer	     UMETA(DisplayName = "FailedEpisodeTimer"),
-//
-// 	// 'waiting room' flags - waiting for XYZ to start 
-// 	WaitingExperiment	  	 UMETA(DisplayName = "WaitingExperiment"),
-// 	WaitingEpisode		  	 UMETA(DisplayName = "WaitingEpisode"),
-// 	WaitingFinishSuccess     UMETA(DisplayName = "WaitingFinishSuccess"),
-// 	WaitingFinishError	     UMETA(DisplayName = "WaitingFinishError"),
-// 	
-// 	// completion flags
-// 	FinishedExperiment	  	 UMETA(DisplayName = "FinishedExperiment"),
-// 	FinishedEpisode		  	 UMETA(DisplayName = "FinishedEpisode"),
-//
-// 	// error flags
-// 	ErrorStartExperiment 	 UMETA(DisplayName = "FailedStartExperiment"),
-// 	ErrorStartEpisode    	 UMETA(DisplayName = "FailedStartEpisode"),
-// 	ErrorFinishedExperiment  UMETA(DisplayName = "FailedFinishedExperiment"),
-// 	ErrorFinishEpisode		 UMETA(DisplayName = "FailedFinishEpisode"),
-// 	ErrorTimedOutExperiment	 UMETA(DisplayName="TimedOutExperiment"),
-// 	ErrorTimedOutEpisode	 UMETA(DisplayName="TimedOutEpisode"),
-// 	
-// 	// there's always stuff we don't expect, right? 
-// 	Unknown				     UMETA(DisplayName = "Unknown"),
-// };
 
 USTRUCT(Blueprintable)
 struct FExperimentTimer
@@ -115,6 +83,7 @@ public:
 		const FRotator Rotation(0.0f, 0.0f, 0.0f); // Desired spawn rotation
 		const float ScaleOffset = 0.99157164105; 
 		const float MapLength = 235.185290;
+		
 		FActorSpawnParameters SpawnParams;
 		for (int i = 0; i < AllLocations.Num(); i++) {
 			AOcclusion* SpawnOcclusion = WorldRefIn->SpawnActor<AOcclusion>(
@@ -218,6 +187,17 @@ class CELLWORLD_VR_API AExperimentServiceMonitor : public AActor
 public:	
 	AExperimentServiceMonitor();
 
+	/* ==== server stuff ==== */
+	
+	// const FString ServerIPMessage = "172.26.176.129";  // lab pc wsl 
+	// const FString ServerIPMessage = "192.168.137.111"; // static laptop lab 
+	// const FString ServerIPMessage = "10.0.0.77";		  // crib
+	
+	const FString ServerIPMessage = "192.168.137.13";  // static vr backpack win11 PACKAGED ONLY
+	// const FString ServerIPMessage = "172.23.126.101";  // static vr backpack WSL EDITOR ONLY
+	const int ServerPort	      = 4970;
+	const int TrackingPort	      = 4790;
+	
 	/* DEBUG */
 	bool bTimerRunning = false;
 	GenericClock::FStopWatch StopWatch;
@@ -270,16 +250,6 @@ public:
 	UPROPERTY()
 		TObjectPtr<URequest> GetOcclusionsRequest;
 
-	/* ==== server stuff ==== */
-	
-	// const FString ServerIPMessage = "172.26.176.129";   // lab pc new
-	// const FString ServerIPMessage = "192.168.137.111"; // static laptop lab 
-	// const FString ServerIPMessage = "127.0.0.1";		  // localhost  
-	const FString ServerIPMessage = "10.0.0.77";		  // home eth
-	// const FString ServerIPMessage = "172.30.127.68";		  // home wsl
-	const int ServerPort	      = 4970;
-	const int TrackingPort	      = 4790;
-
 	/* ==== status stuff ==== */
 	UPROPERTY()
 		FExperimentInfo ExperimentInfo {};
@@ -292,16 +262,15 @@ public:
 	bool bConnectedToServer			 = false;
 
 	/* ==== world stuff ==== */
-	float map_length      = 5100;
 	int FrameCount        = 0; // todo: will probably delete 
 	const float MapLength = 235.185;
-	float WorldScale      = 4.0f; 
+	const float PredatorScaleFactor = 0.5f; 
+	float WorldScale      = 1.0f;
 
 	/* ==== setup ==== */
 	bool SpawnAndPossessPredator();
-	// ACharacter* CharacterPredator = nullptr;
 	UPROPERTY()
-	TObjectPtr<APredatorBasic> PredatorBasic = nullptr;
+		TObjectPtr<APredatorBasic> PredatorBasic = nullptr;
 
 	/* functions called by GameMode and Blueprints */
 	static UMessageClient* CreateNewClient();
@@ -320,9 +289,15 @@ public:
 	UFUNCTION(BlueprintCallable, Category = Experiment)
 		bool StartTimerEpisode(const float DurationIn, FTimerHandle TimerHandleIn);
 
+	UPROPERTY(EditAnywhere)
+		TObjectPtr<APawnMain> PlayerPawnActive = nullptr;
+	UPROPERTY(EditAnywhere)
+		TObjectPtr<APawnMain> PlayerPawn = nullptr;
+
 	/* ==== helper functions  ==== */
 	bool ValidateLevel(UWorld* InWorld, const FString InLevelName);
 	bool GetPlayerPawn();
+	
 	void SelfDestruct(const FString InErrorMessage);
 
 	
@@ -445,5 +420,4 @@ public:
 	virtual void Tick(float DeltaTime) override;
 	virtual void EndPlay(const EEndPlayReason::Type EndPLayReason) override;
 
-	
 };
