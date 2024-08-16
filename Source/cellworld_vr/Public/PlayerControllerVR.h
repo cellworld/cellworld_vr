@@ -19,8 +19,6 @@ public:
 	/* overrides */
 	virtual void BeginPlay() override;
 	virtual void SetupInputComponent() override;
-	void StartExperiment();
-	void StartEpisode();
 	virtual void Tick(float DeltaTime) override;
 	//AGameModeMain* GameMode;
 

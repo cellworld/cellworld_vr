@@ -15,6 +15,7 @@ public class cellworld_vr : ModuleRules
             "EyeTracker","InputCore","UMG","NavigationSystem",
             "TCPMessages", "ExperimentPlugin", "AIModule", "GameplayTasks",
             "Json", "JsonUtilities", "AsyncLoadingScreen","UnrealEngineTemplateModule",
+            "MiscUtils"
         });
         PrivateDependencyModuleNames.AddRange(new string[] { "HeadMountedDisplay", "XRBase", "Slate", "SlateCore" });
 

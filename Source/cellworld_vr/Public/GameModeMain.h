@@ -19,10 +19,10 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Debug")
 	bool bUseVR = false;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Debug")
-	bool bSpawnExperimentService = true;
+	bool bSpawnExperimentService = false;
 	
 	/* world and coordinate system stuff */
-	AActor* GetLevelActorFromName(const FName& ActorNameIn);
+	AActor* GetLevelActorFromName(const FName& ActorNameIn) const;
 	
 	/* debug */
 	TObjectPtr<UClass> PawnClassToSpawn;
@@ -61,7 +61,7 @@ public:
 
 	/* to store waypoint info  */
 	virtual void InitGame(const FString& MapName, const FString& Options, FString& ErrorMessage) override;
-	virtual void InitGameState();
+	virtual void InitGameState() override;
 	virtual void StartPlay() override;
 	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 	virtual void Tick(float DeltaTime) override;

@@ -30,26 +30,6 @@ void APlayerControllerVR::SetupInputComponent()
 	InputComponent->BindAction("QuitGame", EInputEvent::IE_Pressed, this, &APlayerControllerVR::QuitGame);
 	InputComponent->BindAction("RestartGame", EInputEvent::IE_Pressed, this, &APlayerControllerVR::RestartGame);
 	// todo: change to Start: Experiment,Episode; Stop: Experiment, Episode; Send: GetOcclusions; GetOcclusionLocations
-	InputComponent->BindAction("StartExperiment", EInputEvent::IE_Pressed, this, &APlayerControllerVR::StartExperiment);
-	InputComponent->BindAction("StartEpisode", EInputEvent::IE_Pressed, this, &APlayerControllerVR::StartEpisode);
-}
-
-void APlayerControllerVR::StartExperiment()
-{
-	if (PossessedPawn)
-	{
-		UE_DEBUG_BREAK();
-		// PossessedPawn->StartExperiment();
-	}
-}
-
-void APlayerControllerVR::StartEpisode()
-{
-	if (PossessedPawn)
-	{
-		UE_DEBUG_BREAK();
-		PossessedPawn->StartEpisode();
-	}
 }
 
 void APlayerControllerVR::RestartGame()

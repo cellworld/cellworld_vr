@@ -20,6 +20,10 @@ public:
 	/* overrides */
 	virtual void BeginPlay() override;
 	virtual void SetupInputComponent() override;
+	void DbgStartExperiment();
+	void DbgStopExperiment();
+	void DbgStopEpisode();
+	void DbgStartEpisode();
 	virtual void Tick(float DeltaTime) override;
 
 	/* game flow */

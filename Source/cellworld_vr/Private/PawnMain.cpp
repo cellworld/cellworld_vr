@@ -6,16 +6,11 @@
 #include "Components/SceneComponent.h"
 #include "Components/SkeletalMeshComponent.h"
 #include "HeadMountedDisplayFunctionLibrary.h"
-#include "IXRTrackingSystem.h"
 #include "cellworld_vr/cellworld_vr.h"
 #include "Components/EditableTextBox.h"
-#include "Engine/GameEngine.h"
 #include "GameFramework/PlayerController.h"
 #include "GameFramework/CharacterMovementComponent.h" // test 
 #include "Kismet/GameplayStatics.h"
-#include "Kismet/KismetStringLibrary.h" 
-#include "Kismet/KismetMathLibrary.h"
-#include "NavAreas/NavArea_Obstacle.h"
 
 // Sets default values
 AGameModeMain* GameMode; // forward declare to avoid circular dependency
@@ -32,7 +27,7 @@ APawnMain::APawnMain() : Super()
 	/* create collision component */
 	CapsuleComponent = CreateDefaultSubobject<UCapsuleComponent>(TEXT("CapsuleComponent"));
 	CapsuleComponent->SetMobility(EComponentMobility::Movable);
-	CapsuleComponent->InitCapsuleSize(_capsule_radius, _capsule_half_height);
+	CapsuleComponent->InitCapsuleSize(CapsuleRadius, CapsuleHalfHeight);
 	CapsuleComponent->SetCollisionProfileName(TEXT("Pawn"));
 	CapsuleComponent->OnComponentBeginOverlap.AddDynamic(this, &APawnMain::OnOverlapBegin); // overlap events
 	CapsuleComponent->OnComponentEndOverlap.AddDynamic(this, &APawnMain::OnOverlapEnd); // overlap events 
@@ -41,7 +36,7 @@ APawnMain::APawnMain() : Super()
 	/* create camera component as root so pawn moves with camera */
 	Camera = CreateDefaultSubobject<UCameraComponent>(TEXT("ActualCamera"));
 	Camera->SetMobility(EComponentMobility::Movable);
-	Camera->SetRelativeLocation(FVector(0.0f,0.0f,-_capsule_half_height)); // todo: make sure this is OK
+	Camera->SetRelativeLocation(FVector(0.0f, 0.0f, -CapsuleHalfHeight)); // todo: make sure this is OK
 	Camera->bUsePawnControlRotation = false; // todo: add flag, true for VR
 	Camera->SetupAttachment(RootComponent);
 
@@ -50,13 +45,13 @@ APawnMain::APawnMain() : Super()
 	HUDWidgetComponent->AttachToComponent(Camera, FAttachmentTransformRules::KeepRelativeTransform);
 	HUDWidgetComponent->SetOnlyOwnerSee(true);
 	HUDWidgetComponent->SetVisibility(true);
-	HUDWidgetComponent->SetRelativeLocation(FVector(250.0f,30.0f,-20.0f));
-	HUDWidgetComponent->SetRelativeScale3D(FVector(0.25f,0.25f,0.25f));
-	HUDWidgetComponent->SetRelativeRotation(FRotator(0.0f,-180.0f,0.0f));
+	HUDWidgetComponent->SetRelativeLocation(FVector(250.0f, 30.0f, -20.0f));
+	HUDWidgetComponent->SetRelativeScale3D(FVector(0.25f, 0.25f, 0.25f));
+	HUDWidgetComponent->SetRelativeRotation(FRotator(0.0f, -180.0f, 0.0f));
 	HUDWidgetComponent->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	HUDWidgetComponent->SetWidgetSpace(EWidgetSpace::Screen);
-	HUDWidgetComponent->SetDrawSize(FVector2d(1080,720));
-	
+	HUDWidgetComponent->SetDrawSize(FVector2d(1080, 720));
+
 	/*Create Motion Controllers*/
 	MotionControllerLeft = CreateDefaultSubobject<UMotionControllerComponent>(TEXT("MotionControllerLeft"));
 	MotionControllerLeft->CreationMethod = EComponentCreationMethod::Native;
@@ -84,10 +79,13 @@ APawnMain::APawnMain() : Super()
 	OurMovementComponentChar->SetActive(true);
 	OurMovementComponentChar->UpdatedComponent = RootComponent;
 
-	const FSoftClassPath PlayerHUDClassRef(TEXT("/Script/UMGEditor.WidgetBlueprint'/Game/Interfaces/BP_HUDExperiment.BP_HUDExperiment_C'"));
-	if (TSubclassOf<UHUDExperiment> HUDClass = PlayerHUDClassRef.TryLoadClass<UHUDExperiment>()){
+	const FSoftClassPath PlayerHUDClassRef(
+		TEXT("/Script/UMGEditor.WidgetBlueprint'/Game/Interfaces/BP_HUDExperiment.BP_HUDExperiment_C'"));
+	if (TSubclassOf<UHUDExperiment> HUDClass = PlayerHUDClassRef.TryLoadClass<UHUDExperiment>())
+	{
 		HUDWidgetComponent->SetWidgetClass(HUDClass);
-	} else { UE_LOG(LogExperiment, Error, TEXT("[APawnMain::APawnMain()] Couldn't find HUD experiment.")); }
+	}
+	else { UE_LOG(LogExperiment, Error, TEXT("[APawnMain::APawnMain()] Couldn't find HUD experiment.")); }
 }
 
 // Called to bind functionality to input
@@ -101,16 +99,20 @@ UCameraComponent* APawnMain::GetCameraComponent()
 	return this->Camera;
 }
 
-void APawnMain::StartExperiment()
+void APawnMain::DbgStartExperiment()
 {
-	if (GEngine) GEngine->AddOnScreenDebugMessage(-1, 0.5f, FColor::Red, FString::Printf(TEXT("[APawnMain::StartExperiment()]")));
-	return;
 }
 
-void APawnMain::StartEpisode()
+void APawnMain::DbgStopExperiment()
 {
-	if (GEngine) GEngine->AddOnScreenDebugMessage(-1, 0.5f, FColor::Red, FString::Printf(TEXT("[APawnMain::StartEpisode()]")));
-	return; 
+}
+
+void APawnMain::DbgStopEpisode()
+{
+}
+
+void APawnMain::DbgStartEpisode()
+{
 }
 
 void APawnMain::ValidateHMD()
@@ -136,19 +138,21 @@ bool APawnMain::DetectMovement()
 	bool _blocation_updated = false;
 	FVector NewLocation;
 	FRotator NewRotation;
-	
+
 	if (UHeadMountedDisplayFunctionLibrary::IsHeadMountedDisplayEnabled())
 	{
 		UHeadMountedDisplayFunctionLibrary::GetOrientationAndPosition(NewRotation, NewLocation);
 		this->UpdateRoomScaleLocation();
 	}
-	else{ // using WASD
+	else
+	{
+		// using WASD
 		if (GetWorld() && GetWorld()->GetFirstPlayerController())
 		{
 			NewLocation = GetWorld()->GetFirstPlayerController()->GetPawn()->GetActorLocation();
-		}		
+		}
 	}
-	
+
 	return true;
 }
 
@@ -161,45 +165,44 @@ void APawnMain::UpdateRoomScaleLocation()
 
 	FVector DeltaLocation = CameraLocation - CapsuleLocation;
 	DeltaLocation.Z = 0.0f;
-	
+
 	AddActorWorldOffset(DeltaLocation, false, nullptr, ETeleportType::TeleportPhysics);
 	VROrigin->AddWorldOffset(-DeltaLocation, false, nullptr, ETeleportType::TeleportPhysics);
-	this->CapsuleComponent->SetWorldLocation(CameraLocation); 
+	this->CapsuleComponent->SetWorldLocation(CameraLocation);
 }
 
 void APawnMain::OnMovementDetected()
 {
-	FVector FinalLocation = {}; 
-	if (bUseVR)
-	{
+	UE_LOG(LogExperiment, Warning, TEXT("mvmt detected event"));
+	FVector FinalLocation = {};
+	if (bUseVR) {
 		FVector HMDLocation = {};
 		FRotator HMDRotation = {};
 		UHeadMountedDisplayFunctionLibrary::GetOrientationAndPosition(HMDRotation, HMDLocation);
 		FinalLocation = HMDLocation + this->VROrigin->GetComponentLocation();
 		this->UpdateRoomScaleLocation(); // todo: test with VR
-	}else
-	{
-		FinalLocation = this->RootComponent->GetComponentLocation();
-	}
-	
-	MovementDetectedEvent.Broadcast(FinalLocation); 
+	} else { FinalLocation = this->RootComponent->GetComponentLocation(); }
+
+	MovementDetectedEvent.Broadcast(FinalLocation);
 }
 
-void APawnMain::ResetOrigin() 
+void APawnMain::ResetOrigin()
 {
 	if (GEngine) GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Blue, FString::Printf(TEXT("Resetting origin.")));
 }
 
-void APawnMain::RestartGame() {
-
+void APawnMain::RestartGame()
+{
 	FName level_loading = TEXT("L_Loading");
 	UGameplayStatics::OpenLevel(this, level_loading, true);
 }
 
 void APawnMain::QuitGame()
 {
-	if (GEngine) {
-		GEngine->AddOnScreenDebugMessage(-1, 0.5f, FColor::Red, FString::Printf(TEXT("[APawnMain::QuitGame()] Quit game.")));
+	if (GEngine)
+	{
+		GEngine->AddOnScreenDebugMessage(-1, 0.5f, FColor::Red,
+		                                 FString::Printf(TEXT("[APawnMain::QuitGame()] Quit game.")));
 	}
 }
 
@@ -216,39 +219,47 @@ APlayerController* APawnMain::GetGenericController()
 
 bool APawnMain::HUDResetTimer(const float DurationIn) const
 {
-	if (!PlayerHUD->IsValidLowLevelFast())
-	{
-		return false;
-	}
+	if (!PlayerHUD->IsValidLowLevelFast()) { return false; }
+
 	PlayerHUD->SetTimeRemaining(LexToString(DurationIn));
+
 	return true;
 }
 
 bool APawnMain::CreateAndInitializeWidget()
 {
 	if (!PlayerHUDClass->IsValidLowLevelFast()) { return false; }
-	
+
 	APlayerController* PlayerController = GetWorld()->GetFirstPlayerController();
+	check(PlayerController->IsValidLowLevelFast());
+
 	if (!PlayerController->IsValidLowLevelFast())
 	{
-		if (GEngine) GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Red,
-			FString::Printf(TEXT("[APawnMain::CreateAndInitializeWidget()] PlayerController not valid.")));
-		UE_DEBUG_BREAK(); return false;
+		UE_LOG(LogExperiment, Error, TEXT("[APawnMain::CreateAndInitializeWidget()] PlayerController not valid."));
+		return false;
 	}
 
 	PlayerHUD = CreateWidget<UHUDExperiment>(PlayerController, PlayerHUDClass);
 	if (!PlayerHUD->IsValidLowLevelFast())
 	{
-		if (GEngine) GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Red,
-			FString::Printf(TEXT("[APawnMain::CreateAndInitializeWidget()] PlayerHUD not valid.")));
+		if (GEngine)
+			GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Red,
+			                                 FString::Printf(TEXT(
+				                                 "[APawnMain::CreateAndInitializeWidget()] PlayerHUD not valid.")));
 		return false;
 	}
-	
+
 	PlayerHUD->Init();
-	// this->HUDWidgetComponent->SetWidget(PlayerHUD);
+
 	if (!bUseVR) { PlayerHUD->AddToViewport(); }
-	if (GEngine) GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Emerald,
-		FString::Printf(TEXT("[APawnMain::CreateAndInitializeWidget()] OK. Using VR? %i"),bUseVR));
+	else { this->HUDWidgetComponent->SetWidget(PlayerHUD); }
+
+	if (GEngine)
+		GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Emerald,
+		                                 FString::Printf(
+			                                 TEXT("[APawnMain::CreateAndInitializeWidget()] OK. Using VR? %i"),
+			                                 bUseVR));
+
 	return true;
 }
 
@@ -257,32 +268,33 @@ void APawnMain::BeginPlay()
 {
 	Super::BeginPlay();
 
-	if (UUserWidget* HUDWidget = HUDWidgetComponent->GetWidget())
-	{
-		PlayerHUD = Cast<UHUDExperiment>(HUDWidget);
-	}
+	if (UUserWidget* HUDWidget = HUDWidgetComponent->GetWidget()) { PlayerHUD = Cast<UHUDExperiment>(HUDWidget); }
+	check(PlayerHUD->IsValidLowLevelFast());
 
 	AGameModeBase* GameModeTemp = GetWorld()->GetAuthGameMode();
-
 	GameMode = Cast<AGameModeMain>(GameModeTemp);
-	if (GameMode->IsValidLowLevelFast())
-	{
+	if (GameMode->IsValidLowLevelFast()) {
 		bUseVR = GameMode->bUseVR;
 		GameMode->PlayerPawn = this;
 	}
-
-	if (bUseVR)
-	{
-		this->Camera->bUsePawnControlRotation = false;
-	}else
-	{
-		this->Camera->bUsePawnControlRotation = false;
-	}
-
+	float DurationIn = 1.0f / 90.0f;
+	
+	GetWorld()->GetTimerManager().SetTimer(TimerHandleDetectMovement, this,
+			&APawnMain::OnMovementDetected,
+			DurationIn, true, -1.0f);
+	
+	// todo: fix this dumb struct 
+	// EventTimer.TimerDelegate.BindUObject(this, &APawnMain::OnMovementDetected);
+	// if (!EventTimer.Start()) {
+	// 	UE_LOG(LogExperiment, Error, TEXT("TIMER FAILED!"));
+	// }
+	
+	// todo: check? seems to work fine in both. will leave as-is for now bc I may need to revisit this later
+	if (bUseVR) { this->Camera->bUsePawnControlRotation = false; }
+	else { this->Camera->bUsePawnControlRotation = false; }
 }
 
-void APawnMain::DebugHUDAddTime()
-{
+void APawnMain::DebugHUDAddTime() {
 	DebugTimeRemaining += 1;
 	if ((DebugTimeRemaining % 10 == 0) && PlayerHUD->IsValidLowLevelFast())
 	{
@@ -296,8 +308,9 @@ void APawnMain::DebugHUDAddTime()
 void APawnMain::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
-	
-	this->OnMovementDetected();
+
+	// this->OnMovementDetected();
+
 	// samps += 1;
 	// if (samps % 2 == 0)
 	// {
@@ -350,7 +363,8 @@ void APawnMain::UpdateMovementComponent(FVector InputVector, bool bForce)
 
 void APawnMain::MoveForward(float AxisValue)
 {
-	if (AxisValue != 0.0f) {
+	if (AxisValue != 0.0f)
+	{
 		if (OurMovementComponentChar && (OurMovementComponentChar->UpdatedComponent == RootComponent))
 		{
 			FVector CameraForwardVector = this->Camera->GetForwardVector();
@@ -362,7 +376,8 @@ void APawnMain::MoveForward(float AxisValue)
 
 void APawnMain::MoveRight(float AxisValue)
 {
-	if (AxisValue != 0.0f) {
+	if (AxisValue != 0.0f)
+	{
 		if (OurMovementComponentChar && (OurMovementComponentChar->UpdatedComponent == RootComponent))
 		{
 			FVector CameraRightVector = this->Camera->GetRightVector();
@@ -388,14 +403,13 @@ void APawnMain::LookUp(float AxisValue)
 	this->Camera->SetRelativeRotation(NewRotation);
 }
 
-void APawnMain::OnOverlapBegin(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
+void APawnMain::OnOverlapBegin(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp,
+                               int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 {
 	// if (GEngine) GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Red, FString::Printf(TEXT("[APawnMain::OnOverlapBegin()] Hit something!")));
-
 }
 
-void APawnMain::OnOverlapEnd(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex)
+void APawnMain::OnOverlapEnd(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp,
+                             int32 OtherBodyIndex)
 {
-	
 }
-

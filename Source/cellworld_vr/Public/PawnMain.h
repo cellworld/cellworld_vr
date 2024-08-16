@@ -9,6 +9,7 @@
 #include "Containers/Array.h" 
 #include "GameFramework/CharacterMovementComponent.h" // test 
 #include "MotionControllerComponent.h"
+#include "MiscUtils/Timer/EventTimer.h"
 #include "PawnMain.generated.h"
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnMovementDetected, FVector, Location);
@@ -29,6 +30,8 @@ public:
 	
 	UPROPERTY()
 	FOnMovementDetected MovementDetectedEvent;
+
+	FEventTimer EventTimer; 
 
 	UPROPERTY(EditAnywhere)
 		bool bUseVR = false;
@@ -77,6 +80,9 @@ public:
 	UPROPERTY(EditAnywhere)
 	TSubclassOf<class UHUDExperiment> PlayerHUDClass;
 
+	FTimerHandle TimerHandleDetectMovement;
+	FTimerHandle* TimerHandleDetectMovementPtr = &TimerHandleDetectMovement; 
+	
 	UPROPERTY()
 	class UHUDExperiment* PlayerHUD = nullptr;
 	
@@ -90,7 +96,8 @@ public:
 	void OnOverlapEnd(class UPrimitiveComponent* OverlappedComp, class AActor* OtherActor, class UPrimitiveComponent* OtherComp, int32 OtherBodyIndex);
 
 	// to store overlap characters
-	UPrimitiveComponent* OverlappedComponent;
+	UPROPERTY()
+		TObjectPtr<UPrimitiveComponent> OverlappedComponent;
 
 	/* Movement Component */
 	FHitResult OutHit;
@@ -98,17 +105,18 @@ public:
 
 	/* helpers for camera stuff */
 	UCameraComponent* GetCameraComponent();
-	void StartExperiment();
-	void StartEpisode();
+	void DbgStartExperiment();
+	void DbgStopExperiment();
+	void DbgStopEpisode();
+	void DbgStartEpisode();
 	void ValidateHMD();
 	bool DetectMovementVR();
 	bool DetectMovementWASD();
 
 private: 
-	const float _capsule_radius      = 30.0f;
-	const float _player_height       = 175.0f; // 1.75 m
-	const float _capsule_half_height = _player_height / 2;
-	const FVector _camera_location = FVector(0.0f, 0.0f, _capsule_half_height);
+	const float CapsuleRadius      = 30.0f;
+	const float PlayerHeight       = 175.0f; // 1.75 m
+	const float CapsuleHalfHeight = PlayerHeight / 2;
 
 	FVector current_location; 
 	FVector HMDPosition;

@@ -172,10 +172,21 @@ public:
 
 	FOnExperimentStatusChanged OnExperimentStatusChangedEvent;
 	
-	void SetStatus(const EExperimentStatus ExperimentStatusIn){
-		UE_LOG(LogExperiment, Warning, TEXT("[SetStatus] New Status set!"));
+	void SetStatus(EExperimentStatus ExperimentStatusIn){
+		const FString StatusString = FExperimentInfo::GetStatusString(&ExperimentStatusIn);
+		UE_LOG(LogExperiment, Warning, TEXT("[SetStatus] New Status set: %s"), *StatusString);
 		Status = ExperimentStatusIn;
 		OnExperimentStatusChangedEvent.Broadcast(ExperimentStatusIn);
+	}
+
+	static FString GetStatusString(EExperimentStatus* ExperimentStatusIn) {
+		if (!ExperimentStatusIn){ return FString("[FExperimentInfo.GetStatusString()] Invalid Pointer"); }
+		const TEnumAsByte<EExperimentStatus> ExperimentStatusInByted = *ExperimentStatusIn;
+		const FString EnumAsString = UEnum::GetValueAsString(ExperimentStatusInByted.GetValue());
+		int32 Index;
+		if (!EnumAsString.FindChar(TEXT(':'), Index)) { return FString("ConversionError"); }
+
+		return EnumAsString.Mid(Index + 2);
 	}
 };
 	
@@ -205,7 +216,9 @@ public:
 	float TimeElapsedTick = 0.0f;
 	uint32 FrameCountPrey = 0;
 	uint32 FrameCountPredator = 0; 
+
 	FTimerHandle TimerHandle;
+	FTimerHandle* TimerHandlePtr = &TimerHandle;
 	FTimerManager TimerManager;
 	
 	/* ==== main experiment service components ==== */
@@ -287,7 +300,9 @@ public:
 		bool StopEpisode();
 
 	UFUNCTION(BlueprintCallable, Category = Experiment)
-		bool StartTimerEpisode(const float DurationIn, FTimerHandle TimerHandleIn);
+		bool StartTimerEpisode(const float DurationIn, FTimerHandle& TimerHandleIn);
+	UFUNCTION(BlueprintCallable, Category = Experiment)
+		bool StopTimerEpisode(FTimerHandle& TimerHandleIn);
 
 	UPROPERTY(EditAnywhere)
 		TObjectPtr<APawnMain> PlayerPawnActive = nullptr;
@@ -305,7 +320,7 @@ public:
 	UPROPERTY()
 		FOnExperimentStatusChanged OnExperimentStatusChangedEvent;
 	UFUNCTION()
-		void OnStatusChanged(const EExperimentStatus ExperimentStatusIn);
+	void OnStatusChanged(const EExperimentStatus ExperimentStatusIn);
 	
 	UFUNCTION(BlueprintCallable, Category = Experiment)
 		bool SubscribeToTracking();
@@ -324,7 +339,7 @@ public:
 	UFUNCTION()
 		void OnTimerFinished();
 	UFUNCTION()
-		float GetTimeRemaining();
+		float GetTimeRemaining() const;
 
 	/* experiment service */
 	UFUNCTION()
@@ -376,10 +391,6 @@ public:
 	UPROPERTY(BlueprintReadWrite)
 		FString ExperimentNameActive;
 	
-	/* episode control */
-	bool bInExperiment = false;
-	bool bInEpisode = false;
-
 	/* occlusion control */
 	FOcclusions OcclusionsStruct; 
 	TArray<FLocation> OcclusionLocationsAll;
@@ -418,6 +429,6 @@ protected:
 public:	
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
-	virtual void EndPlay(const EEndPlayReason::Type EndPLayReason) override;
+	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 
 };
