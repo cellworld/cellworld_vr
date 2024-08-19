@@ -88,6 +88,7 @@ APawnMain::APawnMain() : Super()
 	else { UE_LOG(LogExperiment, Error, TEXT("[APawnMain::APawnMain()] Couldn't find HUD experiment.")); }
 }
 
+
 // Called to bind functionality to input
 void APawnMain::SetupPlayerInputComponent(class UInputComponent* InInputComponent)
 {
@@ -173,7 +174,6 @@ void APawnMain::UpdateRoomScaleLocation()
 
 void APawnMain::OnMovementDetected()
 {
-	UE_LOG(LogExperiment, Warning, TEXT("mvmt detected event"));
 	FVector FinalLocation = {};
 	if (bUseVR) {
 		FVector HMDLocation = {};
@@ -279,9 +279,30 @@ void APawnMain::BeginPlay()
 	}
 	float DurationIn = 1.0f / 90.0f;
 	
-	GetWorld()->GetTimerManager().SetTimer(TimerHandleDetectMovement, this,
-			&APawnMain::OnMovementDetected,
-			DurationIn, true, -1.0f);
+	EventTimer = NewObject<UEventTimer>(this, UEventTimer::StaticClass());
+	
+	if (EventTimer->IsValidLowLevel()) {
+		EventTimer->SetRateHz(90.0f);
+		EventTimer->bLoop = true;
+		
+		EventTimer->OnTimerFinishedDelegate.AddDynamic(this,
+			&APawnMain::OnMovementDetected);
+		
+		if (EventTimer->Start()) {
+			if (GEngine) GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Red,
+				FString::Printf(TEXT("[APawnMain::BeginPlay()] Timer STARTED OK!")));
+		} else {
+			if (GEngine) GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Red,
+				FString::Printf(TEXT("[APawnMain::BeginPlay()] Timer STARTED FAILED!")));}
+	}else {
+		UE_LOG(LogExperiment, Error, TEXT("[APawnMain::BeginPlay()] EventTimer is NULL!"))
+		if (GEngine) GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Red,
+				FString::Printf(TEXT("[APawnMain::BeginPlay()] Timer NULLPTR!")));
+	}
+	
+	// GetWorld()->GetTimerManager().SetTimer(TimerHandleDetectMovement, this,
+	// 		&APawnMain::OnMovementDetected,
+	// 		DurationIn, true, -1.0f);
 	
 	// todo: fix this dumb struct 
 	// EventTimer.TimerDelegate.BindUObject(this, &APawnMain::OnMovementDetected);
@@ -308,16 +329,6 @@ void APawnMain::DebugHUDAddTime() {
 void APawnMain::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
-
-	// this->OnMovementDetected();
-
-	// samps += 1;
-	// if (samps % 2 == 0)
-	// {
-	// }
-	// if (this->DetectMovement()) {
-	// 	this->OnMovementDetected();
-	// }
 }
 
 void APawnMain::DestroyHUD()
@@ -332,6 +343,10 @@ void APawnMain::DestroyHUD()
 void APawnMain::EndPlay(const EEndPlayReason::Type EndPlayReason)
 {
 	// this->DestroyHUD();
+	if (this->EventTimer->IsValidLowLevel()) {
+		const bool bResultStopTimer = this->EventTimer->Stop();
+		UE_LOG(LogExperiment, Log, TEXT("[APawnMain::EndPlay] Stop Timer result: %i"),bResultStopTimer)
+	}
 }
 
 void APawnMain::Reset()

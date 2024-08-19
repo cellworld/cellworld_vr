@@ -19,7 +19,7 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Debug")
 	bool bUseVR = false;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Debug")
-	bool bSpawnExperimentService = false;
+	bool bSpawnExperimentService = true;
 	
 	/* world and coordinate system stuff */
 	AActor* GetLevelActorFromName(const FName& ActorNameIn) const;

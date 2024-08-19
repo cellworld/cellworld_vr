@@ -31,8 +31,6 @@ public:
 	UPROPERTY()
 	FOnMovementDetected MovementDetectedEvent;
 
-	FEventTimer EventTimer; 
-
 	UPROPERTY(EditAnywhere)
 		bool bUseVR = false;
 
@@ -47,6 +45,10 @@ public:
 	/* temp */
 	FVector RelLoc;
 
+	UPROPERTY(EditAnywhere)
+		// TObjectPtr<UEventTimer> EventTimer;
+		UEventTimer* EventTimer;
+	
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
@@ -122,9 +124,13 @@ private:
 	FVector HMDPosition;
 	FXRHMDData HMDData;
 
-	bool DetectMovement();
-	void OnMovementDetected();
-	void UpdateRoomScaleLocation();
+	UFUNCTION()
+		bool DetectMovement();
+	UFUNCTION()
+		void OnMovementDetected();
+	UFUNCTION()
+		void UpdateRoomScaleLocation();
+
 	FVector _old_location; 
 	FVector _new_location;
 	float _movement_threshold = 5; 

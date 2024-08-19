@@ -171,26 +171,16 @@ void AGameModeMain::OnUpdateHUDTimer()
 		TimeRemaining = ExperimentServiceMonitor->GetTimeRemaining();
 	} else { TimeRemaining = -2.0f; }
 
-	if (PlayerPawn->IsValidLowLevelFast())
-	{
-		if (PlayerPawn->PlayerHUD->IsValidLowLevelFast())
-		{
-			// counter the round down
-			PlayerPawn->PlayerHUD->SetTimeRemaining(FString::FromInt(FMath::FloorToInt(TimeRemaining + 1)));
-		}
-		else
-		{
-			if (GEngine)
-				GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Red,
-				                                 FString::Printf(
-					                                 TEXT("[AGameModeMain::OnUpdateHUDTimer()] HUD not valid.")));
-		}
+	if (PlayerPawn->IsValidLowLevelFast() && PlayerPawn->PlayerHUD->IsValidLowLevelFast()) {
+		// counter the round down
+		PlayerPawn->PlayerHUD->SetTimeRemaining(FString::FromInt(FMath::FloorToInt(TimeRemaining + 1)));
 	}
 	else {
 		if (GEngine)
 			GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Red,
 			                                 FString::Printf(
-				                                 TEXT("[AGameModeMain::OnUpdateHUDTimer()] PlayerPawn not valid.")));
+				                                 TEXT("[AGameModeMain::OnUpdateHUDTimer()] PlayerPawn | HUD not valid.")));
+		TimeRemaining = -2.0f;
 	}
 }
 

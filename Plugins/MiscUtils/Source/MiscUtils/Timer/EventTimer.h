@@ -1,81 +1,90 @@
 ﻿#pragma once
-#include "BlueprintEditor.h"
-
+#include "CoreMinimal.h"
+#include "UObject/Object.h"
+#include "Tickable.h"
+#include "TimerManager.h"
 #include "EventTimer.generated.h"
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnTimerFinished);
 
-USTRUCT(Blueprintable)
-struct FEventTimer
-{
+UCLASS(Blueprintable)
+class MISCUTILS_API UEventTimer : public UObject, public FTickableGameObject {
 	GENERATED_BODY()
 
+	UEventTimer():Rate(1.0f), StartDelay(-1.0f), bLoop(true), TimerHandlePtr(&TimerHandle) {};
 public:
-	
-	FEventTimer()
-	{
-	};
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = EventTimer)
 		FOnTimerFinished OnTimerFinishedDelegate;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = EventTimer)
-		FTimerHandle TimerHandle;
-
-	FTimerHandle* TimerHandlePtr = &TimerHandle;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = EventTimer)
-		float Rate = 1.0f / 90.0f; // 90 Hz 
+		// float Rate = 1.0f / 90.0f; // 90 Hz 
+		float Rate = 1.0f; // 90 Hz 
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = EventTimer)
 		float StartDelay = -1.0f; // no delay in starting
 	
+	// continue after finished (good to use if sampling every "Rate" seconds.
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = EventTimer)
-		bool bLoop = true; // continue after finished (good to use if sampling every "Rate" seconds.
+		bool bLoop = true;
+	
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = EventTimer)
+	FTimerHandle TimerHandle;
 
-	FTimerDelegate TimerDelegate;
+	FTimerHandle* TimerHandlePtr = &TimerHandle;
+
+	virtual void Tick(float DeltaTime) override {
+		// UE_LOG(LogTemp, Log, TEXT("[EventTimer] Time remaining: %0.4f"), this->GetTimeRemaining())	
+	};
+	virtual ETickableTickType GetTickableTickType() const override {
+		return ETickableTickType::Always;
+	}
+	virtual TStatId GetStatId() const override {
+		RETURN_QUICK_DECLARE_CYCLE_STAT(FMyTickableThing, STATGROUP_Tickables);
+	}
+	virtual bool IsTickableWhenPaused() const override {
+		return true;
+	}
+	virtual bool IsTickableInEditor() const override  {
+		return false;
+	}
 	
 	void OnTimerFinished() const {
-		UE_LOG(LogTemp, Log, TEXT("[FEventTimer::OnTimerFinished]"))
-		OnTimerFinishedDelegate.Broadcast(); 
-	};
+		OnTimerFinishedDelegate.Broadcast();
+	}
 
+	void SetRateHz(const float InRate) {
+		this->Rate = 1.0f / InRate; 
+	}
 
-	bool IsRunning() const
-	{
-		if (!TimerHandlePtr->IsValid()){ return false; }
-		return GEngine->GetWorld()->GetTimerManager().IsTimerActive(*TimerHandlePtr); 
+	void SetRateSeconds(const float InRate) {
+		this->Rate = InRate; 
 	}
 	
-	bool Start() {
+	bool Start() const {
+		if (!TimerHandlePtr) { return false; }
 
-		// TimerDelegate.BindRaw(this, &FEventTimer::OnTimerFinished);
+		GetWorld()->GetTimerManager().SetTimer(*TimerHandlePtr,
+			this, &UEventTimer::OnTimerFinished, // func to call when done 
+			Rate, bLoop, StartDelay);
 		
-		// GEngine->GetWorld()->GetTimerManager().SetTimer(TimerHandle,
-		// 	TimerDelegate, Rate, bLoop, StartDelay);
-
-		// GEngine->GetWorld()->GetTimerManager().SetTimer(TimerHandle, 10, bLoop, StartDelay);
-		//
-		return true; 
-	};
-	
-	bool Stop() const {
-		if (!TimerHandlePtr->IsValid()) {
-			UE_LOG(LogTemp, Error,
-				TEXT("[AExperimentServiceMonitor::StopTimerEpisode] Failed, TimerHandleIn is null."));
-			return false;
-		}
-
-		check(TimerHandle.IsValid())
-		GEngine->GetWorld()->GetTimerManager().ClearTimer(*TimerHandlePtr);
-		// TimerHandle.Invalidate();
-		// check(!TimerHandle.IsValid())
-		return true;
-	};
-
-	float GetTimeRemaining() const {
-		if (!TimerHandlePtr->IsValid()){ return -1.0f; }
-		if (!GEngine->GetWorld()->GetTimerManager().IsTimerActive(*TimerHandlePtr)) { return -1.0f; }
-		return GEngine->GetWorld()->GetTimerManager().GetTimerRemaining(*TimerHandlePtr);	
+		return TimerHandlePtr->IsValid(); 
 	}
+	bool Stop() {
+		if (!TimerHandlePtr) { return false; }
+		
+		GetWorld()->GetTimerManager().ClearTimer(*TimerHandlePtr);
+		return !TimerHandlePtr->IsValid();
+	}
+	
+	bool IsRunning() const {
+		if (!TimerHandlePtr) { return false; }
+		return GetWorld()->GetTimerManager().IsTimerActive(*TimerHandlePtr);
+	}
+	
+	float GetTimeRemaining() const {
+		if (!TimerHandlePtr->IsValid()) { return -1.0f; }
+		return GetWorld()->GetTimerManager().GetTimerRemaining(*TimerHandlePtr);
+	}
+	
 };
