@@ -186,19 +186,17 @@ void APawnMain::OnMovementDetected()
 	MovementDetectedEvent.Broadcast(FinalLocation);
 }
 
-void APawnMain::ResetOrigin()
-{
-	if (GEngine) GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Blue, FString::Printf(TEXT("Resetting origin.")));
+void APawnMain::ResetOrigin() {
+	if (GEngine) GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Blue,
+		FString::Printf(TEXT("Resetting origin.")));
 }
 
-void APawnMain::RestartGame()
-{
+void APawnMain::RestartGame() {
 	FName level_loading = TEXT("L_Loading");
 	UGameplayStatics::OpenLevel(this, level_loading, true);
 }
 
-void APawnMain::QuitGame()
-{
+void APawnMain::QuitGame() {
 	if (GEngine)
 	{
 		GEngine->AddOnScreenDebugMessage(-1, 0.5f, FColor::Red,
@@ -277,12 +275,10 @@ void APawnMain::BeginPlay()
 		bUseVR = GameMode->bUseVR;
 		GameMode->PlayerPawn = this;
 	}
-	float DurationIn = 1.0f / 90.0f;
-	
+
 	EventTimer = NewObject<UEventTimer>(this, UEventTimer::StaticClass());
-	
 	if (EventTimer->IsValidLowLevel()) {
-		EventTimer->SetRateHz(90.0f);
+		EventTimer->SetRateHz(60.0f);
 		EventTimer->bLoop = true;
 		
 		EventTimer->OnTimerFinishedDelegate.AddDynamic(this,

@@ -262,6 +262,8 @@ public:
 		TObjectPtr<URequest> TrackingSubscribeRequest;
 	UPROPERTY()
 		TObjectPtr<URequest> GetOcclusionsRequest;
+	UPROPERTY()
+		TObjectPtr<URequest> ResetRequest;
 
 	/* ==== status stuff ==== */
 	UPROPERTY()
@@ -335,11 +337,12 @@ public:
 	
 	/* update predator stuff */
 	UFUNCTION()
-		void HandleUpdatePredator(FMessage MessageIn);
+		void HandleUpdatePredator(const FMessage MessageIn);
 	UFUNCTION()
 		void OnTimerFinished();
 	UFUNCTION()
 		float GetTimeRemaining() const;
+	float GetTimeElapsed() const;
 
 	/* experiment service */
 	UFUNCTION()
@@ -350,6 +353,10 @@ public:
 		void HandleStartEpisodeRequestResponse(const FString response);
 	UFUNCTION()
 		bool ResetTrackingAgent();
+	UFUNCTION()
+		void HandleResetRequestResponse(const FString InResponse);
+	UFUNCTION()
+		void HandleResetRequestTimedOut();
 	UFUNCTION()
 		void HandleStartEpisodeRequestTimedOut();
 	UFUNCTION()
@@ -372,20 +379,16 @@ public:
 		void HandleStopExperimentResponse(const FString ResponseIn);
 	UFUNCTION()
 		void HandleStopExperimentTimedOut();
-	
-	/* update players */
 	UFUNCTION()
-		void UpdatePredator(FMessage message);
-	UFUNCTION()
-		void UpdatePreyPosition(const FVector Location);
-
-	/* other */
-	UFUNCTION()
-		void HandleUnroutedMessage(FMessage message);
+		void HandleUnroutedMessage(const FMessage InMessage);
 	UFUNCTION()
 		bool IsExperimentActive(const FString ExperimentNameIn);
-	
-	void AttachAgent(TObjectPtr<APawn> PawnIn);
+
+	/* update agents */
+	UFUNCTION()
+		void UpdatePredator(const FMessage& InMessage);
+	UFUNCTION()
+		void UpdatePreyPosition(const FVector Location);
 
 	/* experiment control */
 	UPROPERTY(BlueprintReadWrite)
