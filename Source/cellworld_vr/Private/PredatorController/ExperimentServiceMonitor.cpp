@@ -366,15 +366,7 @@ void AExperimentServiceMonitor::HandleStartEpisodeRequestResponse(const FString 
 		return;
 	}
 
-	/* set up episode timer */
-	// todo: check this, fails 1/20 times 
-	// check(!GetWorld()->GetTimerManager().IsTimerActive(*TimerHandlePtr)); // should be false 
-	const bool bStartTimerResult = this->StartTimerEpisode(float(ExperimentInfo.StartExperimentResponse.duration),
-		*TimerHandlePtr);
-	
-	if (!bStartTimerResult) {
-		printScreen("[AExperimentServiceMonitor::StartEpisode] Failed to Start episode timer!");
-	}
+
 	
 	const bool bResetSuccess = this->ResetTrackingAgent();
 	check(bResetSuccess)
@@ -409,7 +401,7 @@ bool AExperimentServiceMonitor::ResetTrackingAgent() {
 	}
 	ResetRequest->ResponseReceived.AddDynamic(this, &AExperimentServiceMonitor::HandleResetRequestResponse);
 	ResetRequest->TimedOut.AddDynamic(this, &AExperimentServiceMonitor::HandleResetRequestTimedOut);
-	
+
 	return true; 
 	// return TrackingClient->SendMessage(MessageReset);
 }
@@ -419,6 +411,18 @@ void AExperimentServiceMonitor::HandleResetRequestResponse(const FString InRespo
 	if (InResponse != "success") {
 		ExperimentInfo.SetStatus(EExperimentStatus::ErrorStartEpisode);
 	}
+
+	/* set up episode timer */
+	// todo: check this, fails 1/20 times 
+	// check(!GetWorld()->GetTimerManager().IsTimerActive(*TimerHandlePtr)); // should be false 
+	const bool bStartTimerResult = this->StartTimerEpisode(float(ExperimentInfo.StartExperimentResponse.duration),
+		*TimerHandlePtr);
+	
+	if (!bStartTimerResult) {
+		UE_LOG(LogExperiment, Error,
+			TEXT("[AExperimentServiceMonitor::HandleResetRequestResponse] Failed to start Timer!"))
+	}
+	
 	FrameCountPrey = 0;
 	ExperimentInfo.SetStatus(EExperimentStatus::InEpisode);
 	UE_LOG(LogExperiment, Log, TEXT("[AExperimentServiceMonitor::StartEpisode] ResetTrackingAgent Successful!"))
@@ -428,7 +432,6 @@ void AExperimentServiceMonitor::HandleResetRequestTimedOut() {
 	UE_LOG(LogExperiment, Error, TEXT("[AExperimentServiceMonitor::HandleResetRequestTimedOut()] Reset request timed out!"))
 	ExperimentInfo.SetStatus(EExperimentStatus::ErrorStartEpisode);
 }
-
 
 /* handle experiment service timeout */
 void AExperimentServiceMonitor::HandleStartEpisodeRequestTimedOut() {
