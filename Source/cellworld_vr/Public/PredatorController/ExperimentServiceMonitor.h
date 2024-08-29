@@ -199,13 +199,7 @@ public:
 	AExperimentServiceMonitor();
 
 	/* ==== server stuff ==== */
-	
-	// const FString ServerIPMessage = "172.26.176.129";  // lab pc wsl 
-	// const FString ServerIPMessage = "192.168.137.111"; // static laptop lab 
-	// const FString ServerIPMessage = "10.0.0.77";		  // crib
-	
-	const FString ServerIPMessage = "192.168.137.13";  // static vr backpack win11 PACKAGED ONLY
-	// const FString ServerIPMessage = "172.23.126.101";  // static vr backpack WSL EDITOR ONLY
+	const FString ServerIPMessage = "192.168.1.200";  // static vr backpack win11 PACKAGED ONLY
 	const int ServerPort	      = 4970;
 	const int TrackingPort	      = 4790;
 	
@@ -316,7 +310,6 @@ public:
 	bool GetPlayerPawn();
 	
 	void SelfDestruct(const FString InErrorMessage);
-
 	
 	/* ==== delegates ==== */
 	UPROPERTY()
@@ -331,8 +324,6 @@ public:
 	UFUNCTION(BlueprintCallable, Category = Experiment)
 		void HandleSubscribeToTrackingTimedOut();
 	UFUNCTION(BlueprintCallable, Category = Experiment)
-		bool SubscribeToServer(UMessageClient* ClientIn);
-	UFUNCTION(BlueprintCallable, Category = Experiment)
 		void RequestRemoveDelegates(URequest* RequestIn);
 	
 	/* update predator stuff */
@@ -345,10 +336,6 @@ public:
 	float GetTimeElapsed() const;
 
 	/* experiment service */
-	UFUNCTION()
-		void HandleSubscribeToServerResponse(FString MessageIn);
-	UFUNCTION()
-		void HandleSubscribeToServerTimedOut();
 	UFUNCTION()
 		void HandleStartEpisodeRequestResponse(const FString response);
 	UFUNCTION()

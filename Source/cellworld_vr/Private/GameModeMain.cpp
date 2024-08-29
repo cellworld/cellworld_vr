@@ -3,22 +3,28 @@
 #include "EngineUtils.h"
 #include "PawnMain.h"
 #include "GameStateMain.h"
-#include "PawnDebug.h"
+#include "HeadMountedDisplayFunctionLibrary.h"
 #include "PredatorController/AIControllerPredator.h"
 #include "AsyncLoadingScreenLibrary.h"
 #include "MouseKeyboardPlayerController.h"
 #include "PlayerControllerVR.h"
-#include "Kismet/GameplayStatics.h"
-#include "GameInstanceMain.h"
 #include "cellworld_vr/cellworld_vr.h"
-#include "Misc/OutputDeviceNull.h"
 
-AGameModeMain::AGameModeMain()
-{
+AGameModeMain::AGameModeMain() {
 	// vr or WASD? 
 	if (bUseVR) { PlayerControllerClass = APlayerControllerVR::StaticClass(); }
 	else { PlayerControllerClass = AMouseKeyboardPlayerController::StaticClass(); }
 
+	// if (UHeadMountedDisplayFunctionLibrary::IsHeadMountedDisplayEnabled()) {
+	// 	UE_LOG(LogExperiment, Log, TEXT("[AGameModeMain::AGameModeMain] Player controller: VR"))
+	// 	bUseVR = true; 
+	// 	PlayerControllerClass = APlayerControllerVR::StaticClass();
+	// } else {
+	// 	UE_LOG(LogExperiment, Log, TEXT("[AGameModeMain::AGameModeMain] Player controller: WASD"))
+	// 	bUseVR = false; 
+	// 	PlayerControllerClass = AMouseKeyboardPlayerController::StaticClass();
+	// }
+	
 	DefaultPawnClass = APawnMain::StaticClass();
 	GameStateClass = AGameStateMain::StaticClass();
 

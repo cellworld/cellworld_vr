@@ -15,8 +15,7 @@
 // Sets default values
 AGameModeMain* GameMode; // forward declare to avoid circular dependency
 
-APawnMain::APawnMain() : Super()
-{
+APawnMain::APawnMain() : Super() {
 	PrimaryActorTick.bStartWithTickEnabled = true;
 	PrimaryActorTick.bCanEverTick = true;
 
@@ -278,15 +277,15 @@ void APawnMain::BeginPlay()
 
 	EventTimer = NewObject<UEventTimer>(this, UEventTimer::StaticClass());
 	if (EventTimer->IsValidLowLevel()) {
-		EventTimer->SetRateHz(60.0f);
+		EventTimer->SetRateHz(90.0f); //todo: make sampling rate GI variable (or somewhere relevant) 
 		EventTimer->bLoop = true;
 		
 		EventTimer->OnTimerFinishedDelegate.AddDynamic(this,
 			&APawnMain::OnMovementDetected);
 		
 		if (EventTimer->Start()) {
-			if (GEngine) GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Red,
-				FString::Printf(TEXT("[APawnMain::BeginPlay()] Timer STARTED OK!")));
+			if (GEngine) GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Green,
+				FString::Printf(TEXT("[APawnMain::BeginPlay()] Posxn Sampling STARTED OK!")));
 		} else {
 			if (GEngine) GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Red,
 				FString::Printf(TEXT("[APawnMain::BeginPlay()] Timer STARTED FAILED!")));}
