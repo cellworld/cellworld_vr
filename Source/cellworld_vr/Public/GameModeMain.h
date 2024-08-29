@@ -32,7 +32,7 @@ public:
 	FRotator InitialPlayerRotation;
 
 	/* spawning player */
-	float WorldScale = 6.0f;
+	float WorldScale = 5.0f;
 	// FVector spawn_location_player  = { -1700.0,1500.000000,30.000000 };
 	// FRotator spawn_rotation_player = { 0.0,0.0, 0.0 };
 	void SpawnAndPossessPlayer(FVector spawn_location, FRotator spawn_rotation);
