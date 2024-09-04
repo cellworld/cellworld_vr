@@ -1,6 +1,5 @@
 #include "ExperimentUtils.h"
 
-
 FAgentState UExperimentUtils::JsonStringToAgentState(FString jsonString) {
 	FAgentState structOutput;
 	FJsonObjectConverter::JsonObjectStringToUStruct(jsonString, &structOutput, 0, 0);

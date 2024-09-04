@@ -15,11 +15,12 @@
 			]
 		},
 		{
-			"Name": "UnrealEngineTemplateModule",
+			"Name": "BotEvadeModule",
 			"Type": "Runtime",
 			"LoadingPhase": "Default",
 			"AdditionalDependencies": [
-				"Engine"
+				"Engine",
+				"UMG"
 			]
 		}
 	],
