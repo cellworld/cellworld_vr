@@ -30,6 +30,10 @@
 			"Enabled": true
 		},
 		{
+			"Name": "MultiplayerSessions",
+			"Enabled": true
+		},
+		{
 			"Name": "OculusXR",
 			"Enabled": false,
 			"MarketplaceURL": "com.epicgames.launcher://ue/marketplace/product/8313d8d7e7cf4e03a33e79eb757bccba",
@@ -106,6 +110,21 @@
 				"Win64",
 				"Linux",
 				"Android"
+			]
+		},
+		{
+			"Name": "OnlineSubsystemGooglePlay",
+			"Enabled": false,
+			"SupportedTargetPlatforms": [
+				"Android"
+			]
+		},
+		{
+			"Name": "OnlineSubsystemIOS",
+			"Enabled": false,
+			"SupportedTargetPlatforms": [
+				"IOS",
+				"TVOS"
 			]
 		}
 	]

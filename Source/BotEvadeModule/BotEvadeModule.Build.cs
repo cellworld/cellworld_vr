@@ -6,7 +6,8 @@ public class BotEvadeModule : ModuleRules //Replace class name with your module 
     public BotEvadeModule(ReadOnlyTargetRules Target) : base(Target) // Replace constructor name with your module name 
     {
         PublicDependencyModuleNames.AddRange(new string[] { "Core", "CoreUObject", "Engine", "InputCore", 
-            "EnhancedInput", "HeadMountedDisplay", "UMG" });
+            "EnhancedInput", "HeadMountedDisplay", "UMG", "OnlineSubsystem","OnlineSubsystemNull", "OnlineSubsystemUtils"
+        });
         
         PrivateDependencyModuleNames.AddRange(new string[] { "XRBase"  });
 

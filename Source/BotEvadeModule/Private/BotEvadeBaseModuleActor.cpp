@@ -9,10 +9,8 @@ ABotEvadeBaseModuleActor::ABotEvadeBaseModuleActor()
 }
 
 // Called when the game starts or when spawned
-void ABotEvadeBaseModuleActor::BeginPlay()
-{
+void ABotEvadeBaseModuleActor::BeginPlay() {
 	Super::BeginPlay();
-	GEngine->AddOnScreenDebugMessage(0, 5.0f, FColor::Blue, TEXT("Hello, world!"));
 }
 
 // Called every frame
@@ -20,6 +18,5 @@ void ABotEvadeBaseModuleActor::BeginPlay()
 void ABotEvadeBaseModuleActor::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
-
 }
 
