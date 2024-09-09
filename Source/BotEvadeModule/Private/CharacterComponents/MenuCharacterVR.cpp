@@ -9,6 +9,7 @@
 #include "GameFramework/SpringArmComponent.h"
 #include "OnlineSubsystem.h"
 #include "OnlineSessionSettings.h"
+#include "OnlineSubsystemUtils.h"
 
 //////////////////////////////////////////////////////////////////////////
 // AMenuCharacterVR
@@ -54,6 +55,30 @@ AMenuCharacterVR::AMenuCharacterVR():
 	if (OnlineSubsystem) {
 		UE_LOG(LogTemp, Log, TEXT("AMenuCharacterVR::AMenuCharacterVR(): OnlineSubsystem valid!"))
 		OnlineSessionInterface = OnlineSubsystem->GetSessionInterface();
+
+		if (GEngine) {
+			// OnlineSessionInterface = Online::GetSessionInterface(GEngine->GetWorld()); // v2 - find foru link..
+			GEngine->AddOnScreenDebugMessage(
+				-1,
+				5.f,
+				FColor::Blue,
+				FString::Printf(TEXT("[AMenuCharacterVR::AMenuCharacterVR] Found subsystem: %s"),
+					*OnlineSubsystem->GetSubsystemName().ToString())
+			);
+		}
+
+	}
+
+	if(!OnlineSessionInterface.IsValid()) {
+		if (GEngine) {
+			// OnlineSessionInterface = Online::GetSessionInterface(GEngine->GetWorld()); // v2 - find foru link..
+			GEngine->AddOnScreenDebugMessage(
+				-1,
+				5.f,
+				FColor::Blue,
+				FString::Printf(TEXT("[AMenuCharacterVR::AMenuCharacterVR] OnlineSessionInterface: not valid!"))
+			);
+		}
 	}
 }
 
@@ -86,9 +111,14 @@ void AMenuCharacterVR::SetupPlayerInputComponent(class UInputComponent* PlayerIn
 }
 
 void AMenuCharacterVR::CreateGameSession() {
+	
 	// Called when pressing the 1 key
-	if (!OnlineSessionInterface.IsValid()) { return; }
 
+	UE_LOG(LogTemp, Log, TEXT("[AMenuCharacterVR::CreateGameSession()] Called!"))
+	if (!OnlineSessionInterface.IsValid()) { return; }
+	UE_LOG(LogTemp, Log, TEXT("[AMenuCharacterVR::CreateGameSession()] OnlineSessionInterface is valid!"))
+
+	// check if a game session already exists, if not null, destroy it
 	FNamedOnlineSession* ExistingSession = OnlineSessionInterface->GetNamedSession(NAME_GameSession); // auto -> classdef
 	if (ExistingSession != nullptr) {
 		OnlineSessionInterface->DestroySession(NAME_GameSession);
@@ -100,32 +130,39 @@ void AMenuCharacterVR::CreateGameSession() {
 	SessionSettings->bIsLANMatch = true; // was false 
 	SessionSettings->NumPublicConnections = 4;
 	SessionSettings->bAllowJoinInProgress = true;
-	// SessionSettings->bAllowJoinViaPresence = true; // steam
-	// SessionSettings->bShouldAdvertise = true; // steam
-	// SessionSettings->bUsesPresence = true; // steam
+	SessionSettings->bUseLobbiesIfAvailable = true;
+	SessionSettings->bAllowJoinViaPresence = true; // steam
+	SessionSettings->bShouldAdvertise = true;	   // steam
+	SessionSettings->bUsesPresence = true;		   // steam
 	SessionSettings->Set(FName("MatchType"), FString("FreeForAll"),
 		EOnlineDataAdvertisementType::ViaOnlineServiceAndPing);
 	
 	const ULocalPlayer* LocalPlayer = GetWorld()->GetFirstLocalPlayerFromController();
 	OnlineSessionInterface->CreateSession(*LocalPlayer->GetPreferredUniqueNetId(), NAME_GameSession, *SessionSettings);
+
+	UE_LOG(LogTemp, Warning, TEXT("[AMenuCharacterVR::CreateGameSession()] Created Session! "))
 }
 
 void AMenuCharacterVR::JoinGameSession() {
+	UE_LOG(LogTemp, Warning, TEXT("[AMenuCharacterVR::JoinGameSession] Looking for session! "))
+
 	// Find game sessions
-	if (!OnlineSessionInterface.IsValid())
-	{
+	if (!OnlineSessionInterface.IsValid()) {
+		UE_LOG(LogTemp, Warning, TEXT("[AMenuCharacterVR::JoinGameSession] OnlineSessionInterface not valid! "))
 		return;
 	}
-
+	
 	OnlineSessionInterface->AddOnFindSessionsCompleteDelegate_Handle(FindSessionsCompleteDelegate);
 
 	SessionSearch = MakeShareable(new FOnlineSessionSearch());
-	SessionSearch->MaxSearchResults = 10000;
-	SessionSearch->bIsLanQuery = false;
-	SessionSearch->QuerySettings.Set(SEARCH_PRESENCE, true, EOnlineComparisonOp::Equals);
+	SessionSearch->MaxSearchResults = 100;
+	SessionSearch->bIsLanQuery = true; // was false
+	// make sure all sessions we find are using presence 
+	// SessionSearch->QuerySettings.Set(SEARCH_PRESENCE, true, EOnlineComparisonOp::Equals); 
 
 	const ULocalPlayer* LocalPlayer = GetWorld()->GetFirstLocalPlayerFromController();
 	OnlineSessionInterface->FindSessions(*LocalPlayer->GetPreferredUniqueNetId(), SessionSearch.ToSharedRef());
+	UE_LOG(LogTemp, Warning, TEXT("[AMenuCharacterVR::JoinGameSession] Reached end! "))
 }
 
 void AMenuCharacterVR::OnCreateSessionComplete(FName SessionName, bool bWasSuccessful) {
@@ -133,57 +170,85 @@ void AMenuCharacterVR::OnCreateSessionComplete(FName SessionName, bool bWasSucce
 		if (GEngine) {
 			GEngine->AddOnScreenDebugMessage(
 				-1,
-				15.f,
+				5.f,
 				FColor::Blue,
-				FString::Printf(TEXT("Created session: %s"), *SessionName.ToString())
+				FString::Printf(TEXT("[AMenuCharacterVR::OnCreateSessionComplete] Created session: %s"), *SessionName.ToString())
 			);
 		}
-
 		UWorld* World = GetWorld();
 		if (World) {
-			World->ServerTravel(FString("/Game/ThirdPersonCPP/Maps/Lobby?listen"));
+			// '/Game/Test_OnlineSubsystem/L_Game?listen'
+			const bool bTravelResult = World->ServerTravel(FString("/Game/Test_OnlineSubsystem/L_Game?listen"));
+			if (GEngine) {
+				GEngine->AddOnScreenDebugMessage(
+					-1,
+					5.f,
+					FColor::Red,
+					FString::Printf(TEXT("[AMenuCharacterVR::OnCreateSessionComplete] Server travel: %s"),
+						*FString::FromInt((int)bTravelResult))
+				);
+			}
 		}
 	} else {
 		if (GEngine) {
 			GEngine->AddOnScreenDebugMessage(
 				-1,
-				15.f,
+				5.f,
 				FColor::Red,
-				FString(TEXT("Failed to create session!"))
+				FString(TEXT("[AMenuCharacterVR::OnCreateSessionComplete] Failed to create session!"))
 			);
 		}
 	}
 }
 
 void AMenuCharacterVR::OnFindSessionsComplete(bool bWasSuccessful) {
-	UE_LOG(LogTemp, Error, TEXT("OnFindSessionComplete->bWasSuccessfu = %i"), bWasSuccessful)
+
+	UE_LOG(LogTemp, Error, TEXT("[AMenuCharacterVR::OnFindSessionsComplete] OnFindSessionComplete->bWasSuccessful = %i"), bWasSuccessful)
+	if (GEngine) {
+		GEngine->AddOnScreenDebugMessage(
+			-1,
+			5.0f,
+			FColor::Cyan,
+			FString::Printf(TEXT("OnFindSessionComplete->bWasSuccessful: %i"), bWasSuccessful)
+		);
+	}
+	
 	if (!OnlineSessionInterface.IsValid())
 	{
+		UE_LOG(LogTemp, Error, TEXT("[AMenuCharacterVR::OnFindSessionsComplete] OnlineSessionInterface not valid!"))
 		return;
 	}
 
-	for (auto Result : SessionSearch->SearchResults)
-	{
+	const int NumSessionsFound = SessionSearch->SearchResults.Num(); 
+	if (GEngine) {
+		GEngine->AddOnScreenDebugMessage(
+			-1,
+			5.0f,
+			FColor::Cyan,
+			FString::Printf(TEXT("Found Sessions: %i"), NumSessionsFound)
+		);
+	}
+
+	for (auto Result : SessionSearch->SearchResults) {
 		FString Id = Result.GetSessionIdStr();
 		FString User = Result.Session.OwningUserName;
 		FString MatchType;
 		Result.Session.SessionSettings.Get(FName("MatchType"), MatchType);
-		if (GEngine)
-		{
+
+		if (GEngine) {
 			GEngine->AddOnScreenDebugMessage(
 				-1,
-				15.f,
+				5.0f,
 				FColor::Cyan,
 				FString::Printf(TEXT("Id: %s, User: %s"), *Id, *User)
 			);
 		}
-		if (MatchType == FString("FreeForAll"))
-		{
-			if (GEngine)
-			{
+
+		if (MatchType == FString("FreeForAll")) {
+			if (GEngine) {
 				GEngine->AddOnScreenDebugMessage(
 					-1,
-					15.f,
+					5.f,
 					FColor::Cyan,
 					FString::Printf(TEXT("Joining Match Type: %s"), *MatchType)
 				);
@@ -199,31 +264,27 @@ void AMenuCharacterVR::OnFindSessionsComplete(bool bWasSuccessful) {
 
 void AMenuCharacterVR::OnJoinSessionComplete(FName SessionName, EOnJoinSessionCompleteResult::Type Result)
 {
-	if (!OnlineSessionInterface.IsValid())
-	{
+	if (!OnlineSessionInterface.IsValid()) {
 		return;
 	}
 	FString Address;
-	if (OnlineSessionInterface->GetResolvedConnectString(NAME_GameSession, Address))
-	{
+	if (OnlineSessionInterface->GetResolvedConnectString(NAME_GameSession, Address)) {
 		if (GEngine)
 		{
 			GEngine->AddOnScreenDebugMessage(
 				-1,
-				15.f,
+				5.f,
 				FColor::Yellow,
 				FString::Printf(TEXT("Connect string: %s"), *Address)
 			);
 		}
 
 		APlayerController* PlayerController = GetGameInstance()->GetFirstLocalPlayerController();
-		if (PlayerController)
-		{
+		if (PlayerController) {
 			PlayerController->ClientTravel(Address, ETravelType::TRAVEL_Absolute);
 		}
 	}
 }
-
 
 void AMenuCharacterVR::OnResetVR()
 {
