@@ -51,35 +51,35 @@ AMenuCharacterVR::AMenuCharacterVR():
 	// Note: The skeletal mesh and anim blueprint references on the Mesh component (inherited from Character) 
 	// are set in the derived blueprint asset named MyCharacter (to avoid direct content references in C++)
 
-	IOnlineSubsystem* OnlineSubsystem = IOnlineSubsystem::Get();
-	if (OnlineSubsystem) {
-		UE_LOG(LogTemp, Log, TEXT("AMenuCharacterVR::AMenuCharacterVR(): OnlineSubsystem valid!"))
-		OnlineSessionInterface = OnlineSubsystem->GetSessionInterface();
-
-		if (GEngine) {
-			// OnlineSessionInterface = Online::GetSessionInterface(GEngine->GetWorld()); // v2 - find foru link..
-			GEngine->AddOnScreenDebugMessage(
-				-1,
-				5.f,
-				FColor::Blue,
-				FString::Printf(TEXT("[AMenuCharacterVR::AMenuCharacterVR] Found subsystem: %s"),
-					*OnlineSubsystem->GetSubsystemName().ToString())
-			);
-		}
-
-	}
-
-	if(!OnlineSessionInterface.IsValid()) {
-		if (GEngine) {
-			// OnlineSessionInterface = Online::GetSessionInterface(GEngine->GetWorld()); // v2 - find foru link..
-			GEngine->AddOnScreenDebugMessage(
-				-1,
-				5.f,
-				FColor::Blue,
-				FString::Printf(TEXT("[AMenuCharacterVR::AMenuCharacterVR] OnlineSessionInterface: not valid!"))
-			);
-		}
-	}
+	// IOnlineSubsystem* OnlineSubsystem = IOnlineSubsystem::Get();
+	// if (OnlineSubsystem) {
+	// 	UE_LOG(LogTemp, Log, TEXT("AMenuCharacterVR::AMenuCharacterVR(): OnlineSubsystem valid!"))
+	// 	OnlineSessionInterface = OnlineSubsystem->GetSessionInterface();
+	//
+	// 	if (GEngine) {
+	// 		// OnlineSessionInterface = Online::GetSessionInterface(GEngine->GetWorld()); // v2 - find foru link..
+	// 		GEngine->AddOnScreenDebugMessage(
+	// 			-1,
+	// 			5.f,
+	// 			FColor::Blue,
+	// 			FString::Printf(TEXT("[AMenuCharacterVR::AMenuCharacterVR] Found subsystem: %s"),
+	// 				*OnlineSubsystem->GetSubsystemName().ToString())
+	// 		);
+	// 	}
+	//
+	// }
+	//
+	// if(!OnlineSessionInterface.IsValid()) {
+	// 	if (GEngine) {
+	// 		// OnlineSessionInterface = Online::GetSessionInterface(GEngine->GetWorld()); // v2 - find foru link..
+	// 		GEngine->AddOnScreenDebugMessage(
+	// 			-1,
+	// 			5.f,
+	// 			FColor::Blue,
+	// 			FString::Printf(TEXT("[AMenuCharacterVR::AMenuCharacterVR] OnlineSessionInterface: not valid!"))
+	// 		);
+	// 	}
+	// }
 }
 
 //////////////////////////////////////////////////////////////////////////
