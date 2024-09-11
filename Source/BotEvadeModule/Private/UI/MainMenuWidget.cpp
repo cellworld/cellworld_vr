@@ -63,6 +63,12 @@ bool UMainMenuWidget::Initialize() {
 		UE_LOG(LogMainMenu, Log, TEXT("QuitButton bound to clicked event."))
 		QuitButton->OnClicked.AddDynamic(this, &UMainMenuWidget::QuitButtonClicked);
 	}
+	
+	if (JoinByIPAddressButton) {
+		UE_LOG(LogMainMenu, Log, TEXT("QuitButton bound to clicked event."))
+		JoinByIPAddressButton->OnClicked.AddDynamic(this, &UMainMenuWidget::JoinByIPAddressButtonClicked);
+	}
+	
 	return true;
 }
 
@@ -190,6 +196,15 @@ void UMainMenuWidget::JoinButtonClicked()
 	if (MultiplayerSubsystem) {
 		UE_LOG(LogMainMenu, Log, TEXT("Looking for 10,000 sessions!"))
 		MultiplayerSubsystem->FindSessions(10000);
+	}
+}
+
+void UMainMenuWidget::JoinByIPAddressButtonClicked() {
+	UE_LOG(LogMainMenu, Log, TEXT("JoinByIPAddressButtonClicked"))
+	JoinByIPAddressButton->SetIsEnabled(false);
+	if (MultiplayerSubsystem) {
+		UE_LOG(LogMainMenu, Log, TEXT("Joining session via IPAddress!"))
+		MultiplayerSubsystem->JoinSessionAddress("192.168.1.199"); // todo: make this modifiable
 	}
 }
 

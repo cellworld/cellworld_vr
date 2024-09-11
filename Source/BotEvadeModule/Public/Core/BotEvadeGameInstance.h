@@ -18,8 +18,9 @@ class UBotEvadeGameInstance : public UGameInstance, public IMenuInterface {
 
 public:
 	/* UGameInstance overrides */
-	virtual void Init() override;	
-
+	virtual void Init() override;
+	void HandleOnNotifyPreClientTravel(const FString& IPAddress, ETravelType TravelType, bool bIsSeamlessTravel);
+	
 	/* new functions */
 	TSubclassOf<UUserWidget> MenuClass;
 	TSubclassOf<UUserWidget> OptionsMenuClass;

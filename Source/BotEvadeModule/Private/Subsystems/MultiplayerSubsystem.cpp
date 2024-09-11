@@ -27,7 +27,6 @@ UMultiplayerSubsystem::UMultiplayerSubsystem():
 	}else {
 		UE_LOG(LogMSS, Error, TEXT("Session interface not valid/found!"))
 	}
-
 	
 }
 
@@ -42,8 +41,8 @@ void UMultiplayerSubsystem::CreateSession(int32 NumPublicConnections, FString Ma
 				DesiredNumPublicConnections, *DesiredMatchType)
 		);
 	}
-	if (!SessionInterface.IsValid())
-	{
+	
+	if (!SessionInterface.IsValid()) {
 		return;
 	}
 
@@ -74,10 +73,8 @@ void UMultiplayerSubsystem::CreateSession(int32 NumPublicConnections, FString Ma
 
 	const ULocalPlayer* LocalPlayer = GetWorld()->GetFirstLocalPlayerFromController();
 	if (!SessionInterface->CreateSession(*LocalPlayer->GetPreferredUniqueNetId(), NAME_GameSession, *LastSessionSettings)) {
-		
 		SessionInterface->ClearOnCreateSessionCompleteDelegate_Handle(CreateSessionCompleteDelegateHandle);
-		// Broadcast our own custom delegate
-		MultiplayerOnCreateSessionComplete.Broadcast(false);
+		MultiplayerOnCreateSessionComplete.Broadcast(false); // Broadcast our own custom delegate
 	}
 }
 
@@ -105,6 +102,46 @@ void UMultiplayerSubsystem::FindSessions(int32 MaxSearchResults)
 		MultiplayerOnFindSessionsComplete.Broadcast(TArray<FOnlineSessionSearchResult>(), false);
 		UE_LOG(LogMSS, Log, TEXT("FindSessions: Failed to look for sessions!"))
 	}
+}
+
+void UMultiplayerSubsystem::JoinSessionAddress(const FString& InIPAddress) {
+	UE_LOG(LogMSS, Log, TEXT("[UMultiplayerSubsystem::JoinSessionAddress] Joining HOST via IP: %s"),
+		*InIPAddress)
+
+	JoinSessionCompleteDelegateHandle = SessionInterface->AddOnJoinSessionCompleteDelegate_Handle(JoinSessionCompleteDelegate);
+
+	// Get the engine and ensure it is not null
+	if (!SessionInterface.IsValid()) {
+		UE_LOG(LogMSS, Error, TEXT("JoinSession: SessionInterface not valid = Unknown error"))
+		SessionInterface->ClearOnJoinSessionCompleteDelegate_Handle(JoinSessionCompleteDelegateHandle);
+		MultiplayerOnJoinSessionComplete.Broadcast(EOnJoinSessionCompleteResult::UnknownError);
+		return;
+	}
+	
+	if (!GEngine) {
+		UE_LOG(LogMSS, Error, TEXT("Failed to join session via IPAddress. GEngine not valid."))
+		SessionInterface->ClearOnJoinSessionCompleteDelegate_Handle(JoinSessionCompleteDelegateHandle);
+		MultiplayerOnJoinSessionComplete.Broadcast(EOnJoinSessionCompleteResult::UnknownError);
+		return;
+	}
+
+	UWorld* World = GetWorld();
+	if (!World) {
+		UE_LOG(LogMSS, Error, TEXT("Failed to join session via IPAddress. UWorld* World not valid."))
+		SessionInterface->ClearOnJoinSessionCompleteDelegate_Handle(JoinSessionCompleteDelegateHandle);
+		MultiplayerOnJoinSessionComplete.Broadcast(EOnJoinSessionCompleteResult::UnknownError);
+		return; 
+	}
+
+	APlayerController* PlayerController = World->GetFirstPlayerController(); 
+	if (!PlayerController->IsValidLowLevel() || !PlayerController->IsLocalController()) {
+		UE_LOG(LogMSS, Error, TEXT("Failed to join session via IPAddress. Error with GetFirstPlayerController()."))
+		SessionInterface->ClearOnJoinSessionCompleteDelegate_Handle(JoinSessionCompleteDelegateHandle);
+		MultiplayerOnJoinSessionComplete.Broadcast(EOnJoinSessionCompleteResult::UnknownError);
+		return; 
+	}
+
+	PlayerController->ClientTravel(InIPAddress, ETravelType::TRAVEL_Absolute); 
 }
 
 void UMultiplayerSubsystem::JoinSession(const FOnlineSessionSearchResult& SessionResult) {

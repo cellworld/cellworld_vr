@@ -19,7 +19,13 @@ UBotEvadeGameInstance::UBotEvadeGameInstance() {
 
 void UBotEvadeGameInstance::Init() {
 	Super::Init();
+	UE_LOG(LogTemp, Log, TEXT("Initialized UBotEvadeGameInstance."))
+	this->OnNotifyPreClientTravel().AddUObject(this, &ThisClass::HandleOnNotifyPreClientTravel);
+}
 
+void UBotEvadeGameInstance::HandleOnNotifyPreClientTravel(const FString& IPAddress, ETravelType TravelType, bool bIsSeamlessTravel) {
+	UE_LOG(LogTemp, Error, TEXT("HandleOnNotifyPreClientTravel: Client travel to address <%s> (ETravelType = %i; bSeamlessTravel = %i)"),
+		*IPAddress, static_cast<int32>(TravelType), bIsSeamlessTravel);
 }
 
 void UBotEvadeGameInstance::MainMenu() {}

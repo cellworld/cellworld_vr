@@ -29,8 +29,13 @@ public:
 	/* button delegates (FOnClicked) */
 	UFUNCTION()
 	void HostButtonClicked();
+
 	UFUNCTION()
 	void JoinButtonClicked();
+
+	UFUNCTION()
+	void JoinByIPAddressButtonClicked();
+
 	UFUNCTION()
 	void QuitButtonClicked(); 
 
@@ -48,6 +53,9 @@ public:
 
 	UPROPERTY(EditAnywhere, meta=(BindWidget))
 	class UButton* QuitButton;
+
+	UPROPERTY(EditAnywhere, meta=(BindWidget))
+	class UButton* JoinByIPAddressButton;
 
 	UPROPERTY(EditAnywhere, meta=(BindWidget))
 	int32 NumPublicConnections{10};
