@@ -26,6 +26,5 @@ public class cellworld_vr : ModuleRules
             "cellworld_vr/Public",
             //"AsyncLoadingScreen/AsyncLoadingScreenLibrary.h"
         });
-        // To include OnlineSubsystemSteam, add it to the plugins section in your uproject file with the Enabled attribute set to true
     }
 }

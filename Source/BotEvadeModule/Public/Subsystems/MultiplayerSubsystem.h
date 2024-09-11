@@ -7,6 +7,8 @@
 #include "Interfaces/OnlineSessionInterface.h"
 #include "MultiplayerSubsystem.generated.h"
 
+DECLARE_LOG_CATEGORY_EXTERN(LogMSS, Log, All);
+
 //
 // Delcaring our own custom delegates for the Menu class to bind callbacks to
 //
@@ -57,10 +59,9 @@ private:
 	TSharedPtr<FOnlineSessionSettings> LastSessionSettings;
 	TSharedPtr<FOnlineSessionSearch> LastSessionSearch;
 
-	//
-	// To add to the Online Session Interface delegate list.
-	// We'll bind our MultiplayerSessionsSubsystem internal callbacks to these.
-	//
+	/* To add to the Online Session Interface delegate list.
+	We'll bind our MultiplayerSessionsSubsystem internal callbacks to these.
+	*/
 	FOnCreateSessionCompleteDelegate CreateSessionCompleteDelegate;
 	FDelegateHandle CreateSessionCompleteDelegateHandle;
 	FOnFindSessionsCompleteDelegate FindSessionsCompleteDelegate;

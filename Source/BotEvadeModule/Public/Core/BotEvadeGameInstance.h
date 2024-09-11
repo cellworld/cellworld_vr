@@ -24,8 +24,8 @@ public:
 	TSubclassOf<UUserWidget> MenuClass;
 	TSubclassOf<UUserWidget> OptionsMenuClass;
 	// TObjectPtr<UMainMenu> Menu;
-	IOnlineSessionPtr SessionInterface;
-	TSharedPtr<FOnlineSessionSearch> SessionSearch;
+	// IOnlineSessionPtr SessionInterface;
+	// TSharedPtr<FOnlineSessionSearch> SessionSearch;
 
 	UPROPERTY()
 	FString GameServerName;

@@ -14,8 +14,8 @@ class UMainMenuWidget : public UUserWidget {
 public:
 
 	virtual bool Initialize() override;
-	virtual void OnLevelRemovedFromWorld(ULevel* InLevel, UWorld* InWorld);
-
+	virtual void NativeDestruct() override;
+	
 	UFUNCTION()
 	void OnCreateSession(bool bWasSuccessful);
 	UFUNCTION()

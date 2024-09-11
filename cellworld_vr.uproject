@@ -31,7 +31,7 @@
 		},
 		{
 			"Name": "MultiplayerSessions",
-			"Enabled": true
+			"Enabled": false
 		},
 		{
 			"Name": "OculusXR",
