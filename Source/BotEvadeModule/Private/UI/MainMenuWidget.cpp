@@ -83,31 +83,16 @@ void UMainMenuWidget::OnCreateSession(bool bWasSuccessful) {
 	UE_LOG(LogMainMenu, Log, TEXT("OnCreateSession: bWasSuccessful = %i; PathToLobby: = %s"),
 		bWasSuccessful, *PathToLobby)
 
-	// only travel is bWasSuccessful is true 
-	if (bWasSuccessful) {
-		if (GEngine) {
-			GEngine->AddOnScreenDebugMessage(
-				-1,
-				15.f,
-				FColor::Blue,
-				FString(TEXT("MainMenuWidget::OnCreateSession: Session created successfully!"))
-			);
-		}
-		UWorld* World = GetWorld();
-		if (World) {
-			World->ServerTravel(PathToLobby);
-		}
-	} else {
+	if (!bWasSuccessful) {
 		UE_LOG(LogMainMenu, Log, TEXT("MainMenuWidget::OnCreateSession: Failed to create session!"))
-		if (GEngine) {
-			GEngine->AddOnScreenDebugMessage(
-				-1,
-				15.f,
-				FColor::Red,
-				FString(TEXT("Failed to create session!"))
-			);
-		}
 		HostButton->SetIsEnabled(true);
+		return;
+	}
+	
+	UWorld* World = GetWorld();
+	if (World) {
+		UE_LOG(LogMainMenu, Log, TEXT("MainMenuWidget::OnCreateSession: Preparing to call ServerTravel!"))
+		World->ServerTravel(PathToLobby);
 	}
 }
 
@@ -163,8 +148,8 @@ void UMainMenuWidget::OnJoinSession(EOnJoinSessionCompleteResult::Type Result) {
 			if (PlayerController) {
 				PlayerController->ClientTravel(Address, ETravelType::TRAVEL_Absolute);
 			} else { UE_LOG(LogMainMenu, Error, TEXT("Player controller not valid!")) }
-		}else { UE_LOG(LogMainMenu, Error, TEXT("OnJoinSession: SessionInterface not valid!")) }
-	}else {  }
+		} else { UE_LOG(LogMainMenu, Error, TEXT("OnJoinSession: SessionInterface not valid!")) }
+	} else { UE_LOG(LogMainMenu, Error, TEXT("OnJoinSession: Subsystem not valid!")) }
 }
 
 void UMainMenuWidget::OnDestroySession(bool bWasSuccessful) {

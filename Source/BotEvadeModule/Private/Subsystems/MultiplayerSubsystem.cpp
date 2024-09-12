@@ -140,7 +140,7 @@ void UMultiplayerSubsystem::JoinSessionAddress(const FString& InIPAddress) {
 		MultiplayerOnJoinSessionComplete.Broadcast(EOnJoinSessionCompleteResult::UnknownError);
 		return; 
 	}
-
+	
 	PlayerController->ClientTravel(InIPAddress, ETravelType::TRAVEL_Absolute); 
 }
 
@@ -196,6 +196,7 @@ void UMultiplayerSubsystem::OnCreateSessionComplete(FName SessionName, bool bWas
 				bWasSuccessful, *SessionName.ToString())
 		);
 	}
+	
 	if (SessionInterface) {
 		SessionInterface->ClearOnCreateSessionCompleteDelegate_Handle(CreateSessionCompleteDelegateHandle);
 	}

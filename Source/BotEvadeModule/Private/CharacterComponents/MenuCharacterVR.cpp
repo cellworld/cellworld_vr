@@ -14,6 +14,7 @@
 //////////////////////////////////////////////////////////////////////////
 // AMenuCharacterVR
 
+
 AMenuCharacterVR::AMenuCharacterVR():
 	CreateSessionCompleteDelegate(FOnCreateSessionCompleteDelegate::CreateUObject(this, &ThisClass::OnCreateSessionComplete)),
 	FindSessionsCompleteDelegate(FOnFindSessionsCompleteDelegate::CreateUObject(this, &ThisClass::OnFindSessionsComplete)),
@@ -347,3 +348,4 @@ void AMenuCharacterVR::MoveRight(float Value)
 		AddMovementInput(Direction, Value);
 	}
 }
+
