@@ -1,5 +1,6 @@
 #include "BotEvadeModule/Public/CharacterComponents/MenuCharacterVR.h"
 #include "HeadMountedDisplayFunctionLibrary.h"
+#include "MovieSceneSequenceID.h"
 #include "Camera/CameraComponent.h"
 #include "Online/OnlineSessionNames.h" // required for version > 5.1 for `SEARCH_PRESENCE` macro
 #include "Components/CapsuleComponent.h"
@@ -10,10 +11,11 @@
 #include "OnlineSubsystem.h"
 #include "OnlineSessionSettings.h"
 #include "OnlineSubsystemUtils.h"
+#include "Components/SphereComponent.h"
 
 //////////////////////////////////////////////////////////////////////////
 // AMenuCharacterVR
-
+DEFINE_LOG_CATEGORY(LogMenuCharacter);
 
 AMenuCharacterVR::AMenuCharacterVR():
 	CreateSessionCompleteDelegate(FOnCreateSessionCompleteDelegate::CreateUObject(this, &ThisClass::OnCreateSessionComplete)),
@@ -22,10 +24,15 @@ AMenuCharacterVR::AMenuCharacterVR():
 {
 	// Set size for collision capsule
 	GetCapsuleComponent()->InitCapsuleSize(42.f, 96.0f);
-
+	
 	// set our turn rates for input
 	BaseTurnRate = 45.f;
 	BaseLookUpRate = 45.f;
+
+	bAlwaysRelevant = true;
+	bReplicates = true;
+	NetUpdateFrequency = 30.0f;
+	MinNetUpdateFrequency = 15.0f;
 
 	// Don't rotate when the controller rotates. Let that just affect the camera.
 	bUseControllerRotationPitch = false;
@@ -48,6 +55,9 @@ AMenuCharacterVR::AMenuCharacterVR():
 	FollowCamera = CreateDefaultSubobject<UCameraComponent>(TEXT("FollowCamera"));
 	FollowCamera->SetupAttachment(CameraBoom, USpringArmComponent::SocketName); // Attach the camera to the end of the boom and let the boom adjust to match the controller orientation
 	FollowCamera->bUsePawnControlRotation = false; // Camera does not rotate relative to arm
+
+	SphereMesh = CreateDefaultSubobject<USphereComponent>(TEXT("MesheSphere"));
+	SphereMesh->SetupAttachment(RootComponent);
 
 	// Note: The skeletal mesh and anim blueprint references on the Mesh component (inherited from Character) 
 	// are set in the derived blueprint asset named MyCharacter (to avoid direct content references in C++)
@@ -83,10 +93,34 @@ AMenuCharacterVR::AMenuCharacterVR():
 	// }
 }
 
+void AMenuCharacterVR::BeginPlay() {
+	Super::BeginPlay();
+	UE_LOG(LogMenuCharacter, Log, TEXT("BeginPlay: About to call this->SetupPlayerInputComponent"))
+	if (HasAuthority() && GetController()->IsValidLowLevel()) {
+		UE_LOG(LogMenuCharacter, Warning, TEXT("Calling SetupPlayerInputComponent from Server"))
+		this->SetupPlayerInputComponent(InputComponent);
+	}
+}
+
+void AMenuCharacterVR::PossessedBy(AController* NewController) {
+	Super::PossessedBy(NewController);
+	FString ControllerName = "NULL";
+	if (NewController->IsValidLowLevel()){
+		ControllerName = NewController->GetName();
+	}
+	UE_LOG(LogMenuCharacter, Log, TEXT("PossssedBy(): Controller name: %s"), *ControllerName)
+}
+
+void AMenuCharacterVR::UnPossessed() {
+	Super::UnPossessed();
+	UE_LOG(LogMenuCharacter, Log, TEXT("UnPossessed()"))
+}
+
 //////////////////////////////////////////////////////////////////////////
 // Input
 
 void AMenuCharacterVR::SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) {
+	UE_LOG(LogMenuCharacter, Log, TEXT("SetupPlayerInputComponent"))
 	// Set up gameplay key bindings
 	check(PlayerInputComponent);
 	PlayerInputComponent->BindAction("Jump", IE_Pressed, this, &ACharacter::Jump);
@@ -109,6 +143,9 @@ void AMenuCharacterVR::SetupPlayerInputComponent(class UInputComponent* PlayerIn
 
 	// VR headset functionality
 	PlayerInputComponent->BindAction("ResetVR", IE_Pressed, this, &AMenuCharacterVR::OnResetVR);
+	if (InputComponent==nullptr) {
+		InputComponent = PlayerInputComponent; 
+	}
 }
 
 void AMenuCharacterVR::CreateGameSession() {
@@ -263,8 +300,10 @@ void AMenuCharacterVR::OnFindSessionsComplete(bool bWasSuccessful) {
 	// }
 }
 
-void AMenuCharacterVR::OnJoinSessionComplete(FName SessionName, EOnJoinSessionCompleteResult::Type Result)
-{
+void AMenuCharacterVR::OnJoinSessionComplete(FName SessionName, EOnJoinSessionCompleteResult::Type Result) {
+
+	UE_LOG(LogMenuCharacter, Log, TEXT("OnJoinSessionComplete"))
+
 	// if (!OnlineSessionInterface.IsValid()) {
 	// 	return;
 	// }

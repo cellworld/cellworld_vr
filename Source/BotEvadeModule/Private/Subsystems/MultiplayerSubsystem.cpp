@@ -78,8 +78,7 @@ void UMultiplayerSubsystem::CreateSession(int32 NumPublicConnections, FString Ma
 	}
 }
 
-void UMultiplayerSubsystem::FindSessions(int32 MaxSearchResults)
-{
+void UMultiplayerSubsystem::FindSessions(int32 MaxSearchResults) {
 	if (!SessionInterface.IsValid()) {
 		UE_LOG(LogMSS, Log, TEXT("FindSessions: SessionInterface not valid!"))
 		return;
@@ -187,20 +186,10 @@ void UMultiplayerSubsystem::OnCreateSessionComplete(FName SessionName, bool bWas
 		TEXT("OnCreateSessionComplete: Successful = %i; SessionName = %s"),
 		bWasSuccessful, *SessionName.ToString())
 	
-	if (GEngine) {
-		GEngine->AddOnScreenDebugMessage(
-			-1,
-			5.f,
-			FColor::Blue,
-			FString::Printf(TEXT("OnCreateSessionComplete: bWasSuccessful =  %i; SesssionName = %s"),
-				bWasSuccessful, *SessionName.ToString())
-		);
-	}
-	
 	if (SessionInterface) {
 		SessionInterface->ClearOnCreateSessionCompleteDelegate_Handle(CreateSessionCompleteDelegateHandle);
 	}
-
+	
 	MultiplayerOnCreateSessionComplete.Broadcast(bWasSuccessful);
 }
 

@@ -14,8 +14,7 @@ DECLARE_LOG_CATEGORY_EXTERN(LogBotEvadeGameMode, Log, All);
  * 
  */
 UCLASS()
-class BOTEVADEMODULE_API ABotEvadeGameMode : public AGameModeBase
-{
+class BOTEVADEMODULE_API ABotEvadeGameMode : public AGameModeBase {
 	GENERATED_BODY()
 
 public:
@@ -27,6 +26,7 @@ public:
 	virtual void StartPlay() override;
 	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 	virtual void Tick(float DeltaTime) override;
+	virtual void OnPostLogin(AController* NewController) override;
 
 	/* player components */
 	UPROPERTY(EditAnywhere)
@@ -34,6 +34,6 @@ public:
 
 	UPROPERTY(EditAnywhere)
 	TObjectPtr<APlayerCharacterVR> PlayerCharacterVR;
-	
+
 	/* experiment components */
 };

@@ -7,6 +7,8 @@
 #include "Interfaces/OnlineSessionInterface.h"
 #include "MenuCharacterVR.generated.h"
 
+DECLARE_LOG_CATEGORY_EXTERN(LogMenuCharacter, Log, All);
+
 UCLASS()
 class BOTEVADEMODULE_API AMenuCharacterVR : public ACharacter
 {
@@ -19,10 +21,20 @@ class BOTEVADEMODULE_API AMenuCharacterVR : public ACharacter
 	/** Follow camera */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"))
 	class UCameraComponent* FollowCamera;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Mesh, meta = (AllowPrivateAccess = "true"))
+	class USphereComponent* SphereMesh;
 	
 public:
 	// Sets default values for this character's properties
 	AMenuCharacterVR();
+
+	virtual void BeginPlay() override;
+	virtual void PossessedBy(AController* NewController) override;
+	virtual void UnPossessed() override;
+
+	// UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category=Camera)
+	// UInputComponent* InputComponent; 	
 
 /** Base turn rate, in deg/sec. Other scaling may affect final turn rate. */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category=Camera)

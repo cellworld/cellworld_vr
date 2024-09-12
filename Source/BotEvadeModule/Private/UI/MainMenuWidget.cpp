@@ -92,7 +92,7 @@ void UMainMenuWidget::OnCreateSession(bool bWasSuccessful) {
 	UWorld* World = GetWorld();
 	if (World) {
 		UE_LOG(LogMainMenu, Log, TEXT("MainMenuWidget::OnCreateSession: Preparing to call ServerTravel!"))
-		World->ServerTravel(PathToLobby);
+		World->ServerTravel(PathToLobby, true, false);
 	}
 }
 
