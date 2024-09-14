@@ -276,7 +276,7 @@ bool AExperimentServiceMonitor::StopEpisode() {
 	
 	ExperimentInfo.SetStatus(EExperimentStatus::FinishedEpisode);
 	// todo: get duration of this episode and pass into ExperimentManager->OnEpisodeFinished()
-	// ExperimentManager->OnEpisodeFinished(0, 30.f);
+	ExperimentManager->OnEpisodeFinished(PlayerIndex, 30.f);
 	
 	if (!this->ValidateClient(Client)) {
 		UE_LOG(LogExperiment, Fatal, TEXT("[AExperimentServiceMonitor::StopEpisode()] Can't stop episode, Experiment Service client not valid."));
@@ -839,13 +839,12 @@ bool AExperimentServiceMonitor::Test() {
 	
 	if (ExperimentManager) {
 		PlayerIndex = ExperimentManager->RegisterNewPlayer(PlayerPawn, NewExperimentMonitorData); //todo: 
-		ExperimentManager->OnEpisodeFinished(0, 30.f);
 	}
 	UE_LOG(LogExperiment, Warning, TEXT("Registered player: %i"), PlayerIndex)
 
 	/* start experiment  */
-	// StartExperimentRequest = this->SendStartExperimentRequest(Client, "ExperimentNameIn");
-	// if (!StartExperimentRequest) { return false; }
+	StartExperimentRequest = this->SendStartExperimentRequest(Client, "ExperimentNameIn");
+	if (!StartExperimentRequest) { return false; }
 
 	return true;
 }
