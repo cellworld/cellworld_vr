@@ -167,9 +167,8 @@ void AGameModeMain::StopLoadingScreen()
 	UAsyncLoadingScreenLibrary::StopLoadingScreen();
 }
 
-void AGameModeMain::OnUpdateHUDTimer()
-{
-	// both should be the same (true/false) at all times 
+void AGameModeMain::OnUpdateHUDTimer() {
+	// both should be the same (true/false) at all times
 	check(bSpawnExperimentService == ExperimentServiceMonitor->IsValidLowLevelFast());
 
 	float TimeRemaining = -2.0f;
@@ -180,8 +179,7 @@ void AGameModeMain::OnUpdateHUDTimer()
 	if (PlayerPawn->IsValidLowLevelFast() && PlayerPawn->PlayerHUD->IsValidLowLevelFast()) {
 		// counter the round down
 		PlayerPawn->PlayerHUD->SetTimeRemaining(FString::FromInt(FMath::FloorToInt(TimeRemaining + 1)));
-	}
-	else {
+	} else {
 		if (GEngine)
 			GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Red,
 			                                 FString::Printf(
@@ -191,14 +189,12 @@ void AGameModeMain::OnUpdateHUDTimer()
 }
 
 // todo: bug - either playerpawn or enum as string is not valid
-void AGameModeMain::OnExperimentStatusChanged(const EExperimentStatus ExperimentStatusIn)
-{
+void AGameModeMain::OnExperimentStatusChanged(const EExperimentStatus ExperimentStatusIn) {
 	const TEnumAsByte<EExperimentStatus> ExperimentStatusInByted = ExperimentStatusIn;
 	const FString EnumAsString = UEnum::GetValueAsString(ExperimentStatusInByted.GetValue());
 
 	int32 Index;
-	if (PlayerPawn->IsValidLowLevelFast() && EnumAsString.FindChar(TEXT(':'), Index))
-	{
+	if (PlayerPawn->IsValidLowLevelFast() && EnumAsString.FindChar(TEXT(':'), Index)) {
 		PlayerPawn->PlayerHUD->SetCurrentStatus(EnumAsString.Mid(Index + 2));
 	}
 }
@@ -209,8 +205,7 @@ void AGameModeMain::OnTimerFinished()
 	                                              FString::Printf(TEXT("[AGameModeMain::OnTimerFinished()]!")));
 }
 
-void AGameModeMain::StartPlay()
-{
+void AGameModeMain::StartPlay() {
 	Super::StartPlay();
 	UE_LOG(LogExperiment, Warning, TEXT("[AGameModeMain::StartPlay()] Starting game!"));
 
@@ -224,8 +219,14 @@ void AGameModeMain::StartPlay()
 	if (!bUseVR) { SpawnLocationVR.Z += 100; }
 
 	// this->SpawnAndPossessPlayer(SpawnLocationVR, FRotator::ZeroRotator);
-
-	GetWorldTimerManager().SetTimer(TimerHUDUpdate, this, &AGameModeMain::OnUpdateHUDTimer, 0.5f, true, -1.0f);
+	/*
+	 * todo: manage this from experiment service and create a timer delegate broadcast where the
+	 * - player pawn can bind to ExperimentService->FOnTimerUpdated.AddDynamic(APawnMain*, APawnMain::UpdatePlayerHUD)
+	 */
+	if (bSpawnExperimentService) {
+		UE_LOG(LogExperiment, Log, TEXT("Running HUD update timer!"))
+		GetWorldTimerManager().SetTimer(TimerHUDUpdate, this, &AGameModeMain::OnUpdateHUDTimer, 0.5f, true, -1.0f);
+	}
 
 	if (bSpawnExperimentService) { AGameModeMain::SpawnExperimentServiceMonitor(); }
 	else { UE_LOG(LogExperiment, Warning, TEXT("[AGameModeMain::StartPlay()] Not spawning Experiment Service!")); }
@@ -233,11 +234,9 @@ void AGameModeMain::StartPlay()
 	AGameModeMain::StopLoadingScreen();
 }
 
-void AGameModeMain::EndPlay(const EEndPlayReason::Type EndPlayReason)
-{
+void AGameModeMain::EndPlay(const EEndPlayReason::Type EndPlayReason) {
 	Super::EndPlay(EndPlayReason);
-	if (bSpawnExperimentService && this->ExperimentServiceMonitor->IsValidLowLevelFast())
-	{
+	if (bSpawnExperimentService && this->ExperimentServiceMonitor->IsValidLowLevelFast()) {
 		this->ExperimentStopEpisode();
 		this->ExperimentStopExperiment(ExperimentServiceMonitor->ExperimentNameActive);
 	}

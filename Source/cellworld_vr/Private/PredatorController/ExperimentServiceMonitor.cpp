@@ -272,12 +272,14 @@ bool AExperimentServiceMonitor::StopEpisode() {
 		if (!this->StopTimerEpisode(*TimerHandlePtr)) {
 			UE_LOG(LogExperiment, Error, TEXT("Failed to stop timer!"))
 		}
-		ExperimentInfo.SetStatus(EExperimentStatus::FinishedEpisode);
 	}
+	
+	ExperimentInfo.SetStatus(EExperimentStatus::FinishedEpisode);
+	// todo: get duration of this episode and pass into ExperimentManager->OnEpisodeFinished()
+	// ExperimentManager->OnEpisodeFinished(0, 30.f);
 	
 	if (!this->ValidateClient(Client)) {
 		UE_LOG(LogExperiment, Fatal, TEXT("[AExperimentServiceMonitor::StopEpisode()] Can't stop episode, Experiment Service client not valid."));
-		UE_DEBUG_BREAK();
 		return false;
 	}
 	
@@ -456,12 +458,11 @@ void AExperimentServiceMonitor::HandleStopEpisodeRequestResponse(const FString r
 	}
 
 	// cleanup
-	if (StopEpisodeRequest->IsValidLowLevelFast())
-	{
+	if (StopEpisodeRequest->IsValidLowLevelFast()) {
 		this->RequestRemoveDelegates(StopEpisodeRequest);
 		StopEpisodeRequest = nullptr;
 		printScreen("Removing delegates: StopEpisodeRequest");
-	}else{printScreen("Removing delegates: StopEpisodeRequest not valid!");}
+	} else { printScreen("Removing delegates: StopEpisodeRequest not valid!"); }
 }
 
 /* handle experiment service timeout */
@@ -558,7 +559,7 @@ bool AExperimentServiceMonitor::IsExperimentActive(const FString ExperimentNameI
 /* gets player pawn from world */
 bool AExperimentServiceMonitor::GetPlayerPawn() {
 	if (!GetWorld()) { return false; }
-
+	
 	APawn* Pawn = UGameplayStatics::GetPlayerPawn(GetWorld(), 0);
 	if (!Pawn) {
 		UE_LOG(LogExperiment, Fatal, TEXT("[AExperimentServiceMonitor::GetPlayerPawn()] No pawn found."))
@@ -834,10 +835,17 @@ bool AExperimentServiceMonitor::Test() {
 
 	/* Bind to Pawn's OnMovementDetected() */
 	if (!this->GetPlayerPawn()) { printScreen("Player Pawn NOT found!"); return false; }
+	UExperimentMonitorData* NewExperimentMonitorData = NewObject<UExperimentMonitorData>(this);
 	
+	if (ExperimentManager) {
+		PlayerIndex = ExperimentManager->RegisterNewPlayer(PlayerPawn, NewExperimentMonitorData); //todo: 
+		ExperimentManager->OnEpisodeFinished(0, 30.f);
+	}
+	UE_LOG(LogExperiment, Warning, TEXT("Registered player: %i"), PlayerIndex)
+
 	/* start experiment  */
-	StartExperimentRequest = this->SendStartExperimentRequest(Client, "ExperimentNameIn");
-	if (!StartExperimentRequest) { return false; }
+	// StartExperimentRequest = this->SendStartExperimentRequest(Client, "ExperimentNameIn");
+	// if (!StartExperimentRequest) { return false; }
 
 	return true;
 }
@@ -900,7 +908,7 @@ void AExperimentServiceMonitor::BeginPlay() {
 
 	if(this->SpawnAndPossessPredator()) { UE_LOG(LogExperiment, Warning, TEXT("Spawned predator: OK")); }
 	else{ UE_LOG(LogExperiment, Warning, TEXT("Spawned predator: FAILED")); UE_DEBUG_BREAK(); }
-
+	ExperimentManager = NewObject<UExperimentManager>(this, UExperimentManager::StaticClass());
 	// main loop 
 	Test();
 }

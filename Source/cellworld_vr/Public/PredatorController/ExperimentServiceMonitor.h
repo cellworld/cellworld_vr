@@ -4,13 +4,10 @@
 #include "GameFramework/Actor.h"
 #include "UObject/ObjectPtr.h"
 #include "Tools/GenericClock.h"
-#include "ExperimentPlugin.h"
 #include "MessageClient.h"
-#include "TCPMessages.h"
 #include "ExperimentUtils.h"
-#include "PredatorController/CharacterPredator.h"
 #include "PawnMain.h"
-#include "PawnDebug.h"
+#include "ExperimentComponents/ExperimentMonitorData.h"
 #include "ExperimentPlugin/Public/Structs.h"
 #include "ExperimentComponents/Occlusion.h"
 #include "DrawDebugHelpers.h"
@@ -19,6 +16,107 @@
 #include "ExperimentServiceMonitor.generated.h"
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnExperimentStatusChanged, EExperimentStatus, ExperimentStatusIn);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnEpisodeFinished, int, PlayerIndex, float, Duration); // todo: bind this to PlayerPawn->FExperimentData.
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FNotifyOnExperimentFinished, int, PlayerIndex); 
+
+//todo: move this to its own file in ExperimentPlugin or BotEvadeModule
+UCLASS(Blueprintable)
+class  UExperimentManager : public UObject {
+	GENERATED_BODY()
+	UExperimentManager():MaxEpisodeTotalTime(1800.0f) {
+	}
+public:
+	UPROPERTY(EditAnywhere)
+	TArray<int> ActivePlayers = {};
+	
+	UPROPERTY(EditAnywhere)
+	TArray<APawnMain*> ActivePlayersPawns = {};
+
+	UPROPERTY(EditAnywhere)
+	TArray<TObjectPtr<UExperimentMonitorData>> Data = {};
+
+	// const float MaxMinutesInEpisode = 30.0f;
+	float MaxEpisodeTotalTime = 1800; 
+	FNotifyOnExperimentFinished NotifyOnExperimentFinished; 
+
+	/* adds new player to ActivePlayer array.
+	 * @return Index of new player. -1 if Index is already used or error. 
+	 */
+	int RegisterNewPlayer(APawnMain* InPawn, UExperimentMonitorData* InExperimentData) {
+		if (!InPawn->IsValidLowLevelFast() || !InExperimentData->IsValidLowLevelFast()) {
+			UE_LOG(LogExperiment, Error, TEXT("Failed to register player. APawn is not valid."))
+			return -1;
+		}
+
+		const int NewPlayerIndex = Data.Add(InExperimentData);
+		UE_LOG(LogExperiment, Warning, TEXT("RegisterNewPlayer() to index: %i"), NewPlayerIndex)
+	
+		return NewPlayerIndex;
+	}
+
+	bool IsPlayerRegistered(const int InPlayerIndex) const {
+		if (!Data.IsValidIndex(InPlayerIndex)) {
+			UE_LOG(LogExperiment, Error,
+				TEXT("[IsPlayerRegistered]  InPlayerIndex not registered/valid."))
+			return false; 
+		}
+		return true; 
+	}
+	
+	bool IsExperimentDone(const int InPlayerIndex) const {
+		if (!IsPlayerRegistered(InPlayerIndex)) { return false; }
+
+		if ((Data)[InPlayerIndex]->GetEpisodesCompletedTime() >= MaxEpisodeTotalTime) {
+			return true; 
+		}
+		
+		return false;
+	}
+	
+	/* adds new player to ActivePlayer array.
+	 * @param const int InPlayerIndex - Player index to modify 
+	 * @param const int InEpisodeDuration - Duration of completed episode
+	 * @return void. 
+	 */
+	// ReSharper disable once CppMemberFunctionMayBeConst
+	void OnEpisodeFinished(const int InPlayerIndex, const float InEpisodeDuration) {
+		// check if player is in list
+		if (!Data.IsValidIndex(InPlayerIndex)) {
+			UE_LOG(LogExperiment, Error,
+				TEXT("[OnEpisodeFinished] Failed to modify ExperimentData. InPlayerIndex not valid."))
+			return; 
+		}
+		
+		check(InEpisodeDuration >= 0.0f);
+
+		Data[InPlayerIndex]->AddEpisodeAndCompletedTime(InEpisodeDuration);
+
+		// check if we finished everything and if so, notify delegates 
+		if (IsExperimentDone(InPlayerIndex)) {
+			NotifyOnExperimentFinished.Broadcast(InPlayerIndex);
+			UE_LOG(LogExperiment, Warning,
+				TEXT("Player (%i) finished experiment! Broadcasting to delegates (FNotifyOnExperimentFinished)."),
+				InPlayerIndex)
+		}
+		
+		UE_LOG(LogExperiment, Warning, TEXT("Added new episode to data! Player: %i, Duration: %0.3f."),
+			InPlayerIndex, InEpisodeDuration)
+	}
+	
+	/* Get FExperimentMonitorData by player index.
+	 * @param (const int) InPlayerIndex - Player index to get 
+	 * @return pointer to player's FExperimentMonitorData. 
+	 */
+	// FExperimentMontitorData* GetDataByIndex(const int InPlayerIndex) const {
+	// 	if (!Data.IsValidIndex(InPlayerIndex)) {
+	// 		UE_LOG(LogExperiment, Error,
+	// 			TEXT("[GetDataByIndex] Failed to get data. Player index not valid."))
+	// 		return nullptr; 
+	// 	}
+	// 	return (Data.IsValidIndex(InPlayerIndex)) ? (Data)[InPlayerIndex] : nullptr;
+	// }
+	
+};
 
 USTRUCT(Blueprintable)
 struct FExperimentTimer
@@ -209,8 +307,11 @@ public:
 	const float TimerFrequency = 0.5; 
 	float TimeElapsedTick = 0.0f;
 	uint32 FrameCountPrey = 0;
-	uint32 FrameCountPredator = 0; 
+	uint32 FrameCountPredator = 0;
 
+	UPROPERTY()
+	TObjectPtr<UExperimentManager> ExperimentManager; 
+	
 	FTimerHandle TimerHandle;
 	FTimerHandle* TimerHandlePtr = &TimerHandle;
 	FTimerManager TimerManager;
@@ -304,6 +405,8 @@ public:
 		TObjectPtr<APawnMain> PlayerPawnActive = nullptr;
 	UPROPERTY(EditAnywhere)
 		TObjectPtr<APawnMain> PlayerPawn = nullptr;
+	UPROPERTY(EditAnywhere)
+		int PlayerIndex; 
 
 	/* ==== helper functions  ==== */
 	bool ValidateLevel(UWorld* InWorld, const FString InLevelName);

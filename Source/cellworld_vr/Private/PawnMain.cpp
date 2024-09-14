@@ -8,8 +8,11 @@
 #include "HeadMountedDisplayFunctionLibrary.h"
 #include "cellworld_vr/cellworld_vr.h"
 #include "Components/EditableTextBox.h"
+#include "Components/StereoLayerComponent.h"
+#include "Engine/TextureRenderTarget2D.h"
 #include "GameFramework/PlayerController.h"
 #include "GameFramework/CharacterMovementComponent.h" // test 
+#include "InstanceCulling/InstanceCullingContext.h"
 #include "Kismet/GameplayStatics.h"
 
 // Sets default values
@@ -44,13 +47,13 @@ APawnMain::APawnMain() : Super() {
 	HUDWidgetComponent->AttachToComponent(Camera, FAttachmentTransformRules::KeepRelativeTransform);
 	HUDWidgetComponent->SetOnlyOwnerSee(true);
 	HUDWidgetComponent->SetVisibility(true);
-	HUDWidgetComponent->SetRelativeLocation(FVector(250.0f, 30.0f, -20.0f));
-	HUDWidgetComponent->SetRelativeScale3D(FVector(0.25f, 0.25f, 0.25f));
+	HUDWidgetComponent->SetRelativeLocation(FVector(100.0f, 0.0f, -30.0f));
+	HUDWidgetComponent->SetRelativeScale3D(FVector(0.1f, 0.1f, 0.1f));
 	HUDWidgetComponent->SetRelativeRotation(FRotator(0.0f, -180.0f, 0.0f));
 	HUDWidgetComponent->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-	HUDWidgetComponent->SetWidgetSpace(EWidgetSpace::Screen);
-	HUDWidgetComponent->SetDrawSize(FVector2d(1080, 720));
-
+	HUDWidgetComponent->SetWidgetSpace(EWidgetSpace::World); 
+	HUDWidgetComponent->SetDrawSize(FVector2d(1920, 1080));
+	
 	/*Create Motion Controllers*/
 	MotionControllerLeft = CreateDefaultSubobject<UMotionControllerComponent>(TEXT("MotionControllerLeft"));
 	MotionControllerLeft->CreationMethod = EComponentCreationMethod::Native;
@@ -59,7 +62,7 @@ APawnMain::APawnMain() : Super() {
 	MotionControllerLeft->MotionSource = FName("Left");
 	MotionControllerLeft->SetVisibility(false, false);
 	MotionControllerLeft->SetupAttachment(RootComponent);
-
+	
 	MotionControllerRight = CreateDefaultSubobject<UMotionControllerComponent>(TEXT("MotionControllerRight"));
 	MotionControllerRight->CreationMethod = EComponentCreationMethod::Native;
 	MotionControllerRight->SetCanEverAffectNavigation(false);
@@ -80,13 +83,14 @@ APawnMain::APawnMain() : Super() {
 
 	const FSoftClassPath PlayerHUDClassRef(
 		TEXT("/Script/UMGEditor.WidgetBlueprint'/Game/Interfaces/BP_HUDExperiment.BP_HUDExperiment_C'"));
-	if (TSubclassOf<UHUDExperiment> HUDClass = PlayerHUDClassRef.TryLoadClass<UHUDExperiment>())
-	{
-		HUDWidgetComponent->SetWidgetClass(HUDClass);
+	PlayerHUDClass = PlayerHUDClassRef.TryLoadClass<UHUDExperiment>();
+	if (PlayerHUDClass->IsValidLowLevel()) {
+		HUDWidgetComponent->SetWidgetClass(PlayerHUDClass);
+		UE_LOG(LogExperiment, Log, TEXT("[APawnMain::APawnMain()] UHUDExperiment found."));
+	} else {
+		UE_LOG(LogExperiment, Error, TEXT("[APawnMain::APawnMain()] UHUDExperiment not found."));
 	}
-	else { UE_LOG(LogExperiment, Error, TEXT("[APawnMain::APawnMain()] Couldn't find HUD experiment.")); }
 }
-
 
 // Called to bind functionality to input
 void APawnMain::SetupPlayerInputComponent(class UInputComponent* InInputComponent)
@@ -223,49 +227,67 @@ bool APawnMain::HUDResetTimer(const float DurationIn) const
 	return true;
 }
 
-bool APawnMain::CreateAndInitializeWidget()
-{
-	if (!PlayerHUDClass->IsValidLowLevelFast()) { return false; }
+bool APawnMain::CreateAndInitializeWidget() {
+
+	if (!PlayerHUDClass->IsValidLowLevelFast() || !HUDWidgetComponent->IsValidLowLevelFast()) {
+		UE_LOG(LogExperiment, Error, TEXT("HUDClass or WidgetComponent not valid."));
+		return false;
+	}
 
 	APlayerController* PlayerController = GetWorld()->GetFirstPlayerController();
 	check(PlayerController->IsValidLowLevelFast());
 
-	if (!PlayerController->IsValidLowLevelFast())
-	{
+	if (!PlayerController->IsValidLowLevelFast()) {
 		UE_LOG(LogExperiment, Error, TEXT("[APawnMain::CreateAndInitializeWidget()] PlayerController not valid."));
 		return false;
 	}
 
 	PlayerHUD = CreateWidget<UHUDExperiment>(PlayerController, PlayerHUDClass);
-	if (!PlayerHUD->IsValidLowLevelFast())
-	{
-		if (GEngine)
-			GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Red,
-			                                 FString::Printf(TEXT(
-				                                 "[APawnMain::CreateAndInitializeWidget()] PlayerHUD not valid.")));
+	if (!PlayerHUD->IsValidLowLevelFast()) {
+		UE_LOG(LogExperiment, Error, TEXT("[APawnMain::CreateAndInitializeWidget()] PlayerHUD not valid."));
 		return false;
 	}
 
-	PlayerHUD->Init();
+	// todo: check if this changes anything; OnNativeConstruct() calls Init()
+	// PlayerHUD->Init(); 
 
-	if (!bUseVR) { PlayerHUD->AddToViewport(); }
-	else { this->HUDWidgetComponent->SetWidget(PlayerHUD); }
-
-	if (GEngine)
-		GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Emerald,
-		                                 FString::Printf(
-			                                 TEXT("[APawnMain::CreateAndInitializeWidget()] OK. Using VR? %i"),
-			                                 bUseVR));
+	if (!bUseVR) {
+		HUDWidgetComponent->SetWidgetSpace(EWidgetSpace::Screen);
+		PlayerHUD->AddToViewport();
+	} else {
+		// HUDWidgetComponent->SetWidget(PlayerHUD);
+		HUDWidgetComponent->SetWidgetSpace(EWidgetSpace::World); // default
+	}
 
 	return true;
 }
 
+bool APawnMain::StartPositionSamplingTimer(const float InRateHz) {
+	EventTimer = NewObject<UEventTimer>(this, UEventTimer::StaticClass());
+	if (EventTimer->IsValidLowLevel()) {
+		EventTimer->SetRateHz(InRateHz); //todo: make sampling rate GI variable (or somewhere relevant) 
+		EventTimer->bLoop = true;
+		
+		EventTimer->OnTimerFinishedDelegate.AddDynamic(this,
+			&APawnMain::OnMovementDetected);
+		
+		if (!EventTimer->Start()) { return false; }
+	} else {
+		UE_LOG(LogExperiment, Error, TEXT("[APawnMain::BeginPlay()] EventTimer is NULL!"))
+		return false;
+	}
+	return true;
+}
+
 // Called when the game starts or when spawned
-void APawnMain::BeginPlay()
-{
+void APawnMain::BeginPlay() {
 	Super::BeginPlay();
 
-	if (UUserWidget* HUDWidget = HUDWidgetComponent->GetWidget()) { PlayerHUD = Cast<UHUDExperiment>(HUDWidget); }
+	if (UUserWidget* HUDWidget = HUDWidgetComponent->GetWidget()) {
+		PlayerHUD = Cast<UHUDExperiment>(HUDWidget);
+		UE_LOG(LogExperiment, Log, TEXT("Found HUDWidget: %s"), *HUDWidget->GetName())
+		// HUDWidget->GetName()
+	}
 	check(PlayerHUD->IsValidLowLevelFast());
 
 	AGameModeBase* GameModeTemp = GetWorld()->GetAuthGameMode();
@@ -273,29 +295,19 @@ void APawnMain::BeginPlay()
 	if (GameMode->IsValidLowLevelFast()) {
 		bUseVR = GameMode->bUseVR;
 		GameMode->PlayerPawn = this;
+		if (GameMode->bSpawnExperimentService) {
+			if (const bool bTimerStarted = StartPositionSamplingTimer(90.0f); !bTimerStarted) {
+				UE_LOG(LogExperiment, Error, TEXT("Failed to start Position sampling timer!"))
+			}
+		}
 	}
 
-	EventTimer = NewObject<UEventTimer>(this, UEventTimer::StaticClass());
-	if (EventTimer->IsValidLowLevel()) {
-		EventTimer->SetRateHz(90.0f); //todo: make sampling rate GI variable (or somewhere relevant) 
-		EventTimer->bLoop = true;
-		
-		EventTimer->OnTimerFinishedDelegate.AddDynamic(this,
-			&APawnMain::OnMovementDetected);
-		
-		if (EventTimer->Start()) {
-			if (GEngine) GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Green,
-				FString::Printf(TEXT("[APawnMain::BeginPlay()] Posxn Sampling STARTED OK!")));
-		} else {
-			if (GEngine) GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Red,
-				FString::Printf(TEXT("[APawnMain::BeginPlay()] Timer STARTED FAILED!")));}
-	}else {
-		UE_LOG(LogExperiment, Error, TEXT("[APawnMain::BeginPlay()] EventTimer is NULL!"))
-		if (GEngine) GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Red,
-				FString::Printf(TEXT("[APawnMain::BeginPlay()] Timer NULLPTR!")));
-	}
+    if (!this->CreateAndInitializeWidget()) {
+		UE_DEBUG_BREAK();
+    	UE_LOG(LogExperiment, Error, TEXT("Failed to initialize PlayerHUD!"))
+    }
 	
-	// GetWorld()->GetTimerManager().SetTimer(TimerHandleDetectMovement, this,
+	// GetWorld()->CreateAndInitializeGetTimerManager().SetTimer(TimerHandleDetectMovement, this,
 	// 		&APawnMain::OnMovementDetected,
 	// 		DurationIn, true, -1.0f);
 	
@@ -341,6 +353,10 @@ void APawnMain::EndPlay(const EEndPlayReason::Type EndPlayReason)
 	if (this->EventTimer->IsValidLowLevel()) {
 		const bool bResultStopTimer = this->EventTimer->Stop();
 		UE_LOG(LogExperiment, Log, TEXT("[APawnMain::EndPlay] Stop Timer result: %i"),bResultStopTimer)
+	}
+
+	if (HUDWidgetComponent && HUDWidgetComponent->GetWidget()) {
+		HUDWidgetComponent->DestroyComponent();
 	}
 }
 

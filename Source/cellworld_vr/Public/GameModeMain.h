@@ -8,8 +8,7 @@
 #include "GameModeMain.generated.h"
 
 UCLASS()
-class CELLWORLD_VR_API AGameModeMain : public AGameModeBase
-{
+class CELLWORLD_VR_API AGameModeMain : public AGameModeBase {
 public:
 	AGameModeMain();
 	
@@ -18,6 +17,7 @@ public:
 	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Debug")
 	bool bUseVR = false;
+	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Debug")
 	bool bSpawnExperimentService = true;
 	

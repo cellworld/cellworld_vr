@@ -7,7 +7,7 @@
 #include "Interfaces/HUDExperiment.h"
 #include "HeadMountedDisplay.h"
 #include "Containers/Array.h" 
-#include "GameFramework/CharacterMovementComponent.h" // test 
+#include "GameFramework/CharacterMovementComponent.h" // test
 #include "MotionControllerComponent.h"
 #include "MiscUtils/Timer/EventTimer.h"
 #include "PawnMain.generated.h"
@@ -15,8 +15,7 @@
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnMovementDetected, FVector, Location);
 
 UCLASS()
-class CELLWORLD_VR_API APawnMain : public APawn
-{
+class CELLWORLD_VR_API APawnMain : public APawn {
 	GENERATED_BODY()
 
 public:
@@ -40,6 +39,7 @@ public:
 	APlayerController* GetGenericController();
 	bool HUDResetTimer(float DurationIn) const;
 	bool CreateAndInitializeWidget();
+	bool StartPositionSamplingTimer(const float InRateHz);
 	void DestroyHUD();
 
 	/* temp */
@@ -76,8 +76,9 @@ public:
 	USceneComponent* VROrigin; 
 	UCapsuleComponent* CapsuleComponent;
 	UCustomCharacterMovementComponent* MovementComponent; 
-	class UMotionControllerComponent* MotionControllerLeft;
-	class UMotionControllerComponent* MotionControllerRight;
+	UMotionControllerComponent* MotionControllerLeft;
+	UMotionControllerComponent* MotionControllerRight;
+	UCustomStereoLayerComponent* StereoLayerComponent;
 
 	UPROPERTY(EditAnywhere)
 	TSubclassOf<class UHUDExperiment> PlayerHUDClass;
