@@ -13,6 +13,7 @@
 #include "DrawDebugHelpers.h"
 #include "PredatorBasic.h"
 #include "cellworld_vr/cellworld_vr.h"
+#include "MiscUtils/Timer/EventTimer.h"
 #include "ExperimentServiceMonitor.generated.h"
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnExperimentStatusChanged, EExperimentStatus, ExperimentStatusIn);
@@ -38,7 +39,7 @@ public:
 	// const float MaxMinutesInEpisode = 30.0f;
 	float MaxEpisodeTotalTime = 1800; 
 	FNotifyOnExperimentFinished NotifyOnExperimentFinished; 
-
+	
 	/* adds new player to ActivePlayer array.
 	 * @return Index of new player. -1 if Index is already used or error. 
 	 */
@@ -309,6 +310,9 @@ public:
 	uint32 FrameCountPrey = 0;
 	uint32 FrameCountPredator = 0;
 
+	UPROPERTY(EditAnywhere)
+	TObjectPtr<UStopwatch> Stopwatch;
+
 	UPROPERTY()
 	TObjectPtr<UExperimentManager> ExperimentManager; 
 	
@@ -388,7 +392,6 @@ public:
 	static bool ValidateExperimentName(const FString& ExperimentNameIn);
 	static bool Disconnect(UMessageClient* ClientIn);
 	
-	bool StartExperiment(const FString& ExperimentNameIn);
 	bool StopExperiment(const FString& ExperimentNameIn);
 	
 	UFUNCTION(BlueprintCallable, Category = Experiment)
@@ -397,16 +400,16 @@ public:
 		bool StopEpisode();
 
 	UFUNCTION(BlueprintCallable, Category = Experiment)
-		bool StartTimerEpisode(const float DurationIn, FTimerHandle& TimerHandleIn);
+		bool StartTimerEpisode();
 	UFUNCTION(BlueprintCallable, Category = Experiment)
-		bool StopTimerEpisode(FTimerHandle& TimerHandleIn);
+		bool StopTimerEpisode(double &InElapsedTime);
 
 	UPROPERTY(EditAnywhere)
 		TObjectPtr<APawnMain> PlayerPawnActive = nullptr;
 	UPROPERTY(EditAnywhere)
 		TObjectPtr<APawnMain> PlayerPawn = nullptr;
 	UPROPERTY(EditAnywhere)
-		int PlayerIndex; 
+		int PlayerIndex = -1; 
 
 	/* ==== helper functions  ==== */
 	bool ValidateLevel(UWorld* InWorld, const FString InLevelName);
@@ -432,8 +435,6 @@ public:
 	/* update predator stuff */
 	UFUNCTION()
 		void HandleUpdatePredator(const FMessage MessageIn);
-	UFUNCTION()
-		void OnTimerFinished();
 	UFUNCTION()
 		float GetTimeRemaining() const;
 	float GetTimeElapsed() const;

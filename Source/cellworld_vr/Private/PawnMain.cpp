@@ -248,16 +248,11 @@ bool APawnMain::CreateAndInitializeWidget() {
 		return false;
 	}
 
-	// todo: check if this changes anything; OnNativeConstruct() calls Init()
-	// PlayerHUD->Init(); 
-
 	if (!bUseVR) {
 		HUDWidgetComponent->SetWidgetSpace(EWidgetSpace::Screen);
 		PlayerHUD->AddToViewport();
-	} else {
-		// HUDWidgetComponent->SetWidget(PlayerHUD);
-		HUDWidgetComponent->SetWidgetSpace(EWidgetSpace::World); // default
 	}
+	else { HUDWidgetComponent->SetWidgetSpace(EWidgetSpace::World); }
 
 	return true;
 }

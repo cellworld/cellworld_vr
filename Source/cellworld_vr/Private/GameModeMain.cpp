@@ -171,20 +171,15 @@ void AGameModeMain::OnUpdateHUDTimer() {
 	// both should be the same (true/false) at all times
 	check(bSpawnExperimentService == ExperimentServiceMonitor->IsValidLowLevelFast());
 
-	float TimeRemaining = -2.0f;
-	if (ExperimentServiceMonitor->IsValidLowLevelFast()) {
-		TimeRemaining = ExperimentServiceMonitor->GetTimeRemaining();
-	} else { TimeRemaining = -2.0f; }
+	double TimeElapsed = 0.0f;
+	if (ExperimentServiceMonitor->IsValidLowLevelFast() &&  
+		ExperimentServiceMonitor->ExperimentInfo.Status == EExperimentStatus::InEpisode &&
+		ExperimentServiceMonitor->Stopwatch && ExperimentServiceMonitor->Stopwatch->IsRunning()) {
+		TimeElapsed = ExperimentServiceMonitor->Stopwatch->GetElapsedTime();
+	} 
 
 	if (PlayerPawn->IsValidLowLevelFast() && PlayerPawn->PlayerHUD->IsValidLowLevelFast()) {
-		// counter the round down
-		PlayerPawn->PlayerHUD->SetTimeRemaining(FString::FromInt(FMath::FloorToInt(TimeRemaining + 1)));
-	} else {
-		if (GEngine)
-			GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Red,
-			                                 FString::Printf(
-				                                 TEXT("[AGameModeMain::OnUpdateHUDTimer()] PlayerPawn | HUD not valid.")));
-		TimeRemaining = -2.0f;
+		PlayerPawn->PlayerHUD->SetTimeRemaining(FString::Printf(TEXT("%0.2f"), TimeElapsed));
 	}
 }
 
@@ -225,7 +220,14 @@ void AGameModeMain::StartPlay() {
 	 */
 	if (bSpawnExperimentService) {
 		UE_LOG(LogExperiment, Log, TEXT("Running HUD update timer!"))
-		GetWorldTimerManager().SetTimer(TimerHUDUpdate, this, &AGameModeMain::OnUpdateHUDTimer, 0.5f, true, -1.0f);
+		HUDTimer = NewObject<UEventTimer>(this, UEventTimer::StaticClass());
+		if (HUDTimer) {
+			HUDTimer->SetRateHz(10.0f);
+			HUDTimer->bLoop = true;
+			HUDTimer->OnTimerFinishedDelegate.AddDynamic(this, &AGameModeMain::OnUpdateHUDTimer);
+			if (HUDTimer->Start()) { UE_LOG(LogExperiment, Log, TEXT("Started v2 timer for OnUpdateHUDTimer")); } 
+		}
+		// GetWorldTimerManager().SetTimer(TimerHUDUpdate, this, &AGameModeMain::OnUpdateHUDTimer, 0.1f, true, -1.0f);
 	}
 
 	if (bSpawnExperimentService) { AGameModeMain::SpawnExperimentServiceMonitor(); }
@@ -254,8 +256,7 @@ void AGameModeMain::Tick(float DeltaTime)
 	// }
 }
 
-bool AGameModeMain::ExperimentStartEpisode()
-{
+bool AGameModeMain::ExperimentStartEpisode() {
 	if (!IsValid(ExperimentServiceMonitor)) { return false; }
 	return ExperimentServiceMonitor->StartEpisode(ExperimentServiceMonitor->Client,
 	                                              ExperimentServiceMonitor->ExperimentInfo.ExperimentNameActive);
