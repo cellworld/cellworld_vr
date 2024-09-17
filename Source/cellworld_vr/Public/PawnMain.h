@@ -31,7 +31,7 @@ public:
 	FOnMovementDetected MovementDetectedEvent;
 
 	UPROPERTY(EditAnywhere)
-		bool bUseVR = false;
+		bool bUseVR = true;
 
 	void ResetOrigin();
 	void RestartGame();

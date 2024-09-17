@@ -25,6 +25,8 @@ public:
 	
 	/* set remaining time */
 	void SetCurrentStatus(const FString& CurrentStatusIn); // todo; change to take in Enum
+	void SetNotificationVisibility(ESlateVisibility InVisibility);
+	void SetNotificationText(const FString& InNotification);
 	void SetTimeRemaining(const FString& TimeRemainingIn);
 	void Init();
 	
@@ -38,6 +40,10 @@ public:
 
 	UPROPERTY(EditAnywhere, meta=(BindWidget))
 	class UEditableTextBox* TextBoxCurrentStatus;
+	
+	UPROPERTY(EditAnywhere, meta=(BindWidget))
+	class UEditableTextBox* TextBoxNotification;
+
 };
 
 

@@ -11,6 +11,30 @@ AExperimentServiceMonitor::AExperimentServiceMonitor() {
 	PrimaryActorTick.bStartWithTickEnabled = true;
 }
 
+void AExperimentServiceMonitor::OnExperimentFinished(const int InPlayerIndex) {
+
+	UE_LOG(LogExperiment, Log, TEXT("OnExperimentFinished: Player #%i finished!"), InPlayerIndex)
+	
+	UExperimentMonitorData* Data = ExperimentManager->GetDataByIndex(InPlayerIndex);
+	if (Data->IsValidLowLevel()) {
+		UE_LOG(LogExperiment, Log,
+			TEXT("OnExperimentFinished: Player #%i finished: Episodes: %i; TotalTime: %0.2f;"),
+			InPlayerIndex, Data->EpisodesCompleted, Data->EpisodesCompletedTime)
+	} else {
+		UE_LOG(LogExperiment, Error, TEXT("Failed to get Data for Player #%i !"), InPlayerIndex)
+	}
+	
+	if (!PlayerPawn->IsValidLowLevelFast() || !PlayerPawn->PlayerHUD->IsValidLowLevel()) {
+		UE_LOG(LogExperiment, Error, TEXT("OnExperimentFinished: Failed to get PlayerPawn and exit."))
+		return; 
+	}
+	PlayerPawn->PlayerHUD->SetNotificationVisibility(ESlateVisibility::Visible);
+
+	/* todo; unregister player from ExperimentManager */
+	UE_LOG(LogExperiment, Log, TEXT("OnExperimentFinished Player #%i: Called everything OK!"), InPlayerIndex)
+
+}
+
 //TODO - add argument to include MessageType (Log, Warning, Error, Fatal)
 void printScreen(const FString InMessage) {
 	if (GEngine) GEngine->AddOnScreenDebugMessage(-1, 1.0f, FColor::Green, FString::Printf(TEXT("%s"), *InMessage));
@@ -232,10 +256,13 @@ bool AExperimentServiceMonitor::StopEpisode() {
 	}
 	
 	ExperimentInfo.SetStatus(EExperimentStatus::FinishedEpisode);
-
 	double ElapsedTime = -1.0f;
-	StopTimerEpisode(ElapsedTime);
-	ExperimentManager->OnEpisodeFinished(PlayerIndex, ElapsedTime);
+	if (StopTimerEpisode(ElapsedTime)) {
+		// ExperimentManager->OnEpisodeFinished(PlayerIndex, ElapsedTime);
+		ExperimentManager->OnEpisodeFinishedDelegate.Broadcast(PlayerIndex, ElapsedTime);
+	} else {
+		UE_LOG(LogExperiment, Error, TEXT("Failed to StopTimerEpisode() in StopEpisode()"))
+	}
 		
 	if (!ValidateClient(Client)) {
 		UE_LOG(LogExperiment, Fatal, TEXT("[AExperimentServiceMonitor::StopEpisode()] Can't stop episode, Experiment Service client not valid."));
@@ -289,7 +316,7 @@ bool AExperimentServiceMonitor::StopTimerEpisode(double& InElapsedTime) {
 		return false; 
 	}
 
-	InElapsedTime = Stopwatch->Stop();
+	InElapsedTime = Stopwatch->Lap();
 	Stopwatch->Reset();
 	// Stopwatch->MarkAsGarbage();
 	UE_LOG(LogExperiment,Log,TEXT("[AExperimentServiceMonitor::StopTimerEpisode] OK"));
@@ -546,7 +573,7 @@ void AExperimentServiceMonitor::SelfDestruct(const FString InErrorMessage)
 
 void AExperimentServiceMonitor::HandleSubscribeToTrackingResponse(FString Response) {
 
-	UE_LOG(LogExperiment, Error, TEXT("[AExperimentServiceMonitor::HandleSubscribeToTrackingResponse] Response: %s"), *Response)
+	UE_LOG(LogExperiment, Log, TEXT("[AExperimentServiceMonitor::HandleSubscribeToTrackingResponse] Response: %s"), *Response)
 
 	if (Response == "success") {
 		/* reset tracking agent */
@@ -795,8 +822,9 @@ bool AExperimentServiceMonitor::Test() {
 	
 	if (ExperimentManager) {
 		PlayerIndex = ExperimentManager->RegisterNewPlayer(PlayerPawn, NewExperimentMonitorData); //todo: 
+	} else {
+		UE_LOG(LogExperiment, Error, TEXT(" Failed to Register new player. ExperimentManager not valid!"))
 	}
-	UE_LOG(LogExperiment, Warning, TEXT("Registered player: %i"), PlayerIndex)
 
 	/* start experiment  */
 	StartExperimentRequest = this->SendStartExperimentRequest(Client, "ExperimentNameIn");
@@ -838,7 +866,11 @@ void AExperimentServiceMonitor::BeginPlay() {
 
 	if(this->SpawnAndPossessPredator()) { UE_LOG(LogExperiment, Warning, TEXT("Spawned predator: OK")); }
 	else{ UE_LOG(LogExperiment, Warning, TEXT("Spawned predator: FAILED")); UE_DEBUG_BREAK(); }
+	
 	ExperimentManager = NewObject<UExperimentManager>(this, UExperimentManager::StaticClass());
+	ensure(ExperimentManager->IsValidLowLevel());
+	ExperimentManager->NotifyOnExperimentFinishedDelegate.AddDynamic(this, &AExperimentServiceMonitor::OnExperimentFinished);
+
 	// main loop 
 	Test();
 }
@@ -852,7 +884,7 @@ void AExperimentServiceMonitor::Tick(float DeltaTime)
 void AExperimentServiceMonitor::EndPlay(const EEndPlayReason::Type EndPlayReason) {
 	Super::EndPlay(EndPlayReason);
 
-	if (Stopwatch->IsRunning()) { Stopwatch->Reset(); };
+	if (Stopwatch && Stopwatch->IsRunning()) { Stopwatch->Reset(); };
 	if (TrackingClient->IsValidLowLevelFast()) { TrackingClient->Disconnect(); }
 	if (Client->IsValidLowLevelFast()) { Client->Disconnect(); }
 	

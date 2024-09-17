@@ -10,21 +10,13 @@
 #include "PlayerControllerVR.h"
 #include "cellworld_vr/cellworld_vr.h"
 
+
+
 AGameModeMain::AGameModeMain() {
-	// vr or WASD? 
+	// vr or WASD?
 	if (bUseVR) { PlayerControllerClass = APlayerControllerVR::StaticClass(); }
 	else { PlayerControllerClass = AMouseKeyboardPlayerController::StaticClass(); }
 
-	// if (UHeadMountedDisplayFunctionLibrary::IsHeadMountedDisplayEnabled()) {
-	// 	UE_LOG(LogExperiment, Log, TEXT("[AGameModeMain::AGameModeMain] Player controller: VR"))
-	// 	bUseVR = true; 
-	// 	PlayerControllerClass = APlayerControllerVR::StaticClass();
-	// } else {
-	// 	UE_LOG(LogExperiment, Log, TEXT("[AGameModeMain::AGameModeMain] Player controller: WASD"))
-	// 	bUseVR = false; 
-	// 	PlayerControllerClass = AMouseKeyboardPlayerController::StaticClass();
-	// }
-	
 	DefaultPawnClass = APawnMain::StaticClass();
 	GameStateClass = AGameStateMain::StaticClass();
 

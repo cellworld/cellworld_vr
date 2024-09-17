@@ -242,15 +242,15 @@ bool APawnMain::CreateAndInitializeWidget() {
 		return false;
 	}
 
-	PlayerHUD = CreateWidget<UHUDExperiment>(PlayerController, PlayerHUDClass);
-	if (!PlayerHUD->IsValidLowLevelFast()) {
-		UE_LOG(LogExperiment, Error, TEXT("[APawnMain::CreateAndInitializeWidget()] PlayerHUD not valid."));
-		return false;
-	}
+	// PlayerHUD = CreateWidget<UHUDExperiment>(PlayerController, PlayerHUDClass);
+	// if (!PlayerHUD->IsValidLowLevelFast()) {
+	// 	UE_LOG(LogExperiment, Error, TEXT("[APawnMain::CreateAndInitializeWidget()] PlayerHUD not valid."));
+	// 	return false;
+	// }
 
 	if (!bUseVR) {
 		HUDWidgetComponent->SetWidgetSpace(EWidgetSpace::Screen);
-		PlayerHUD->AddToViewport();
+		// PlayerHUD->AddToViewport();
 	}
 	else { HUDWidgetComponent->SetWidgetSpace(EWidgetSpace::World); }
 

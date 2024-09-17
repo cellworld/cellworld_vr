@@ -110,10 +110,9 @@ public:
 		return FPlatformTime::Seconds() - StartTime;
 	}
 	
-	double Stop() {
+	double Lap() {
 		const double FinalElapsedTime = GetElapsedTime(); 
-		UE_LOG(LogTimer, Log, TEXT("UStopwatch::Stop(); Elapsed time: %0.2f"), FinalElapsedTime)
-		Reset(); 
+		UE_LOG(LogTimer, Log, TEXT("UStopwatch::Lap(); Elapsed time: %0.2f"), FinalElapsedTime)
 		return FinalElapsedTime; 	
 	}
 
