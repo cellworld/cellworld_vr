@@ -291,7 +291,8 @@ void APawnMain::BeginPlay() {
 		bUseVR = GameMode->bUseVR;
 		GameMode->PlayerPawn = this;
 		if (GameMode->bSpawnExperimentService) {
-			if (const bool bTimerStarted = StartPositionSamplingTimer(90.0f); !bTimerStarted) {
+			// todo: make rate (hz) to game instance variable
+			if (const bool bTimerStarted = StartPositionSamplingTimer(30.0f); !bTimerStarted) {
 				UE_LOG(LogExperiment, Error, TEXT("Failed to start Position sampling timer!"))
 			}
 		}

@@ -423,7 +423,9 @@ public:
 		FOnExperimentStatusChanged OnExperimentStatusChangedEvent;
 	UFUNCTION()
 	void OnStatusChanged(const EExperimentStatus ExperimentStatusIn);
-	
+
+	UPROPERTY(EditAnywhere)
+		bool bSubscribed = false; 
 	UFUNCTION(BlueprintCallable, Category = Experiment)
 		bool SubscribeToTracking();
 	UFUNCTION(BlueprintCallable, Category = Experiment)
@@ -477,6 +479,8 @@ public:
 		bool IsExperimentActive(const FString ExperimentNameIn);
 
 	/* update agents */
+	UPROPERTY(EditAnywhere)
+		bool bCanUpdatePrey = false;
 	UFUNCTION()
 		void UpdatePredator(const FMessage& InMessage);
 	UFUNCTION()

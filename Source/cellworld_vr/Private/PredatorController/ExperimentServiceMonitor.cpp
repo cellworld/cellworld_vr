@@ -345,7 +345,13 @@ void AExperimentServiceMonitor::HandleStartEpisodeRequestResponse(const FString 
 	ExperimentInfo.SetStatus(EExperimentStatus::InEpisode);
 	
 	/* resubscribe */
-	const bool bSubscribeResult = this->SubscribeToTracking();
+	bool bSubscribeResult = false; 
+	if (!bSubscribed) {
+		bSubscribeResult = this->SubscribeToTracking();
+	} else {
+		bSubscribeResult = true;
+	}
+	
 	if (!bSubscribeResult) {
 		UE_LOG(LogExperiment, Error, TEXT("[AExperimentServiceMonitor::HandleStartEpisodeRequestResponse] Failed to subscribe to tracking!"));
 		return;
@@ -389,6 +395,8 @@ void AExperimentServiceMonitor::HandleResetRequestResponse(const FString InRespo
 	}
 	
 	const bool bStartTimerResult = this->StartTimerEpisode();
+	// todo: bind to state machine FOnStatusChanged -> InEpisode (and move InEpisode to after reset success)
+	bCanUpdatePrey = true; 
 	
 	if (!bStartTimerResult) {
 		UE_LOG(LogExperiment, Error,
@@ -404,6 +412,7 @@ void AExperimentServiceMonitor::HandleResetRequestResponse(const FString InRespo
 
 void AExperimentServiceMonitor::HandleResetRequestTimedOut() {
 	UE_LOG(LogExperiment, Error, TEXT("[AExperimentServiceMonitor::HandleResetRequestTimedOut()] Reset request timed out!"))
+	bCanUpdatePrey = false; 
 	if (PlayerPawn && PlayerPawn->PlayerHUD) {
 		PlayerPawn->PlayerHUD->SetNotificationText("Reset Request timed out!");
 		PlayerPawn->PlayerHUD->SetNotificationVisibility(ESlateVisibility::Visible);
@@ -431,6 +440,7 @@ void AExperimentServiceMonitor::HandleStopEpisodeRequestResponse(const FString r
 	
 	// ExperimentInfo.SetStatus(EExperimentStatus::FinishedEpisode); // todo: make permanent (delete below)
 	// todo: temp - this will be called in multiplayer queue when player's turn is next after validation
+	bCanUpdatePrey = false; 
 	ExperimentInfo.SetStatus(EExperimentStatus::WaitingEpisode);
 	OcclusionsStruct.SetAllHidden();
 
@@ -500,7 +510,8 @@ void AExperimentServiceMonitor::UpdatePredator(const FMessage& InMessage) {
 
 /* get updated player position and send to prey route via tracking service client */
 void AExperimentServiceMonitor::UpdatePreyPosition(const FVector vector) {
-	if (ExperimentInfo.Status != EExperimentStatus::InEpisode) { return; }
+	// if (ExperimentInfo.Status != EExperimentStatus::InEpisode) { return; }
+	if (!bCanUpdatePrey) { return; }
 	
 	if (!this->ValidateClient(TrackingClient)) {
 		// todo: raise error to player hud 
@@ -582,29 +593,32 @@ void AExperimentServiceMonitor::HandleSubscribeToTrackingResponse(FString Respon
 	UE_LOG(LogExperiment, Log, TEXT("[AExperimentServiceMonitor::HandleSubscribeToTrackingResponse] Response: %s"), *Response)
 
 	if (Response == "success") {
+		bSubscribed = true; 
+		UE_LOG(LogExperiment, Log, TEXT("[AExperimentServiceMonitor::HandleSubscribeToTrackingResponse] bSubscribe: %i"), bSubscribed)
+
 		/* reset tracking agent */
 		// const bool bResetSuccess = this->ResetTrackingAgent();
 		// check(bResetSuccess)
 		// if (!bResetSuccess) {
 		// 	UE_LOG(LogExperiment, Fatal, TEXT("[AExperimentServiceMonitor::StartEpisode] failed to reset tracking agent."));
 		// }
-	}else {
+	} else {
 		UE_LOG(LogExperiment, Error,
 			TEXT("[AExperimentServiceMonitor::HandleSubscribeToTrackingResponse] Response failed! Response: %s"),
 			*Response)
 	}
-
+	
 	if (TrackingSubscribeRequest->IsValidLowLevelFast()) {
 		UE_LOG(LogExperiment, Log, TEXT("[AExperimentServiceMonitor::HandleSubscribeToTrackingResponse] RequestRemoveDelegates(TrackingSubscribeRequest)"))
 		RequestRemoveDelegates(TrackingSubscribeRequest);
-		TrackingSubscribeRequest = nullptr; 
+		TrackingSubscribeRequest = nullptr;
 	}
 }
 
 void AExperimentServiceMonitor::HandleSubscribeToTrackingTimedOut() {
 	
 	UE_LOG(LogExperiment, Error, TEXT("[AExperimentServiceMonitor::HandleSubscribeToTrackingTimedOut] Timed out!"));
-	
+	bSubscribed = false; 
 	if (TrackingSubscribeRequest->IsValidLowLevelFast()) {
 		UE_LOG(LogExperiment, Log,
 			TEXT("[AExperimentServiceMonitor::HandleSubscribeToTrackingTimedOut] RequestRemoveDelegates(TrackingSubscribeRequest)!"));
