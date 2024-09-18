@@ -93,9 +93,9 @@ APawnMain::APawnMain() : Super() {
 }
 
 // Called to bind functionality to input
-void APawnMain::SetupPlayerInputComponent(class UInputComponent* InInputComponent)
-{
+void APawnMain::SetupPlayerInputComponent(class UInputComponent* InInputComponent) {
 	Super::SetupPlayerInputComponent(InInputComponent);
+	
 }
 
 UCameraComponent* APawnMain::GetCameraComponent()

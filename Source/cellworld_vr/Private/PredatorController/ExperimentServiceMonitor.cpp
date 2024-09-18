@@ -32,7 +32,6 @@ void AExperimentServiceMonitor::OnExperimentFinished(const int InPlayerIndex) {
 
 	/* todo; unregister player from ExperimentManager */
 	UE_LOG(LogExperiment, Log, TEXT("OnExperimentFinished Player #%i: Called everything OK!"), InPlayerIndex)
-
 }
 
 //TODO - add argument to include MessageType (Log, Warning, Error, Fatal)
@@ -232,8 +231,7 @@ bool AExperimentServiceMonitor::ValidateClient(UMessageClient* ClientIn)
 		return false;
 	}
 	
-	if (!ClientIn->IsConnected())
-	{
+	if (!ClientIn->IsConnected()) {
 		UE_LOG(LogExperiment, Error, TEXT("[AExperimentServiceMonitor::ValidateClient] Client not connected."));
 		return false;
 	}
@@ -259,18 +257,19 @@ bool AExperimentServiceMonitor::StopEpisode() {
 	double ElapsedTime = -1.0f;
 	if (StopTimerEpisode(ElapsedTime)) {
 		// ExperimentManager->OnEpisodeFinished(PlayerIndex, ElapsedTime);
+		UE_LOG(LogExperiment, Log, TEXT("Player 0: Finished episode. Collected %i samples in %0.2f seconds (~%0.2f) Hz"),
+			FrameCountPrey, ElapsedTime, (float)FrameCountPrey/ElapsedTime)
 		ExperimentManager->OnEpisodeFinishedDelegate.Broadcast(PlayerIndex, ElapsedTime);
 	} else {
 		UE_LOG(LogExperiment, Error, TEXT("Failed to StopTimerEpisode() in StopEpisode()"))
 	}
-		
+	
 	if (!ValidateClient(Client)) {
 		UE_LOG(LogExperiment, Fatal, TEXT("[AExperimentServiceMonitor::StopEpisode()] Can't stop episode, Experiment Service client not valid."));
 		return false;
 	}
 
 	// ExperimentInfo.SetStatus(EExperimentStatus::WaitingEpisode);
-
 	FFinishEpisodeRequest RequestBody;
 	RequestBody.experiment_name = ExperimentInfo.ExperimentNameActive;
 
@@ -295,7 +294,7 @@ bool AExperimentServiceMonitor::StartTimerEpisode() {
 	Stopwatch = NewObject<UStopwatch>(this, UStopwatch::StaticClass());
 
 	if (!Stopwatch->IsValidLowLevel()) {
-		UE_LOG(LogExperiment, Error, TEXT("[APawnMain::BeginPlay()] UStopwatch is NULL!"))
+		UE_LOG(LogExperiment, Error, TEXT("[AExperimentServiceMonitor::StartTimerEpisode()] UStopwatch is NULL!"))
 		return false;
 	}
 	Stopwatch->Start(); 
@@ -371,8 +370,8 @@ void AExperimentServiceMonitor::HandleStartEpisodeRequestResponse(const FString 
 
 bool AExperimentServiceMonitor::ResetTrackingAgent() {
 	printScreen("[AExperimentServiceMonitor::ResetTrackingAgent()] Preparing to send!");
-
-	ResetRequest = TrackingClient->SendRequest("reset","",5.0f);
+	
+	ResetRequest = TrackingClient->SendRequest("reset","",10.0f);
 	if (!ResetRequest) {
 		UE_LOG(LogExperiment, Error, TEXT("Failed to create reset request!"));
 		return false; 
@@ -386,6 +385,7 @@ void AExperimentServiceMonitor::HandleResetRequestResponse(const FString InRespo
 	UE_LOG(LogExperiment, Log, TEXT("[AExperimentServiceMonitor::HandleResetRequestResponse()] Response: %s"),*InResponse)
 	if (InResponse != "success") {
 		ExperimentInfo.SetStatus(EExperimentStatus::ErrorResetTrackingAgent);
+		return; 
 	}
 	
 	const bool bStartTimerResult = this->StartTimerEpisode();
@@ -404,6 +404,10 @@ void AExperimentServiceMonitor::HandleResetRequestResponse(const FString InRespo
 
 void AExperimentServiceMonitor::HandleResetRequestTimedOut() {
 	UE_LOG(LogExperiment, Error, TEXT("[AExperimentServiceMonitor::HandleResetRequestTimedOut()] Reset request timed out!"))
+	if (PlayerPawn && PlayerPawn->PlayerHUD) {
+		PlayerPawn->PlayerHUD->SetNotificationText("Reset Request timed out!");
+		PlayerPawn->PlayerHUD->SetNotificationVisibility(ESlateVisibility::Visible);
+	}
 	// ExperimentInfo.SetStatus(EExperimentStatus::ErrorTimedOutReset);
 }
 
@@ -435,6 +439,7 @@ void AExperimentServiceMonitor::HandleStopEpisodeRequestResponse(const FString r
 		FMessage MessageOut;
 		MessageOut.header = "stop";
 		MessageOut.body   = "";
+		UE_LOG(LogExperiment, Log, TEXT("StopEpisode to AT: %s"),*MessageOut.body)
 		const bool bMessageResult = TrackingClient->SendMessage(MessageOut);
 		if (!bMessageResult) { printScreen("Failed to send STOP! Is TrackingClient connected? "); }
 	} else { printScreen("TrackingClient not valid! Failed to send STOP!"); }
@@ -523,6 +528,7 @@ void AExperimentServiceMonitor::UpdatePreyPosition(const FVector vector) {
 	
 	if (!TrackingClient->SendMessage(MessageOut)) {
 		UE_LOG(LogExperiment, Error, TEXT("[AExperimentServiceMonitor::UpdatePreyPosition] Failed: Send prey step!"))
+		return;
 	}
 	FrameCountPrey += 1; 
 }
@@ -590,7 +596,8 @@ void AExperimentServiceMonitor::HandleSubscribeToTrackingResponse(FString Respon
 
 	if (TrackingSubscribeRequest->IsValidLowLevelFast()) {
 		UE_LOG(LogExperiment, Log, TEXT("[AExperimentServiceMonitor::HandleSubscribeToTrackingResponse] RequestRemoveDelegates(TrackingSubscribeRequest)"))
-		this->RequestRemoveDelegates(TrackingSubscribeRequest);
+		RequestRemoveDelegates(TrackingSubscribeRequest);
+		TrackingSubscribeRequest = nullptr; 
 	}
 }
 
@@ -604,10 +611,15 @@ void AExperimentServiceMonitor::HandleSubscribeToTrackingTimedOut() {
 		this->RequestRemoveDelegates(TrackingSubscribeRequest);
 		TrackingSubscribeRequest = nullptr;
 	}
+
+	if (PlayerPawn && PlayerPawn->PlayerHUD) {
+		PlayerPawn->PlayerHUD->SetNotificationText("SubscribeToTracking() timed out!");
+		PlayerPawn->PlayerHUD->SetNotificationVisibility(ESlateVisibility::Visible);
+	}
 }
 
 bool AExperimentServiceMonitor::SubscribeToTracking() {
-	if (!this->ValidateClient(TrackingClient)) {
+	if (!ValidateClient(TrackingClient)) {
 		UE_LOG(LogExperiment, Fatal, TEXT("[AExperimentServiceMonitor::SubscribeToTracking] ClientIn not valid."))
 		return false;
 	}
@@ -619,6 +631,7 @@ bool AExperimentServiceMonitor::SubscribeToTracking() {
 		UE_LOG(LogExperiment, Fatal, TEXT("[AExperimentServiceMonitor::SubscribeToTracking] TrackingSubscribeRequest not valid."))
 		return false;
 	}
+	UE_LOG(LogExperiment, Log, TEXT("TrackingSubscribeRequest:"))
 
 	TrackingSubscribeRequest->ResponseReceived.AddDynamic(this, &AExperimentServiceMonitor::HandleSubscribeToTrackingResponse);
 	TrackingSubscribeRequest->TimedOut.AddDynamic(this, &AExperimentServiceMonitor::HandleSubscribeToTrackingTimedOut);
@@ -738,7 +751,6 @@ void AExperimentServiceMonitor::HandleGetOcclusionLocationsResponse(const FStrin
 	if (!this->SendGetOcclusionsRequest()) {
 		UE_LOG(LogExperiment, Log, TEXT("[SendGetOcclusionsRequest] send request false!"));
 	}
-
 	
 }
 
@@ -864,8 +876,8 @@ void AExperimentServiceMonitor::BeginPlay() {
 	if (GI->IsValidLowLevelFast()) { this->WorldScale = GI->GetLevelScale(nullptr).X; }
 	UE_LOG(LogExperiment, Log, TEXT("[AExperimentServiceMonitor::BeginPlay()] WorldScale: %0.2f"), this->WorldScale);
 
-	if(this->SpawnAndPossessPredator()) { UE_LOG(LogExperiment, Warning, TEXT("Spawned predator: OK")); }
-	else{ UE_LOG(LogExperiment, Warning, TEXT("Spawned predator: FAILED")); UE_DEBUG_BREAK(); }
+	if(this->SpawnAndPossessPredator()) { UE_LOG(LogExperiment, Log, TEXT("Spawned predator: OK")); }
+	else{ UE_LOG(LogExperiment, Error, TEXT("Spawned predator: FAILED")); UE_DEBUG_BREAK(); }
 	
 	ExperimentManager = NewObject<UExperimentManager>(this, UExperimentManager::StaticClass());
 	ensure(ExperimentManager->IsValidLowLevel());
