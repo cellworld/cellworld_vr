@@ -19,6 +19,8 @@
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnExperimentStatusChanged, EExperimentStatus, ExperimentStatusIn);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnEpisodeFinished, int, PlayerIndex, float, Duration); // todo: bind this to PlayerPawn->FExperimentData.
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FNotifyOnExperimentFinished, int, PlayerIndex); 
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnSubscribeResultDelegate, bool, bSubscribeResult); 
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnResetResultDelegate, bool, bResetResult); 
 
 //todo: move this to its own file in ExperimentPlugin or BotEvadeModule
 UCLASS(Blueprintable)
@@ -41,6 +43,9 @@ public:
 	float MaxEpisodeTotalTime = 30.0f; 
 	FNotifyOnExperimentFinished NotifyOnExperimentFinishedDelegate;
 	FOnEpisodeFinished OnEpisodeFinishedDelegate;
+	FOnSubscribeResultDelegate OnSubscribeResultDelegate;
+	FOnResetResultDelegate OnResetResultDelegate;
+	
 	
 	/* adds new player to ActivePlayer array.
 	 * @return Index of new player. -1 if Index is already used or error. 
@@ -451,6 +456,10 @@ public:
 		void HandleResetRequestResponse(const FString InResponse);
 	UFUNCTION()
 		void HandleResetRequestTimedOut();
+	UFUNCTION()
+		void OnSubscribeResult(bool bSubscribeResult);
+	UFUNCTION()
+		void OnResetResult(bool bResetResult);
 	UFUNCTION()
 		void HandleStartEpisodeRequestTimedOut();
 	UFUNCTION()

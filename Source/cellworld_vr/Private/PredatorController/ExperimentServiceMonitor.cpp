@@ -346,10 +346,10 @@ void AExperimentServiceMonitor::HandleStartEpisodeRequestResponse(const FString 
 	
 	/* resubscribe */
 	bool bSubscribeResult = false; 
-	if (!bSubscribed) {
-		bSubscribeResult = this->SubscribeToTracking();
-	} else {
+	if (bSubscribed) {
 		bSubscribeResult = true;
+	} else {
+		bSubscribeResult = this->SubscribeToTracking();
 	}
 	
 	if (!bSubscribeResult) {
@@ -391,17 +391,27 @@ void AExperimentServiceMonitor::HandleResetRequestResponse(const FString InRespo
 	UE_LOG(LogExperiment, Log, TEXT("[AExperimentServiceMonitor::HandleResetRequestResponse()] Response: %s"),*InResponse)
 	if (InResponse != "success") {
 		ExperimentInfo.SetStatus(EExperimentStatus::ErrorResetTrackingAgent);
+		
+		if (ExperimentManager) {
+			ExperimentManager->OnResetResultDelegate.Broadcast(false);
+			UE_LOG(LogExperiment, Log, TEXT("Broadcasting OnResetResultDelegate false!"))
+		}
 		return; 
 	}
-	
-	const bool bStartTimerResult = this->StartTimerEpisode();
-	// todo: bind to state machine FOnStatusChanged -> InEpisode (and move InEpisode to after reset success)
-	bCanUpdatePrey = true; 
-	
-	if (!bStartTimerResult) {
-		UE_LOG(LogExperiment, Error,
-			TEXT("[AExperimentServiceMonitor::HandleResetRequestResponse] Failed to start Timer!"))
+
+	if (ExperimentManager) {
+		ExperimentManager->OnResetResultDelegate.Broadcast(true);
+		UE_LOG(LogExperiment, Log, TEXT("Broadcasting OnResetResultDelegate true!"))
 	}
+	
+	// const bool bStartTimerResult = this->StartTimerEpisode();
+	// // todo: bind to state machine FOnStatusChanged -> InEpisode (and move InEpisode to after reset success)
+	// bCanUpdatePrey = true; 
+	//
+	// if (!bStartTimerResult) {
+	// 	UE_LOG(LogExperiment, Error,
+	// 		TEXT("[AExperimentServiceMonitor::HandleResetRequestResponse] Failed to start Timer!"))
+	// }
 	
 	FrameCountPrey = 0;
 	// ExperimentInfo.SetStatus(EExperimentStatus::InEpisode); // todo: change flag 
@@ -412,12 +422,54 @@ void AExperimentServiceMonitor::HandleResetRequestResponse(const FString InRespo
 
 void AExperimentServiceMonitor::HandleResetRequestTimedOut() {
 	UE_LOG(LogExperiment, Error, TEXT("[AExperimentServiceMonitor::HandleResetRequestTimedOut()] Reset request timed out!"))
-	bCanUpdatePrey = false; 
 	if (PlayerPawn && PlayerPawn->PlayerHUD) {
 		PlayerPawn->PlayerHUD->SetNotificationText("Reset Request timed out!");
 		PlayerPawn->PlayerHUD->SetNotificationVisibility(ESlateVisibility::Visible);
 	}
+	if (ExperimentManager) {
+		UE_LOG(LogExperiment, Log, TEXT("Broadcasting OnResetResultDelegate false!"))
+		ExperimentManager->OnResetResultDelegate.Broadcast(false);
+	}
 	// ExperimentInfo.SetStatus(EExperimentStatus::ErrorTimedOutReset);
+}
+
+void AExperimentServiceMonitor::OnSubscribeResult(const bool bSubscribeResult) {
+	UE_LOG(LogExperiment, Log, TEXT("OnSubscribeResult: %i"), bSubscribeResult)
+	if (bSubscribeResult) {
+		UE_LOG(LogExperiment, Log, TEXT("Subscription successful!"))	
+	}else {
+		UE_LOG(LogExperiment, Error, TEXT("Subscription Failed!"))	
+	}
+}
+
+void AExperimentServiceMonitor::OnResetResult(const bool bResetResult) {
+	// todo: bind to state machine FOnStatusChanged -> InEpisode (and move InEpisode to after reset success)
+	bCanUpdatePrey = bResetResult;
+	UE_LOG(LogExperiment, Log, TEXT("OnResetResult: bCanUpdatePrey = %i"), bResetResult)
+
+	if (!bResetResult) {
+		UE_LOG(LogExperiment, Error, TEXT("OnResetResult Reset Failed!"))	
+		return; 
+	}
+	
+	if (!this->StartTimerEpisode()) {
+		UE_LOG(LogExperiment, Error, TEXT("OnResetResult Failed to start Timer!"))
+	}
+	
+	// todo: Start (and stop) EventTimer instead of blocking the flag to send updates - can save 180 calls per second..
+	if (!PlayerPawn) {
+		UE_LOG(LogExperiment, Error, TEXT("OnResetResult Could not find valid player pawn and will start sampling!"))
+		return; 
+	}
+	
+	UE_LOG(LogExperiment, Log, TEXT("OnResetResult Found valid player pawn and will start sampling!"))
+	
+	if(!PlayerPawn->StartPositionSamplingTimer(90.0)) {
+		UE_LOG(LogExperiment, Error, TEXT("OnResetResult Failed to StartPositionSamplingTimer!"))
+		return; 
+	}
+
+	UE_LOG(LogExperiment, Log, TEXT("OnResetResult OK!"))
 }
 
 /* handle experiment service timeout */
@@ -440,10 +492,17 @@ void AExperimentServiceMonitor::HandleStopEpisodeRequestResponse(const FString r
 	
 	// ExperimentInfo.SetStatus(EExperimentStatus::FinishedEpisode); // todo: make permanent (delete below)
 	// todo: temp - this will be called in multiplayer queue when player's turn is next after validation
-	bCanUpdatePrey = false; 
+	bCanUpdatePrey = false;
+	if (PlayerPawn) {
+		const bool bStopTimerResult = PlayerPawn->StopPositionSamplingTimer();
+		if (!bStopTimerResult) {
+			UE_LOG(LogExperiment, Error, TEXT("Failed to StopPositionSamplingTimer!"));
+		}
+	}
+	
 	ExperimentInfo.SetStatus(EExperimentStatus::WaitingEpisode);
 	OcclusionsStruct.SetAllHidden();
-
+	
 	// todo: make this primary function
 	if (TrackingClient->IsValidLowLevelFast()) {
 		FMessage MessageOut;
@@ -896,7 +955,8 @@ void AExperimentServiceMonitor::BeginPlay() {
 	ExperimentManager = NewObject<UExperimentManager>(this, UExperimentManager::StaticClass());
 	ensure(ExperimentManager->IsValidLowLevel());
 	ExperimentManager->NotifyOnExperimentFinishedDelegate.AddDynamic(this, &AExperimentServiceMonitor::OnExperimentFinished);
-
+	ExperimentManager->OnSubscribeResultDelegate.AddDynamic(this, &AExperimentServiceMonitor::OnSubscribeResult);
+	ExperimentManager->OnResetResultDelegate.AddDynamic(this, &AExperimentServiceMonitor::OnResetResult);
 	// main loop 
 	Test();
 }

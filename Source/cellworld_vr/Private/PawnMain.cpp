@@ -258,6 +258,7 @@ bool APawnMain::CreateAndInitializeWidget() {
 }
 
 bool APawnMain::StartPositionSamplingTimer(const float InRateHz) {
+	UE_LOG(LogExperiment, Log, TEXT("StartPositionSamplingTimer"))
 	EventTimer = NewObject<UEventTimer>(this, UEventTimer::StaticClass());
 	if (EventTimer->IsValidLowLevel()) {
 		EventTimer->SetRateHz(InRateHz); //todo: make sampling rate GI variable (or somewhere relevant) 
@@ -268,9 +269,32 @@ bool APawnMain::StartPositionSamplingTimer(const float InRateHz) {
 		
 		if (!EventTimer->Start()) { return false; }
 	} else {
-		UE_LOG(LogExperiment, Error, TEXT("[APawnMain::BeginPlay()] EventTimer is NULL!"))
+		UE_LOG(LogExperiment, Error, TEXT("StartPositionSamplingTimer Failed! EventTimer is NULL!"))
 		return false;
 	}
+	
+	UE_LOG(LogExperiment, Log, TEXT("StartPositionSamplingTimer OK!"))
+	return true;
+}
+
+bool APawnMain::StopPositionSamplingTimer() {
+	UE_LOG(LogExperiment, Log, TEXT("StopPositionSamplingTimer"))
+
+	if (EventTimer->IsValidLowLevel()) {
+		
+		EventTimer->OnTimerFinishedDelegate.RemoveDynamic(this,
+			&APawnMain::OnMovementDetected);
+		
+		if (!EventTimer->Stop()) {
+			UE_LOG(LogExperiment, Error, TEXT("StopPositionSamplingTimer Failed to stop EventTimer!"))
+			return false;
+		}
+	} else {
+		UE_LOG(LogExperiment, Error, TEXT("StopPositionSamplingTimer failed to stop EventTimer! EventTimer is NULL!"))
+		return false;
+	}
+	
+	EventTimer->MarkAsGarbage();
 	return true;
 }
 
@@ -285,18 +309,18 @@ void APawnMain::BeginPlay() {
 	}
 	check(PlayerHUD->IsValidLowLevelFast());
 
-	AGameModeBase* GameModeTemp = GetWorld()->GetAuthGameMode();
-	GameMode = Cast<AGameModeMain>(GameModeTemp);
-	if (GameMode->IsValidLowLevelFast()) {
-		bUseVR = GameMode->bUseVR;
-		GameMode->PlayerPawn = this;
-		if (GameMode->bSpawnExperimentService) {
-			// todo: make rate (hz) to game instance variable
-			if (const bool bTimerStarted = StartPositionSamplingTimer(30.0f); !bTimerStarted) {
-				UE_LOG(LogExperiment, Error, TEXT("Failed to start Position sampling timer!"))
-			}
-		}
-	}
+	// AGameModeBase* GameModeTemp = GetWorld()->GetAuthGameMode();
+	// GameMode = Cast<AGameModeMain>(GameModeTemp);
+	// if (GameMode->IsValidLowLevelFast()) {
+	// 	bUseVR = GameMode->bUseVR;
+	// 	GameMode->PlayerPawn = this;
+	// 	if (GameMode->bSpawnExperimentService) {
+	// 		// todo: make rate (hz) to game instance variable
+	// 		if (const bool bTimerStarted = StartPositionSamplingTimer(90.0f); !bTimerStarted) {
+	// 			UE_LOG(LogExperiment, Error, TEXT("Failed to start Position sampling timer!"))
+	// 		}
+	// 	}
+	// }
 
     if (!this->CreateAndInitializeWidget()) {
 		UE_DEBUG_BREAK();

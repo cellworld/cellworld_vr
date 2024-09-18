@@ -40,6 +40,7 @@ public:
 	bool HUDResetTimer(float DurationIn) const;
 	bool CreateAndInitializeWidget();
 	bool StartPositionSamplingTimer(const float InRateHz);
+	bool StopPositionSamplingTimer();
 	void DestroyHUD();
 
 	/* temp */
