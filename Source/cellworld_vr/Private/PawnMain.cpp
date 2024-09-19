@@ -137,8 +137,7 @@ bool APawnMain::DetectMovementWASD()
 }
 
 // todo: attach as delegate to a timer 
-bool APawnMain::DetectMovement()
-{
+bool APawnMain::DetectMovement() {
 	bool _blocation_updated = false;
 	FVector NewLocation;
 	FRotator NewRotation;
@@ -160,8 +159,7 @@ bool APawnMain::DetectMovement()
 	return true;
 }
 
-void APawnMain::UpdateRoomScaleLocation()
-{
+void APawnMain::UpdateRoomScaleLocation() {
 	const FVector CapsuleLocation = this->CapsuleComponent->GetComponentLocation();
 
 	FVector CameraLocation = Camera->GetComponentLocation();
@@ -183,8 +181,10 @@ void APawnMain::OnMovementDetected()
 		FRotator HMDRotation = {};
 		UHeadMountedDisplayFunctionLibrary::GetOrientationAndPosition(HMDRotation, HMDLocation);
 		FinalLocation = HMDLocation + this->VROrigin->GetComponentLocation();
-		this->UpdateRoomScaleLocation(); // todo: test with VR
-	} else { FinalLocation = this->RootComponent->GetComponentLocation(); }
+		UpdateRoomScaleLocation(); // todo: test with VR
+	} else {
+		FinalLocation = RootComponent->GetComponentLocation();
+	}
 
 	MovementDetectedEvent.Broadcast(FinalLocation);
 }
@@ -351,10 +351,7 @@ void APawnMain::DebugHUDAddTime() {
 	}
 }
 
-/* Called every frame:
- * todo: implement elsewhere */
-void APawnMain::Tick(float DeltaTime)
-{
+void APawnMain::Tick(float DeltaTime) {
 	Super::Tick(DeltaTime);
 }
 
@@ -367,8 +364,7 @@ void APawnMain::DestroyHUD()
 	}
 }
 
-void APawnMain::EndPlay(const EEndPlayReason::Type EndPlayReason)
-{
+void APawnMain::EndPlay(const EEndPlayReason::Type EndPlayReason) {
 	// this->DestroyHUD();
 	if (this->EventTimer->IsValidLowLevel()) {
 		const bool bResultStopTimer = this->EventTimer->Stop();
@@ -385,20 +381,7 @@ void APawnMain::Reset()
 	Super::Reset();
 }
 
-void APawnMain::UpdateMovementComponent(FVector InputVector, bool bForce)
-{
-	/* Apply movement, called by MoveForward() or MoveRight().
-	FVector InputVector (scaled 0-1) */
-
-	/*
-	Note: Felix, 8/30/2023
-	Could be more elegant,OurMovementComponentChar->AddInputVector() and then
-	OurMovementComponentChar->GetLastInputVector() is the ideal way to use it.
-	This would prevent having to pass FVector InputVector into UpdateMovementComponent().
-	OurMovementComponentChar->ConsumeInputVector() also returns 0.
-	For now, we have this working.
-	*/
-	//this->RootComponent->AddWorldOffset(InputVector);
+void APawnMain::UpdateMovementComponent(FVector InputVector, bool bForce) {
 	OurMovementComponentChar->SafeMoveUpdatedComponent(
 		InputVector,
 		OurMovementComponentChar->UpdatedComponent->GetComponentQuat(),
@@ -409,10 +392,8 @@ void APawnMain::UpdateMovementComponent(FVector InputVector, bool bForce)
 
 void APawnMain::MoveForward(float AxisValue)
 {
-	if (AxisValue != 0.0f)
-	{
-		if (OurMovementComponentChar && (OurMovementComponentChar->UpdatedComponent == RootComponent))
-		{
+	if (AxisValue != 0.0f) {
+		if (OurMovementComponentChar && (OurMovementComponentChar->UpdatedComponent == RootComponent)) {
 			FVector CameraForwardVector = this->Camera->GetForwardVector();
 			CameraForwardVector.Z = 0.0;
 			this->UpdateMovementComponent(CameraForwardVector * AxisValue * 2, /*force*/ true);
