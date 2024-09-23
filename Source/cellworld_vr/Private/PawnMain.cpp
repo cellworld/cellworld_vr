@@ -81,15 +81,16 @@ APawnMain::APawnMain() : Super() {
 	OurMovementComponentChar->SetActive(true);
 	OurMovementComponentChar->UpdatedComponent = RootComponent;
 
-	const FSoftClassPath PlayerHUDClassRef(
-		TEXT("/Script/UMGEditor.WidgetBlueprint'/Game/Interfaces/BP_HUDExperiment.BP_HUDExperiment_C'"));
-	PlayerHUDClass = PlayerHUDClassRef.TryLoadClass<UHUDExperiment>();
-	if (PlayerHUDClass->IsValidLowLevel()) {
-		HUDWidgetComponent->SetWidgetClass(PlayerHUDClass);
-		UE_LOG(LogExperiment, Log, TEXT("[APawnMain::APawnMain()] UHUDExperiment found."));
-	} else {
-		UE_LOG(LogExperiment, Error, TEXT("[APawnMain::APawnMain()] UHUDExperiment not found."));
-	}
+	// const FSoftClassPath PlayerHUDClassRef(
+	// 	TEXT("/Script/UMGEditor.WidgetBlueprint'/Game/Interfaces/BP_HUDExperiment.BP_HUDExperiment_C'"));
+	// PlayerHUDClass = PlayerHUDClassRef.TryLoadClass<UHUDExperiment>();
+	// if (PlayerHUDClass) {
+	// 	// HUDWidgetComponent->SetWidgetClass(PlayerHUDClass);
+	// 	UE_LOG(LogExperiment, Log, TEXT("[APawnMain::APawnMain()] Found HUD experiment!"));
+	// }
+	// else {
+	// 	UE_LOG(LogExperiment, Error, TEXT("[APawnMain::APawnMain()] Couldn't find HUD experiment!"));
+	// }
 }
 
 // Called to bind functionality to input
@@ -142,16 +143,11 @@ bool APawnMain::DetectMovement() {
 	FVector NewLocation;
 	FRotator NewRotation;
 
-	if (UHeadMountedDisplayFunctionLibrary::IsHeadMountedDisplayEnabled())
-	{
+	if (UHeadMountedDisplayFunctionLibrary::IsHeadMountedDisplayEnabled()) {
 		UHeadMountedDisplayFunctionLibrary::GetOrientationAndPosition(NewRotation, NewLocation);
 		this->UpdateRoomScaleLocation();
-	}
-	else
-	{
-		// using WASD
-		if (GetWorld() && GetWorld()->GetFirstPlayerController())
-		{
+	} else { // called in WASD 
+		if (GetWorld() && GetWorld()->GetFirstPlayerController()) {
 			NewLocation = GetWorld()->GetFirstPlayerController()->GetPawn()->GetActorLocation();
 		}
 	}
@@ -173,20 +169,28 @@ void APawnMain::UpdateRoomScaleLocation() {
 	this->CapsuleComponent->SetWorldLocation(CameraLocation);
 }
 
-void APawnMain::OnMovementDetected()
-{
+void APawnMain::OnMovementDetected() {
 	FVector FinalLocation = {};
+	FRotator FinalRotation = {};
 	if (bUseVR) {
-		FVector HMDLocation = {};
-		FRotator HMDRotation = {};
-		UHeadMountedDisplayFunctionLibrary::GetOrientationAndPosition(HMDRotation, HMDLocation);
-		FinalLocation = HMDLocation + this->VROrigin->GetComponentLocation();
-		UpdateRoomScaleLocation(); // todo: test with VR
-	} else {
+		if ((UHeadMountedDisplayFunctionLibrary::GetHMDWornState() == EHMDWornState::Worn)) {
+			FVector HMDLocation = {};
+			FRotator HMDRotation = {};
+			UHeadMountedDisplayFunctionLibrary::GetOrientationAndPosition(HMDRotation, HMDLocation);
+			FinalLocation = HMDLocation + this->VROrigin->GetComponentLocation();
+			FinalRotation = HMDRotation;
+			UpdateRoomScaleLocation();
+		} else {
+			UE_LOG(LogExperiment, Error, TEXT("OnMovementDetected: HMD is not being worn! Using WASD mode!"))
+			FinalLocation = RootComponent->GetComponentLocation();
+			FinalRotation = GetActorRotation();
+		}
+	} else { // only gets called when in WASD 
 		FinalLocation = RootComponent->GetComponentLocation();
+		FinalRotation = GetActorRotation();
 	}
-
-	MovementDetectedEvent.Broadcast(FinalLocation);
+		
+	MovementDetectedEvent.Broadcast(FinalLocation, FinalRotation);
 }
 
 void APawnMain::ResetOrigin() {
@@ -242,18 +246,23 @@ bool APawnMain::CreateAndInitializeWidget() {
 		return false;
 	}
 
-	// PlayerHUD = CreateWidget<UHUDExperiment>(PlayerController, PlayerHUDClass);
-	// if (!PlayerHUD->IsValidLowLevelFast()) {
-	// 	UE_LOG(LogExperiment, Error, TEXT("[APawnMain::CreateAndInitializeWidget()] PlayerHUD not valid."));
-	// 	return false;
-	// }
-
+	PlayerHUD = CreateWidget<UHUDExperiment>(PlayerController, PlayerHUDClass);
+	if (!PlayerHUD->IsValidLowLevelFast()) {
+		UE_LOG(LogExperiment, Error, TEXT("[APawnMain::CreateAndInitializeWidget()] PlayerHUD not valid."));
+		return false;
+	}
+	
+	HUDWidgetComponent->SetWidgetClass(PlayerHUDClass);
+	
 	if (!bUseVR) {
 		HUDWidgetComponent->SetWidgetSpace(EWidgetSpace::Screen);
 		// PlayerHUD->AddToViewport();
+	} else {
+		HUDWidgetComponent->SetWidgetSpace(EWidgetSpace::World);
+		HUDWidgetComponent->SetWidget(PlayerHUD);
 	}
-	else { HUDWidgetComponent->SetWidgetSpace(EWidgetSpace::World); }
-
+	
+	UE_LOG(LogExperiment, Log, TEXT("CreateAndInitializeWidget: OK."));
 	return true;
 }
 
@@ -261,6 +270,7 @@ bool APawnMain::StartPositionSamplingTimer(const float InRateHz) {
 	UE_LOG(LogExperiment, Log, TEXT("StartPositionSamplingTimer"))
 	EventTimer = NewObject<UEventTimer>(this, UEventTimer::StaticClass());
 	if (EventTimer->IsValidLowLevel()) {
+		UE_LOG(LogExperiment, Log, TEXT("StartPositionSamplingTimer: Starting at %0.2f Hz."), InRateHz)
 		EventTimer->SetRateHz(InRateHz); //todo: make sampling rate GI variable (or somewhere relevant) 
 		EventTimer->bLoop = true;
 		
@@ -302,44 +312,13 @@ bool APawnMain::StopPositionSamplingTimer() {
 void APawnMain::BeginPlay() {
 	Super::BeginPlay();
 
-	if (UUserWidget* HUDWidget = HUDWidgetComponent->GetWidget()) {
-		PlayerHUD = Cast<UHUDExperiment>(HUDWidget);
-		UE_LOG(LogExperiment, Log, TEXT("Found HUDWidget: %s"), *HUDWidget->GetName())
-		// HUDWidget->GetName()
-	}
-	check(PlayerHUD->IsValidLowLevelFast());
-
-	// AGameModeBase* GameModeTemp = GetWorld()->GetAuthGameMode();
-	// GameMode = Cast<AGameModeMain>(GameModeTemp);
-	// if (GameMode->IsValidLowLevelFast()) {
-	// 	bUseVR = GameMode->bUseVR;
-	// 	GameMode->PlayerPawn = this;
-	// 	if (GameMode->bSpawnExperimentService) {
-	// 		// todo: make rate (hz) to game instance variable
-	// 		if (const bool bTimerStarted = StartPositionSamplingTimer(90.0f); !bTimerStarted) {
-	// 			UE_LOG(LogExperiment, Error, TEXT("Failed to start Position sampling timer!"))
-	// 		}
-	// 	}
+	// if (!this->CreateAndInitializeWidget()) {
+	// 	UE_LOG(LogExperiment, Error, TEXT("Failed to init PlayerHUD widget"));
 	// }
 
-    if (!this->CreateAndInitializeWidget()) {
-		UE_DEBUG_BREAK();
-    	UE_LOG(LogExperiment, Error, TEXT("Failed to initialize PlayerHUD!"))
-    }
-	
-	// GetWorld()->CreateAndInitializeGetTimerManager().SetTimer(TimerHandleDetectMovement, this,
-	// 		&APawnMain::OnMovementDetected,
-	// 		DurationIn, true, -1.0f);
-	
-	// todo: fix this dumb struct 
-	// EventTimer.TimerDelegate.BindUObject(this, &APawnMain::OnMovementDetected);
-	// if (!EventTimer.Start()) {
-	// 	UE_LOG(LogExperiment, Error, TEXT("TIMER FAILED!"));
-	// }
-	
 	// todo: check? seems to work fine in both. will leave as-is for now bc I may need to revisit this later
-	if (bUseVR) { this->Camera->bUsePawnControlRotation = false; }
-	else { this->Camera->bUsePawnControlRotation = false; }
+	if (bUseVR) { Camera->bUsePawnControlRotation = false; }
+	else { Camera->bUsePawnControlRotation = true; }
 }
 
 void APawnMain::DebugHUDAddTime() {
@@ -396,7 +375,7 @@ void APawnMain::MoveForward(float AxisValue)
 		if (OurMovementComponentChar && (OurMovementComponentChar->UpdatedComponent == RootComponent)) {
 			FVector CameraForwardVector = this->Camera->GetForwardVector();
 			CameraForwardVector.Z = 0.0;
-			this->UpdateMovementComponent(CameraForwardVector * AxisValue * 2, /*force*/ true);
+			this->UpdateMovementComponent(CameraForwardVector * AxisValue * 20, /*force*/ true);
 		}
 	}
 }

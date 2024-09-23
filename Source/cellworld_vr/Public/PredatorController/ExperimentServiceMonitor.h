@@ -26,7 +26,7 @@ DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnResetResultDelegate, bool, bReset
 UCLASS(Blueprintable)
 class  UExperimentManager : public UObject {
 	GENERATED_BODY()
-	UExperimentManager():MaxEpisodeTotalTime(240.0f) {
+	UExperimentManager():MaxEpisodeTotalTime(1800.0f) {
 		OnEpisodeFinishedDelegate.AddDynamic(this, &UExperimentManager::OnEpisodeFinished);
 	}
 public:
@@ -368,6 +368,8 @@ public:
 	UPROPERTY()
 		TObjectPtr<URequest> GetOcclusionsRequest;
 	UPROPERTY()
+		TObjectPtr<URequest> GetOcclusionLocationRequest;
+	UPROPERTY()
 		TObjectPtr<URequest> ResetRequest;
 
 	/* ==== status stuff ==== */
@@ -386,7 +388,10 @@ public:
 	const float MapLength = 235.185;
 	const float PredatorScaleFactor = 0.5f; 
 	float WorldScale      = 1.0f;
-
+	
+	/* experiment params */
+	const float PositionSamplingRate = 90.0f; 
+		
 	/* ==== setup ==== */
 	bool SpawnAndPossessPredator();
 	UPROPERTY()
@@ -426,8 +431,10 @@ public:
 	/* ==== delegates ==== */
 	UPROPERTY()
 		FOnExperimentStatusChanged OnExperimentStatusChangedEvent;
+
+	/* Called when status is changed. */
 	UFUNCTION()
-	void OnStatusChanged(const EExperimentStatus ExperimentStatusIn);
+		void OnStatusChanged(const EExperimentStatus ExperimentStatusIn);
 
 	UPROPERTY(EditAnywhere)
 		bool bSubscribed = false; 
@@ -482,18 +489,35 @@ public:
 		void HandleStopExperimentResponse(const FString ResponseIn);
 	UFUNCTION()
 		void HandleStopExperimentTimedOut();
+	/* gets location of all possible occlusions in cellworld  */
+	UFUNCTION()
+		bool SendGetOcclusionLocationsRequest();
+	UFUNCTION()
+		void HandleGetOcclusionLocationsResponse(const FString ResponseIn);
+	UFUNCTION()
+		void HandleGetOcclusionLocationsTimedOut();
+	/* gets location of all possible occlusions in our specific/given experiment/world configuration
+	 * default: 21_05
+	 */
+	UFUNCTION()
+		bool SendGetOcclusionsRequest();
+	UFUNCTION()
+		void HandleGetOcclusionsResponse(const FString ResponseIn);
+	UFUNCTION()
+		void HandleGetOcclusionsTimedOut();
+	
 	UFUNCTION()
 		void HandleUnroutedMessage(const FMessage InMessage);
 	UFUNCTION()
 		bool IsExperimentActive(const FString ExperimentNameIn);
-
+	
 	/* update agents */
 	UPROPERTY(EditAnywhere)
 		bool bCanUpdatePrey = false;
 	UFUNCTION()
 		void UpdatePredator(const FMessage& InMessage);
 	UFUNCTION()
-		void UpdatePreyPosition(const FVector Location);
+		void UpdatePreyPosition(const FVector InVector, const FRotator InRotation);
 
 	/* experiment control */
 	UPROPERTY(BlueprintReadWrite)
@@ -505,20 +529,9 @@ public:
 	TArray<int32> OcclusionIDsIntArr;
 	bool bIsOcclusionLoaded = false;
 
-	UFUNCTION()
-		URequest* SendGetOcclusionLocationsRequest();
-	UFUNCTION()
-		void HandleGetOcclusionLocationsResponse(const FString ResponseIn);
-	UFUNCTION()
-		void HandleGetOcclusionLocationsTimedOut();
-	UFUNCTION()
-		bool SendGetOcclusionsRequest();
-	UFUNCTION()
-		void HandleGetOcclusionsResponse(const FString ResponseIn);
-	UFUNCTION()
-		void HandleGetOcclusionsTimedOut();
-	UFUNCTION()
-		void HandleOcclusionLocation(const FMessage MessageIn);
+
+	
+	
 	UFUNCTION()
 		static bool ConnectToServer(UMessageClient* ClientIn, const int MaxAttemptsIn, const FString& IPAddressIn, const int PortIn);
 	UFUNCTION()

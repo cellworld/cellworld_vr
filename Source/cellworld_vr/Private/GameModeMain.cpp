@@ -168,7 +168,10 @@ void AGameModeMain::OnUpdateHUDTimer() {
 		ExperimentServiceMonitor->ExperimentInfo.Status == EExperimentStatus::InEpisode &&
 		ExperimentServiceMonitor->Stopwatch && ExperimentServiceMonitor->Stopwatch->IsRunning()) {
 		TimeElapsed = ExperimentServiceMonitor->Stopwatch->GetElapsedTime();
-	} 
+	} else {
+		UE_LOG(LogExperiment, Log, TEXT("OnUpdateHUDTimer: Skipping. "))
+		return; 
+	}
 
 	if (PlayerPawn->IsValidLowLevelFast() && PlayerPawn->PlayerHUD->IsValidLowLevelFast()) {
 		PlayerPawn->PlayerHUD->SetTimeRemaining(FString::Printf(TEXT("%0.2f"), TimeElapsed));
@@ -210,7 +213,8 @@ void AGameModeMain::StartPlay() {
 	 * todo: manage this from experiment service and create a timer delegate broadcast where the
 	 * - player pawn can bind to ExperimentService->FOnTimerUpdated.AddDynamic(APawnMain*, APawnMain::UpdatePlayerHUD)
 	 */
-	if (bSpawnExperimentService) {
+	
+	if (bSpawnExperimentService && bUpdateHUDTimer) {
 		UE_LOG(LogExperiment, Log, TEXT("Running HUD update timer!"))
 		HUDTimer = NewObject<UEventTimer>(this, UEventTimer::StaticClass());
 		if (HUDTimer) {
@@ -219,7 +223,6 @@ void AGameModeMain::StartPlay() {
 			HUDTimer->OnTimerFinishedDelegate.AddDynamic(this, &AGameModeMain::OnUpdateHUDTimer);
 			if (HUDTimer->Start()) { UE_LOG(LogExperiment, Log, TEXT("Started v2 timer for OnUpdateHUDTimer")); } 
 		}
-		// GetWorldTimerManager().SetTimer(TimerHUDUpdate, this, &AGameModeMain::OnUpdateHUDTimer, 0.1f, true, -1.0f);
 	}
 
 	if (bSpawnExperimentService) { AGameModeMain::SpawnExperimentServiceMonitor(); }

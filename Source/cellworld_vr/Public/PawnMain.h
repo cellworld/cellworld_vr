@@ -12,7 +12,7 @@
 #include "MiscUtils/Timer/EventTimer.h"
 #include "PawnMain.generated.h"
 
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnMovementDetected, FVector, Location);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnMovementDetected, FVector, Location, FRotator, Rotation);
 
 UCLASS()
 class CELLWORLD_VR_API APawnMain : public APawn {

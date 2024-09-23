@@ -16,9 +16,9 @@ ACharacterPredator::ACharacterPredator()
 
     // Initialize the skeletal mesh component with a specific mesh
     static ConstructorHelpers::FObjectFinder<USkeletalMesh> MeshAsset(TEXT("SkeletalMesh'/Game/AIPredator/Spooky_Ghost/Ghost_face_Killa3_Skeletal_Mesh.Ghost_face_Killa3_Skeletal_Mesh'"));
-    if (MeshAsset.Succeeded())
-    {
+    if (MeshAsset.Succeeded()) {
         GetMesh()->SetSkeletalMesh(MeshAsset.Object);
+    	GetMesh()->SetRelativeRotation(FRotator(0.0f,-90.0f,0.0f));
 
         // Apply a material to the skeletal mesh
         static ConstructorHelpers::FObjectFinder<UMaterialInterface> MaterialAsset(TEXT("Material'/Game/AIPredator/Spooky_Ghost/Ghost_face_Killa3_Material.Ghost_face_Killa3_Material'"));
@@ -29,8 +29,7 @@ ACharacterPredator::ACharacterPredator()
 
         // Optionally set the physics asset, if needed
         static ConstructorHelpers::FObjectFinder<UPhysicsAsset> PhysicsAsset(TEXT("PhysicsAsset'/Game/AIPredator/Spooky_Ghost/Ghost_face_Killa3_PhysicsAsset.Ghost_face_Killa3_PhysicsAsset'"));
-        if (PhysicsAsset.Succeeded())
-        {
+        if (PhysicsAsset.Succeeded()) {
             GetMesh()->SetPhysicsAsset(PhysicsAsset.Object);
         }
     }

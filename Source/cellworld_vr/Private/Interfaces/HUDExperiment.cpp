@@ -4,21 +4,19 @@
 #include "cellworld_vr/cellworld_vr.h"
 #include "Components/EditableTextBox.h"
 
-void UHUDExperiment::NativeConstruct()
-{
+void UHUDExperiment::NativeConstruct() {
 	Super::NativeConstruct();
 	this->Init();
 }
 
-void UHUDExperiment::SetTimeRemaining(const FString& TimeRemainingIn)
-{
+void UHUDExperiment::SetTimeRemaining(const FString& TimeRemainingIn) {
 	TextBoxTimeRemaining->SetText(FText::FromString(TimeRemainingIn));
 }
 
 void UHUDExperiment::Init() {
 	UE_LOG(LogExperiment, Log, TEXT("UHUDExperiment::Init"))
 	SetTimeRemaining(FString("N/A"));
-	SetCurrentStatus(FString("Waiting"));
+	SetCurrentStatus(FString("Init"));
 
 	/* Notification inits */
 	SetNotificationText("Experiment Complete! Press `Right Menu Button` or contact experimenter.");

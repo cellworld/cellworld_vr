@@ -44,12 +44,12 @@ bool AExperimentServiceMonitor::ValidateLevel(UWorld* InWorld, const FString InL
 	
 	if (!InWorld->IsValidLowLevelFast()) { printScreen("[AExperimentServiceMonitor::ValidateLevel] World is not valid."); return false; }
 	
-	if (!InLevelName.IsEmpty()) { UE_LOG(LogTemp, Warning, TEXT("LevelName: %s"), *InLevelName); }
+	if (!InLevelName.IsEmpty()) { UE_LOG(LogExperiment, Warning, TEXT("LevelName: %s"), *InLevelName); }
 	else { printScreen("[AExperimentServiceMonitor::ValidateLevel] LevelName is empty!"); return false; }
 
 	FString MapName = InWorld->GetMapName();
 	MapName.RemoveFromStart(InWorld->StreamingLevelsPrefix);
-	UE_LOG(LogTemp, Warning, TEXT("map name: %s"), *MapName);
+	UE_LOG(LogExperiment, Warning, TEXT("map name: %s"), *MapName);
 
 	return true;
 }
@@ -58,7 +58,7 @@ bool AExperimentServiceMonitor::ValidateLevel(UWorld* InWorld, const FString InL
 bool AExperimentServiceMonitor::SpawnAndPossessPredator() {
 
 	if (!GetWorld()) {
-		UE_LOG(LogTemp, Error, TEXT("[AExperimentServiceMonitor::SpawnAndPossessPredator()] GetWorld() failed!"));
+		UE_LOG(LogExperiment, Error, TEXT("[AExperimentServiceMonitor::SpawnAndPossessPredator()] GetWorld() failed!"));
 		return false;
 	}
 
@@ -78,7 +78,7 @@ bool AExperimentServiceMonitor::SpawnAndPossessPredator() {
 
 	// Ensure the character was spawned
 	if (!this->PredatorBasic) {
-		UE_LOG(LogTemp, Error, TEXT("[AExperimentServiceMonitor::SpawnAndPossessPredator()] Spawn APredatorBasic Failed!"));
+		UE_LOG(LogExperiment, Error, TEXT("[AExperimentServiceMonitor::SpawnAndPossessPredator()] Spawn APredatorBasic Failed!"));
 		return false;
 	}
 
@@ -145,7 +145,7 @@ URequest* AExperimentServiceMonitor::SendFinishExperimentRequest(const FString& 
 
 void AExperimentServiceMonitor::HandleStopExperimentResponse(const FString ResponseIn)
 {
-	UE_LOG(LogTemp, Warning, TEXT("[AExperimentServiceMonitor::HandleFinishExperimentResponse] %s"), *ResponseIn);
+	UE_LOG(LogExperiment, Warning, TEXT("[AExperimentServiceMonitor::HandleFinishExperimentResponse] %s"), *ResponseIn);
 	if (GEngine) GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Green, FString::Printf(TEXT("Experiment response: %s"), *ResponseIn));
 
 	/* convert to usable format */
@@ -156,13 +156,13 @@ void AExperimentServiceMonitor::HandleStopExperimentResponse(const FString Respo
 		UE_DEBUG_BREAK();
 	}
 
-	UE_LOG(LogTemp, Warning, TEXT("[AExperimentServiceMonitor::HandleFinishExperimentResponse] Experiment name: %s"), *ExperimentNameActive);
+	UE_LOG(LogExperiment, Warning, TEXT("[AExperimentServiceMonitor::HandleFinishExperimentResponse] Experiment name: %s"), *ExperimentNameActive);
 
 }
 
 void AExperimentServiceMonitor::HandleStopExperimentTimedOut()
 {
-	UE_LOG(LogTemp, Error, TEXT("[AExperimentServiceMonitor::HandleFinishExperimentTimedOut()] Finish experiment request timed out!"))
+	UE_LOG(LogExperiment, Error, TEXT("[AExperimentServiceMonitor::HandleFinishExperimentTimedOut()] Finish experiment request timed out!"))
 }
 
 URequest* AExperimentServiceMonitor::SendStartExperimentRequest(UMessageClient* ClientIn, FString ExperimentNameIn)
@@ -181,7 +181,7 @@ URequest* AExperimentServiceMonitor::SendStartExperimentRequest(UMessageClient* 
 
 	URequest* Request = ClientIn->SendRequest("start_experiment", StartExperimentRequestBodyString, 5.0f);
 	
-	if (!Request) { UE_LOG(LogTemp, Error, TEXT("[AExperimentServiceMonitor::StartExperiment()] StartExperimentRequest is NULL.")); return nullptr; }
+	if (!Request) { UE_LOG(LogExperiment, Error, TEXT("[AExperimentServiceMonitor::StartExperiment()] StartExperimentRequest is NULL.")); return nullptr; }
 	
 	Request->ResponseReceived.AddDynamic(this, &AExperimentServiceMonitor::HandleStartExperimentResponse);
 	Request->TimedOut.AddDynamic(this, &AExperimentServiceMonitor::HandleStartExperimentTimedOut);
@@ -201,12 +201,12 @@ bool AExperimentServiceMonitor::StartEpisode(UMessageClient* ClientIn, const FSt
 	}
 	
 	if (!this->ValidateClient(ClientIn)) {
-		UE_LOG(LogTemp, Error, TEXT("[AExperimentServiceMonitor::StartEpisode] Can't start episode, client not valid."));
+		UE_LOG(LogExperiment, Error, TEXT("[AExperimentServiceMonitor::StartEpisode] Can't start episode, client not valid."));
 		return false;
 	}
 	
 	if (!this->ValidateExperimentName(ExperimentNameIn)){
-		UE_LOG(LogTemp, Error, TEXT("[AExperimentServiceMonitor::StartEpisode] Can't start episode, experiment name not valid."));
+		UE_LOG(LogExperiment, Error, TEXT("[AExperimentServiceMonitor::StartEpisode] Can't start episode, experiment name not valid."));
 		return false;
 	}
 
@@ -353,29 +353,31 @@ void AExperimentServiceMonitor::HandleStartEpisodeRequestResponse(const FString 
 	}
 	
 	if (!bSubscribeResult) {
-		UE_LOG(LogExperiment, Error, TEXT("[AExperimentServiceMonitor::HandleStartEpisodeRequestResponse] Failed to subscribe to tracking!"));
+		UE_LOG(LogExperiment, Error, TEXT("HandleStartEpisodeRequestResponse: Failed to subscribe to tracking!"));
 		return;
 	}
 	
 	const bool bResetSuccess = this->ResetTrackingAgent();
 	check(bResetSuccess)
 	if (!bResetSuccess) {
-		UE_LOG(LogExperiment, Error, TEXT("[AExperimentServiceMonitor::HandleStartEpisodeRequestResponse] failed to reset tracking agent."));
+		UE_LOG(LogExperiment, Error, TEXT("HandleStartEpisodeRequestResponse: failed to reset tracking agent."));
 		return; 
 	}
 	
 	// todo: remove resettrackingagent from SubscribeToTracking(); 
-	this->SendGetOcclusionLocationsRequest();
+	if (!this->SendGetOcclusionLocationsRequest()) {
+		UE_LOG(LogExperiment, Error, TEXT("HandleStartEpisodeRequestResponse: Failed to SendGetOcclusionLocationsRequest"))
+	}
 	
 	// remove delegates
 	if (StartEpisodeRequest->IsValidLowLevelFast()) {
 		this->RequestRemoveDelegates(StartEpisodeRequest);
-		printScreen("[AExperimentServiceMonitor::HandleStartEpisodeRequestResponse] Removed bindings from StartEpisodeRequest");
+		printScreen("HandleStartEpisodeRequestResponse: Removed bindings from StartEpisodeRequest");
 	}
 }
 
 bool AExperimentServiceMonitor::ResetTrackingAgent() {
-	printScreen("[AExperimentServiceMonitor::ResetTrackingAgent()] Preparing to send!");
+	printScreen("HandleStartEpisodeRequestResponse: Preparing to send!");
 	
 	ResetRequest = TrackingClient->SendRequest("reset","",10.0f);
 	if (!ResetRequest) {
@@ -404,15 +406,6 @@ void AExperimentServiceMonitor::HandleResetRequestResponse(const FString InRespo
 		UE_LOG(LogExperiment, Log, TEXT("Broadcasting OnResetResultDelegate true!"))
 	}
 	
-	// const bool bStartTimerResult = this->StartTimerEpisode();
-	// // todo: bind to state machine FOnStatusChanged -> InEpisode (and move InEpisode to after reset success)
-	// bCanUpdatePrey = true; 
-	//
-	// if (!bStartTimerResult) {
-	// 	UE_LOG(LogExperiment, Error,
-	// 		TEXT("[AExperimentServiceMonitor::HandleResetRequestResponse] Failed to start Timer!"))
-	// }
-	
 	FrameCountPrey = 0;
 	// ExperimentInfo.SetStatus(EExperimentStatus::InEpisode); // todo: change flag 
 	UE_LOG(LogExperiment, Log, TEXT("[AExperimentServiceMonitor::HandleResetRequestResponse] ResetTrackingAgent Successful!"))
@@ -430,7 +423,6 @@ void AExperimentServiceMonitor::HandleResetRequestTimedOut() {
 		UE_LOG(LogExperiment, Log, TEXT("Broadcasting OnResetResultDelegate false!"))
 		ExperimentManager->OnResetResultDelegate.Broadcast(false);
 	}
-	// ExperimentInfo.SetStatus(EExperimentStatus::ErrorTimedOutReset);
 }
 
 void AExperimentServiceMonitor::OnSubscribeResult(const bool bSubscribeResult) {
@@ -456,15 +448,15 @@ void AExperimentServiceMonitor::OnResetResult(const bool bResetResult) {
 		UE_LOG(LogExperiment, Error, TEXT("OnResetResult Failed to start Timer!"))
 	}
 	
-	// todo: Start (and stop) EventTimer instead of blocking the flag to send updates - can save 180 calls per second..
-	if (!PlayerPawn) {
+	if (!PlayerPawn->IsValidLowLevel()) {
 		UE_LOG(LogExperiment, Error, TEXT("OnResetResult Could not find valid player pawn and will start sampling!"))
 		return; 
 	}
 	
-	UE_LOG(LogExperiment, Log, TEXT("OnResetResult Found valid player pawn and will start sampling!"))
+	UE_LOG(LogExperiment, Log, TEXT("OnResetResult Found valid player pawn and will start sampling at %0.2f!"),
+		PositionSamplingRate)
 	
-	if(!PlayerPawn->StartPositionSamplingTimer(90.0)) {
+	if(!PlayerPawn->StartPositionSamplingTimer(PositionSamplingRate)) {
 		UE_LOG(LogExperiment, Error, TEXT("OnResetResult Failed to StartPositionSamplingTimer!"))
 		return; 
 	}
@@ -491,8 +483,8 @@ void AExperimentServiceMonitor::HandleStopEpisodeRequestResponse(const FString r
 	}
 	
 	// ExperimentInfo.SetStatus(EExperimentStatus::FinishedEpisode); // todo: make permanent (delete below)
-	// todo: temp - this will be called in multiplayer queue when player's turn is next after validation
 	bCanUpdatePrey = false;
+	
 	if (PlayerPawn) {
 		const bool bStopTimerResult = PlayerPawn->StopPositionSamplingTimer();
 		if (!bStopTimerResult) {
@@ -507,7 +499,15 @@ void AExperimentServiceMonitor::HandleStopEpisodeRequestResponse(const FString r
 	if (TrackingClient->IsValidLowLevelFast()) {
 		FMessage MessageOut;
 		MessageOut.header = "stop";
-		MessageOut.body   = "";
+		MessageOut.body   = ""; //todo: add time elapsed info
+		
+		if (ExperimentManager->IsValidLowLevel()) {
+			if (const UExperimentMonitorData* DataTemp = ExperimentManager->GetDataByIndex(PlayerIndex)) {
+				MessageOut.body = FString::SanitizeFloat(DataTemp->EpisodesCompletedTime);
+				UE_LOG(LogExperiment, Log, TEXT("DataTemp->EpisodesCompletedTime: %s"),*MessageOut.body)
+			}
+		}
+		
 		UE_LOG(LogExperiment, Log, TEXT("StopEpisode to AT: %s"),*MessageOut.body)
 		const bool bMessageResult = TrackingClient->SendMessage(MessageOut);
 		if (!bMessageResult) { printScreen("Failed to send STOP! Is TrackingClient connected? "); }
@@ -568,7 +568,7 @@ void AExperimentServiceMonitor::UpdatePredator(const FMessage& InMessage) {
 }
 
 /* get updated player position and send to prey route via tracking service client */
-void AExperimentServiceMonitor::UpdatePreyPosition(const FVector vector) {
+void AExperimentServiceMonitor::UpdatePreyPosition(const FVector InVector, const FRotator InRotation) {
 	// if (ExperimentInfo.Status != EExperimentStatus::InEpisode) { return; }
 	if (!bCanUpdatePrey) { return; }
 	
@@ -583,15 +583,9 @@ void AExperimentServiceMonitor::UpdatePreyPosition(const FVector vector) {
 	Step.data = "VR";
 	Step.agent_name = "prey";
 	Step.frame = FrameCountPrey;
-	Step.location = UExperimentUtils::VrToCanonical(vector, MapLength, this->WorldScale);
-	Step.rotation = 0.0f; // todo: get actual rotation of player  
-	Step.time_stamp = this->GetTimeElapsed(); 
-
-	// const FString PrintMe = "Location: (x|y)  |" + FString::SanitizeFloat(Step.location.x) +
-	// 	" | " + FString::SanitizeFloat(Step.location.y) + " | time (s): " + FString::SanitizeFloat(Step.time_stamp) + 
-	// 	" | frame: " + FString::SanitizeFloat(Step.frame);
-	// printScreen(PrintMe);
-	/* send message to ES */
+	Step.location = UExperimentUtils::VrToCanonical(InVector, MapLength, this->WorldScale);
+	Step.rotation = InRotation.Yaw; // todo: get actual rotation of player  
+	Step.time_stamp = GetTimeElapsed(); 
 
 	const FMessage MessageOut = UMessageClient::NewMessage("prey_step",
 		UExperimentUtils::StepToJsonString(Step));
@@ -722,14 +716,11 @@ void AExperimentServiceMonitor::RequestRemoveDelegates(URequest* RequestIn) {
 	UE_LOG(LogExperiment, Log, TEXT("[AExperimentServiceMonitor::RequestRemoveDelegates] Result: %i"), Result)
 }
 
-// ReSharper disable once CppMemberFunctionMayBeStatic
-/* Called when status*/
 void AExperimentServiceMonitor::OnStatusChanged(EExperimentStatus ExperimentStatusIn) {
 	const FString StatusString = FExperimentInfo::GetStatusString(&ExperimentStatusIn);
 	printScreen("[AExperimentServiceMonitor::OnStatusChanged] " + StatusString);
 }
 
-/* get occlusions in our specific experiment (FWorldInfo.occlusions; default: "21_05") */
 bool AExperimentServiceMonitor::SendGetOcclusionsRequest() {
 	if (!Client) { UE_LOG(LogExperiment, Error, TEXT("[SendGetOcclusionsRequest()] Cant send get occlusion request, Experiment service client not valid.")); return false; } // experiment service client not valid
 	GetOcclusionsRequest = Client->SendRequest("get_occlusions", "21_05", TimeOut);
@@ -744,7 +735,6 @@ bool AExperimentServiceMonitor::SendGetOcclusionsRequest() {
 	return true;
 }
 
-/* gets location of all possible occlusions in our given experiment/world configuration */
 void AExperimentServiceMonitor::HandleGetOcclusionsResponse(const FString ResponseIn)  {
 	UE_LOG(LogExperiment, Warning, TEXT("[AExperimentServiceMonitor::HandleGetOcclusionsResponse] Occlusion IDs (raw): %s"), *ResponseIn);
 
@@ -789,26 +779,24 @@ void AExperimentServiceMonitor::HandleGetOcclusionsTimedOut() {
 	this->RequestRemoveDelegates(GetOcclusionsRequest);
 }
 
-URequest* AExperimentServiceMonitor::SendGetOcclusionLocationsRequest()
-{
+bool AExperimentServiceMonitor::SendGetOcclusionLocationsRequest() {
 	UE_LOG(LogExperiment, Log, TEXT("[AExperimentServiceMonitor::SendGetOcclusionLocationsRequest()] Starting request."));
-	if (!this->ValidateClient(Client))
-	{
+	if (!this->ValidateClient(Client)) {
 		UE_LOG(LogExperiment, Error,
 			TEXT("[AExperimentServiceMonitor::SendGetOcclusionLocationsRequest()] Cant send get occlusion request, Experiment service client not valid."));
-		return nullptr;
+		return false;
 	}
 	
 	const FString BodyOut   = "21_05";
 	const FString HeaderOut = "get_cell_locations";
-	URequest* Request = Client->SendRequest("get_cell_locations", "21_05", 10.0f);
+	GetOcclusionLocationRequest = Client->SendRequest("get_cell_locations", "21_05", 10.0f);
 	
-	if (!Request) { return nullptr; }
+	if (!GetOcclusionLocationRequest) { return false; }
 	
-	Request->ResponseReceived.AddDynamic(this, &AExperimentServiceMonitor::HandleGetOcclusionLocationsResponse);
-	Request->TimedOut.AddDynamic(this, &AExperimentServiceMonitor::HandleGetOcclusionLocationsTimedOut);
+	GetOcclusionLocationRequest->ResponseReceived.AddDynamic(this, &AExperimentServiceMonitor::HandleGetOcclusionLocationsResponse);
+	GetOcclusionLocationRequest->TimedOut.AddDynamic(this, &AExperimentServiceMonitor::HandleGetOcclusionLocationsTimedOut);
 
-	return Request;
+	return true;
 }
 
 /* gets location of all possible occlusions in our given experiment/world configuration */
@@ -819,22 +807,31 @@ void AExperimentServiceMonitor::HandleGetOcclusionLocationsResponse(const FStrin
 		constexpr int HeightScaleFactor = 3;
 		OcclusionsStruct.SpawnAll(GetWorld(), true, false,
 			FVector(WorldScale, WorldScale, WorldScale*HeightScaleFactor));
+	}else {
+		UE_LOG(LogExperiment, Log, TEXT("[SendGetOcclusionsRequest] All locations already spawned. Skipping spawn!"));
 	}
-	
+
+	if (GetOcclusionLocationRequest) {
+		UE_LOG(LogExperiment, Log,
+			TEXT("HandleGetOcclusionLocationsResponse: Requesting to remove delegates for GetOcclusionLocationRequest"))
+		RequestRemoveDelegates(GetOcclusionLocationRequest);
+	}else {
+		UE_LOG(LogExperiment, Log,
+			TEXT("HandleGetOcclusionLocationsResponse: Failed to remove delegates for GetOcclusionLocationRequest, request not valid"))
+	}
+
+	// get locations in our specific world configuration (21_05 by defualt) 
 	if (!this->SendGetOcclusionsRequest()) {
 		UE_LOG(LogExperiment, Log, TEXT("[SendGetOcclusionsRequest] send request false!"));
+	} else {
+		UE_LOG(LogExperiment, Log,
+			TEXT("HandleGetOcclusionLocationsResponse: Failed to SendGetOcclusionsRequest"))
 	}
-	
 }
 
 void AExperimentServiceMonitor::HandleGetOcclusionLocationsTimedOut() {
 	UE_LOG(LogExperiment, Warning, TEXT("[HandleGetOcclusionLocationsTimedOut] Get cell location request timed out!"));
 	return;
-}
-
-void AExperimentServiceMonitor::HandleOcclusionLocation(const FMessage MessageIn)
-{
-	UE_LOG(LogExperiment, Warning, TEXT("OcclusionLocation: %s"), *MessageIn.body);
 }
 
 bool AExperimentServiceMonitor::ConnectToServer(UMessageClient* ClientIn, const int MaxAttemptsIn, const FString& IPAddressIn, const int PortIn) {

@@ -22,8 +22,7 @@ void APlayerControllerVR::BeginPlay()
 }
 
 // Called to bind functionality to input
-void APlayerControllerVR::SetupInputComponent()
-{
+void APlayerControllerVR::SetupInputComponent() {
 	Super::SetupInputComponent();
 
 	InputComponent->BindAction("ResetOrigin", EInputEvent::IE_Pressed, this, &APlayerControllerVR::ResetOrigin);

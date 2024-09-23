@@ -20,6 +20,7 @@ APredatorBasic::APredatorBasic() : Super()
 	
 	SkeletalMeshComponent = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("SkeletalMeshComponent"));
 	SkeletalMeshComponent->SetRelativeLocation(FVector(0.0,0.0f,30.0f));
+	SkeletalMeshComponent->SetRelativeRotation(FRotator(0.0,+180.0f,0.0f));
 	RootComponent = SkeletalMeshComponent;	
 
 	static ConstructorHelpers::FObjectFinder<USkeletalMesh>SkeletalMesh(TEXT("/Script/Engine.SkeletalMesh'/Game/AnimalVarietyPack/Fox/Meshes/SK_Fox.SK_Fox'"));
