@@ -325,44 +325,54 @@ bool AExperimentServiceMonitor::StopTimerEpisode(double& InElapsedTime) {
 /* Handle episode response */
 void AExperimentServiceMonitor::HandleStartEpisodeRequestResponse(const FString response) {
 
-	UE_LOG(LogExperiment, Warning, TEXT("[AExperimentServiceMonitor::HandleStartEpisodeRequestResponse] %s"), *response);
+	UE_LOG(LogExperiment, Warning, TEXT("[HandleStartEpisodeRequestResponse] %s"), *response);
 	if (GEngine) if (GEngine) GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Magenta, FString::Printf(TEXT("Episode response: %s"), *response));
 	
 	if (response != "success") {
 		// avoid multiple calls if already in episode and avoid setting status as error (just an artifact)
 		if (ExperimentInfo.Status == EExperimentStatus::InEpisode) {
 			UE_LOG(LogExperiment, Warning,
-				TEXT("[AExperimentServiceMonitor::HandleStartEpisodeRequestResponse] Failed to start episode! Already in episode"));
+				TEXT("[HandleStartEpisodeRequestResponse] Failed to start episode! Already in episode"));
 			return;
 		}
 		
 		UE_LOG(LogExperiment, Error,
-			TEXT("[AExperimentServiceMonitor::HandleStartEpisodeRequestResponse] Failed to start episode! Unkown reason!"))
+			TEXT("[HandleStartEpisodeRequestResponse] Failed to start episode! Unkown reason!"))
 		// ExperimentInfo.SetStatus(EExperimentStatus::ErrorStartEpisode);
 		return;
 	}
 
 	ExperimentInfo.SetStatus(EExperimentStatus::InEpisode);
 	
-	/* resubscribe */
-	bool bSubscribeResult = false; 
-	if (bSubscribed) {
-		bSubscribeResult = true;
+	/* check is subbed, if not, resub
+	bool bSubscribeResultLocal = false; 
+	bool bResetResultLocal = false;
+	if (ExperimentManager){
+		if (ExperimentManager->bSubscribed) {
+			// reset
+			UE_LOG(LogExperiment,
+				Error,
+				TEXT("[HandleStartEpisodeRequestResponse] Already subscribed, calling ResetTrackingAgent()!"))
+			bResetResultLocal = this->ResetTrackingAgent();
+		} else {
+			UE_LOG(LogExperiment,
+				Warning, TEXT("[HandleStartEpisodeRequestResponse] Not Subscribed, sending request!"))
+			bSubscribeResultLocal = this->SubscribeToTracking(); 
+		}
 	} else {
-		bSubscribeResult = this->SubscribeToTracking();
+		UE_LOG(LogExperiment,
+			Error, TEXT("[HandleStartEpisodeRequestResponse] Experiment Manager NULL!"))
 	}
 	
-	if (!bSubscribeResult) {
-		UE_LOG(LogExperiment, Error, TEXT("HandleStartEpisodeRequestResponse: Failed to subscribe to tracking!"));
+	if (!bSubscribeResultLocal) {
+		UE_LOG(LogExperiment,
+			Error, TEXT("[HandleStartEpisodeRequestResponse] Something went wrong in SubscribeToTracking!"))
 		return;
 	}
+	*/
 	
-	const bool bResetSuccess = this->ResetTrackingAgent();
-	check(bResetSuccess)
-	if (!bResetSuccess) {
-		UE_LOG(LogExperiment, Error, TEXT("HandleStartEpisodeRequestResponse: failed to reset tracking agent."));
-		return; 
-	}
+	
+
 	
 	// todo: remove resettrackingagent from SubscribeToTracking(); 
 	if (!this->SendGetOcclusionLocationsRequest()) {
@@ -371,58 +381,74 @@ void AExperimentServiceMonitor::HandleStartEpisodeRequestResponse(const FString 
 	
 	// remove delegates
 	if (StartEpisodeRequest->IsValidLowLevelFast()) {
-		this->RequestRemoveDelegates(StartEpisodeRequest);
+		this->RequestRemoveDelegates(StartEpisodeRequest, "StartEpisodeRequest");
 		printScreen("HandleStartEpisodeRequestResponse: Removed bindings from StartEpisodeRequest");
 	}
 }
 
 bool AExperimentServiceMonitor::ResetTrackingAgent() {
-	printScreen("HandleStartEpisodeRequestResponse: Preparing to send!");
-	
+
+	UE_LOG(LogExperiment, Log, TEXT("[ResetTrackingAgent] Preparing to send!"))
 	ResetRequest = TrackingClient->SendRequest("reset","",10.0f);
 	if (!ResetRequest) {
-		UE_LOG(LogExperiment, Error, TEXT("Failed to create reset request!"));
+		UE_LOG(LogExperiment, Error, TEXT("[ResetTrackingAgent] Failed to create and send ResetRequest!"));
 		return false; 
 	}
+	
 	ResetRequest->ResponseReceived.AddDynamic(this, &AExperimentServiceMonitor::HandleResetRequestResponse);
 	ResetRequest->TimedOut.AddDynamic(this, &AExperimentServiceMonitor::HandleResetRequestTimedOut);
+	UE_LOG(LogExperiment, Log, TEXT("[ResetTrackingAgent] OK!"))
 	return true; 
 }
 
 void AExperimentServiceMonitor::HandleResetRequestResponse(const FString InResponse) {
-	UE_LOG(LogExperiment, Log, TEXT("[AExperimentServiceMonitor::HandleResetRequestResponse()] Response: %s"),*InResponse)
+	UE_LOG(LogExperiment, Log, TEXT("[HandleResetRequestResponse] Response: %s"),*InResponse)
 	if (InResponse != "success") {
 		ExperimentInfo.SetStatus(EExperimentStatus::ErrorResetTrackingAgent);
-		
 		if (ExperimentManager) {
+			UE_LOG(LogExperiment, Log, TEXT("[HandleResetRequestResponse] Broadcasting OnResetResultDelegate false!"))
 			ExperimentManager->OnResetResultDelegate.Broadcast(false);
-			UE_LOG(LogExperiment, Log, TEXT("Broadcasting OnResetResultDelegate false!"))
 		}
 		return; 
 	}
 
 	if (ExperimentManager) {
 		ExperimentManager->OnResetResultDelegate.Broadcast(true);
-		UE_LOG(LogExperiment, Log, TEXT("Broadcasting OnResetResultDelegate true!"))
+		UE_LOG(LogExperiment, Log, TEXT("[HandleResetRequestResponse] Broadcasting OnResetResultDelegate true!"))
+	}else {
+		UE_LOG(LogExperiment, Error, TEXT("[HandleResetRequestResponse] ExperimentManager NULL!"))
 	}
 	
 	FrameCountPrey = 0;
 	// ExperimentInfo.SetStatus(EExperimentStatus::InEpisode); // todo: change flag 
-	UE_LOG(LogExperiment, Log, TEXT("[AExperimentServiceMonitor::HandleResetRequestResponse] ResetTrackingAgent Successful!"))
-	UE_LOG(LogExperiment, Log, TEXT("[AExperimentServiceMonitor::HandleResetRequestResponse] RequestRemoveDelegates(ResetRequest)"))
-	this->RequestRemoveDelegates(ResetRequest);
+	UE_LOG(LogExperiment, Log, TEXT("[HandleResetRequestResponse] ResetTrackingAgent OK!"))
+	UE_LOG(LogExperiment, Log, TEXT("[HandleResetRequestResponse] RequestRemoveDelegates(ResetRequest)"))
+	this->RequestRemoveDelegates(ResetRequest, "ResetRequest");
 }
 
 void AExperimentServiceMonitor::HandleResetRequestTimedOut() {
-	UE_LOG(LogExperiment, Error, TEXT("[AExperimentServiceMonitor::HandleResetRequestTimedOut()] Reset request timed out!"))
+	UE_LOG(LogExperiment, Error, TEXT("[HandleResetRequestTimedOut] Reset request timed out!"))
+
 	if (PlayerPawn && PlayerPawn->PlayerHUD) {
+		UE_LOG(LogExperiment, Log,
+			TEXT("[HandleResetRequestTimedOut] Notifying timeout to PlayerPawn->PlayerHUD!"))
 		PlayerPawn->PlayerHUD->SetNotificationText("Reset Request timed out!");
 		PlayerPawn->PlayerHUD->SetNotificationVisibility(ESlateVisibility::Visible);
+	} else {
+		UE_LOG(LogExperiment, Error,
+			TEXT("[HandleResetRequestTimedOut] Can't notify with PlayerHUD. PlayerPawn or PlayerHUD is NULL!"))
 	}
+
 	if (ExperimentManager) {
-		UE_LOG(LogExperiment, Log, TEXT("Broadcasting OnResetResultDelegate false!"))
+		UE_LOG(LogExperiment, Log, TEXT("[HandleResetRequestTimedOut] Broadcasting OnResetResultDelegate false!"))
 		ExperimentManager->OnResetResultDelegate.Broadcast(false);
+	} else {
+		UE_LOG(LogExperiment, Error,
+			TEXT("[HandleResetRequestTimedOut] Failed to broadcast OnResetResultDelegate, Experiment Manager is NULL!"))
 	}
+
+	this->RequestRemoveDelegates(ResetRequest, "ResetRequest");
+	ResetRequest = nullptr;
 }
 
 void AExperimentServiceMonitor::OnSubscribeResult(const bool bSubscribeResult) {
@@ -440,7 +466,8 @@ void AExperimentServiceMonitor::OnResetResult(const bool bResetResult) {
 	UE_LOG(LogExperiment, Log, TEXT("OnResetResult: bCanUpdatePrey = %i"), bResetResult)
 
 	if (!bResetResult) {
-		UE_LOG(LogExperiment, Error, TEXT("OnResetResult Reset Failed!"))	
+		UE_LOG(LogExperiment, Error, TEXT("OnResetResult Reset Failed!"))
+		ExperimentInfo.SetStatus(EExperimentStatus::WaitingEpisode);	
 		return; 
 	}
 	
@@ -453,13 +480,12 @@ void AExperimentServiceMonitor::OnResetResult(const bool bResetResult) {
 		return; 
 	}
 	
-	UE_LOG(LogExperiment, Log, TEXT("OnResetResult Found valid player pawn and will start sampling at %0.2f!"),
-		PositionSamplingRate)
+	UE_LOG(LogExperiment, Log, TEXT("OnResetResult Found valid player pawn"))
 	
-	if(!PlayerPawn->StartPositionSamplingTimer(PositionSamplingRate)) {
-		UE_LOG(LogExperiment, Error, TEXT("OnResetResult Failed to StartPositionSamplingTimer!"))
-		return; 
-	}
+	// if(!PlayerPawn->StartPositionSamplingTimer(PositionSamplingRate)) {
+	// 	UE_LOG(LogExperiment, Error, TEXT("OnResetResult Failed to StartPositionSamplingTimer!"))
+	// 	return; 
+	// }
 
 	UE_LOG(LogExperiment, Log, TEXT("OnResetResult OK!"))
 }
@@ -485,13 +511,6 @@ void AExperimentServiceMonitor::HandleStopEpisodeRequestResponse(const FString r
 	// ExperimentInfo.SetStatus(EExperimentStatus::FinishedEpisode); // todo: make permanent (delete below)
 	bCanUpdatePrey = false;
 	
-	if (PlayerPawn) {
-		const bool bStopTimerResult = PlayerPawn->StopPositionSamplingTimer();
-		if (!bStopTimerResult) {
-			UE_LOG(LogExperiment, Error, TEXT("Failed to StopPositionSamplingTimer!"));
-		}
-	}
-	
 	ExperimentInfo.SetStatus(EExperimentStatus::WaitingEpisode);
 	OcclusionsStruct.SetAllHidden();
 	
@@ -515,7 +534,7 @@ void AExperimentServiceMonitor::HandleStopEpisodeRequestResponse(const FString r
 
 	// cleanup
 	if (StopEpisodeRequest->IsValidLowLevelFast()) {
-		this->RequestRemoveDelegates(StopEpisodeRequest);
+		this->RequestRemoveDelegates(StopEpisodeRequest, "StopEpisodeRequest");
 		StopEpisodeRequest = nullptr;
 		printScreen("Removing delegates: StopEpisodeRequest");
 	} else { printScreen("Removing delegates: StopEpisodeRequest not valid!"); }
@@ -531,11 +550,9 @@ void AExperimentServiceMonitor::HandleStartExperimentResponse(const FString Resp
 	ExperimentInfo.StartExperimentResponse = UExperimentUtils::JsonStringToStartExperimentResponse(*ResponseIn);
 	ExperimentInfo.ExperimentNameActive    = ExperimentInfo.StartExperimentResponse.experiment_name;
 	
-	// printScreen(ExperimentInfo.StartExperimentResponse.experiment_name);
-	
 	if (!this->ValidateExperimentName(ExperimentInfo.ExperimentNameActive)) {
 		UE_LOG(LogExperiment, Error,
-			TEXT("[AExperimentServiceMonitor::HandleStartExperimentResponse] Failed to start experiment. ExperimentNameIn not valid."));
+			TEXT("[HandleStartExperimentResponse] Failed to start experiment. ExperimentNameIn not valid."));
 		UE_DEBUG_BREAK();
 		ExperimentInfo.Status = EExperimentStatus::ErrorStartExperiment;
 	}
@@ -643,46 +660,47 @@ void AExperimentServiceMonitor::SelfDestruct(const FString InErrorMessage)
 
 void AExperimentServiceMonitor::HandleSubscribeToTrackingResponse(FString Response) {
 
-	UE_LOG(LogExperiment, Log, TEXT("[AExperimentServiceMonitor::HandleSubscribeToTrackingResponse] Response: %s"), *Response)
+	UE_LOG(LogExperiment, Log, TEXT("[HandleSubscribeToTrackingResponse] Response: %s"), *Response)
+	if (Response != "success" ) {
+		if (ExperimentManager) {
+			ExperimentManager->OnSubscribeStatusChangedDelegate.Broadcast(false);
+		} else {
+			UE_LOG(LogExperiment, Error,
+				TEXT("[HandleSubscribeToTrackingResponse] ExperimentManager is NULL!"))
+			RequestRemoveDelegates(TrackingSubscribeRequest, "TrackingSubscribeRequest");
+		}
+		return;
+	}
 
-	if (Response == "success") {
-		bSubscribed = true; 
-		UE_LOG(LogExperiment, Log, TEXT("[AExperimentServiceMonitor::HandleSubscribeToTrackingResponse] bSubscribe: %i"), bSubscribed)
-
-		/* reset tracking agent */
-		// const bool bResetSuccess = this->ResetTrackingAgent();
-		// check(bResetSuccess)
-		// if (!bResetSuccess) {
-		// 	UE_LOG(LogExperiment, Fatal, TEXT("[AExperimentServiceMonitor::StartEpisode] failed to reset tracking agent."));
-		// }
+	// means result is success 
+	if (ExperimentManager->IsValidLowLevel()){
+		ExperimentManager->OnSubscribeStatusChangedDelegate.Broadcast(true);
 	} else {
 		UE_LOG(LogExperiment, Error,
-			TEXT("[AExperimentServiceMonitor::HandleSubscribeToTrackingResponse] Response failed! Response: %s"),
-			*Response)
+			TEXT("[HandleSubscribeToTrackingResponse] ExperimentManager is NULL!"))
 	}
-	
-	if (TrackingSubscribeRequest->IsValidLowLevelFast()) {
-		UE_LOG(LogExperiment, Log, TEXT("[AExperimentServiceMonitor::HandleSubscribeToTrackingResponse] RequestRemoveDelegates(TrackingSubscribeRequest)"))
-		RequestRemoveDelegates(TrackingSubscribeRequest);
-		TrackingSubscribeRequest = nullptr;
-	}
+
+
+	RequestRemoveDelegates(TrackingSubscribeRequest, "TrackingSubscribeRequest");
 }
 
 void AExperimentServiceMonitor::HandleSubscribeToTrackingTimedOut() {
 	
-	UE_LOG(LogExperiment, Error, TEXT("[AExperimentServiceMonitor::HandleSubscribeToTrackingTimedOut] Timed out!"));
-	bSubscribed = false; 
-	if (TrackingSubscribeRequest->IsValidLowLevelFast()) {
-		UE_LOG(LogExperiment, Log,
-			TEXT("[AExperimentServiceMonitor::HandleSubscribeToTrackingTimedOut] RequestRemoveDelegates(TrackingSubscribeRequest)!"));
-		this->RequestRemoveDelegates(TrackingSubscribeRequest);
-		TrackingSubscribeRequest = nullptr;
+	UE_LOG(LogExperiment, Error, TEXT("[HandleSubscribeToTrackingTimedOut] Timed out!"));
+	if (ExperimentManager) {
+		ExperimentManager->OnSubscribeStatusChangedDelegate.Broadcast(false);
+	} else {
+		UE_LOG(LogExperiment, Error,
+			TEXT("[HandleSubscribeToTrackingTimedOut] ExperimentManager NULL!"));
 	}
-
+	
+	this->RequestRemoveDelegates(TrackingSubscribeRequest, "RequestRemoveDelegates");
 	if (PlayerPawn && PlayerPawn->PlayerHUD) {
 		PlayerPawn->PlayerHUD->SetNotificationText("SubscribeToTracking() timed out!");
 		PlayerPawn->PlayerHUD->SetNotificationVisibility(ESlateVisibility::Visible);
 	}
+	
+	RequestRemoveDelegates(TrackingSubscribeRequest, "TrackingSubscribeRequest");
 }
 
 bool AExperimentServiceMonitor::SubscribeToTracking() {
@@ -690,43 +708,56 @@ bool AExperimentServiceMonitor::SubscribeToTracking() {
 		UE_LOG(LogExperiment, Fatal, TEXT("[AExperimentServiceMonitor::SubscribeToTracking] ClientIn not valid."))
 		return false;
 	}
-	
-	UE_LOG(LogExperiment,Log,TEXT("[AExperimentServiceMonitor::SubscribeToTracking()] Sending Request: TrackingSubscribeRequest."));
 
+	if (ExperimentManager && ExperimentManager->bSubscribed) {
+		UE_LOG(LogExperiment, Warning,
+			TEXT("[SubscribeToTracking] Already subscribed! ExperimentManager->bSubscribed = %i"),
+			ExperimentManager->bSubscribed)
+		return true;
+	}
+	
+	UE_LOG(LogExperiment, Log,TEXT("[SubscribeToTracking] Preparing to send! TrackingSubscribeRequest."));
 	TrackingSubscribeRequest = TrackingClient->SendRequest("!subscribe","",10.0f); // TC is just slower...
 	if (!TrackingSubscribeRequest->IsValidLowLevelFast()) {
-		UE_LOG(LogExperiment, Fatal, TEXT("[AExperimentServiceMonitor::SubscribeToTracking] TrackingSubscribeRequest not valid."))
+		UE_LOG(LogExperiment, Fatal, TEXT("[SubscribeToTracking] TrackingSubscribeRequest not valid."))
 		return false;
 	}
-	UE_LOG(LogExperiment, Log, TEXT("TrackingSubscribeRequest:"))
 
 	TrackingSubscribeRequest->ResponseReceived.AddDynamic(this, &AExperimentServiceMonitor::HandleSubscribeToTrackingResponse);
 	TrackingSubscribeRequest->TimedOut.AddDynamic(this, &AExperimentServiceMonitor::HandleSubscribeToTrackingTimedOut);
+	UE_LOG(LogExperiment, Log, TEXT("[SubscribeToTracking] OK!"))
 	return true;
 }
 
-void AExperimentServiceMonitor::RequestRemoveDelegates(URequest* RequestIn) {
+void AExperimentServiceMonitor::RequestRemoveDelegates(URequest* InRequest, const FString& InRequestString) {
+	UE_LOG(LogExperiment, Log, TEXT("[RequestRemoveDelegates] Called for: (%s)"), *InRequestString)
 	bool Result = false; 
-	if (RequestIn->IsValidLowLevelFast()) {
-		RequestIn->ResponseReceived.RemoveAll(this);
-		RequestIn->TimedOut.RemoveAll(this);
+	if (InRequest->IsValidLowLevelFast()) {
+		InRequest->ResponseReceived.RemoveAll(this);
+		InRequest->TimedOut.RemoveAll(this);
+		InRequest = nullptr; 
 		Result = true; 
+	} else {
+		UE_LOG(LogExperiment, Error, TEXT("[RequestRemoveDelegates] Failed. RequestIn (%s) NULL"), *InRequestString)
 	}
-	
-	UE_LOG(LogExperiment, Log, TEXT("[AExperimentServiceMonitor::RequestRemoveDelegates] Result: %i"), Result)
+	UE_LOG(LogExperiment, Log, TEXT("[RequestRemoveDelegates] Request: %s; Result: %i"), *InRequestString, Result)
 }
 
 void AExperimentServiceMonitor::OnStatusChanged(EExperimentStatus ExperimentStatusIn) {
 	const FString StatusString = FExperimentInfo::GetStatusString(&ExperimentStatusIn);
-	printScreen("[AExperimentServiceMonitor::OnStatusChanged] " + StatusString);
+	UE_LOG(LogExperiment, Log, TEXT("[OnStatusChanged] New status: %s"), *StatusString)
 }
 
 bool AExperimentServiceMonitor::SendGetOcclusionsRequest() {
-	if (!Client) { UE_LOG(LogExperiment, Error, TEXT("[SendGetOcclusionsRequest()] Cant send get occlusion request, Experiment service client not valid.")); return false; } // experiment service client not valid
+	if (!Client) {
+		UE_LOG(LogExperiment, Error, TEXT("[SendGetOcclusionsRequest()] Cant send get occlusion request, Experiment service client NULL."));
+		return false;
+	} // experiment service client not valid
+
 	GetOcclusionsRequest = Client->SendRequest("get_occlusions", "21_05", TimeOut);
 
 	if (!GetOcclusionsRequest) {
-		UE_LOG(LogExperiment, Error, TEXT("[AExperimentServiceMonitor::SendGetOcclusionsRequest] Failed to GetOcclusionsRequest"))
+		UE_LOG(LogExperiment, Error, TEXT("[AExperimentServiceMonitor::SendGetOcclusionsRequest] SendGetOcclusionsRequest Failed. GetOcclusionsRequest NULL."))
 		return false;
 	}
 	
@@ -736,7 +767,7 @@ bool AExperimentServiceMonitor::SendGetOcclusionsRequest() {
 }
 
 void AExperimentServiceMonitor::HandleGetOcclusionsResponse(const FString ResponseIn)  {
-	UE_LOG(LogExperiment, Warning, TEXT("[AExperimentServiceMonitor::HandleGetOcclusionsResponse] Occlusion IDs (raw): %s"), *ResponseIn);
+	UE_LOG(LogExperiment, Warning, TEXT("HandleGetOcclusionsResponse: Occlusion IDs (raw): %s"), *ResponseIn);
 
 	/* start empty */
 	OcclusionIDsIntArr.Empty(); 
@@ -747,25 +778,32 @@ void AExperimentServiceMonitor::HandleGetOcclusionsResponse(const FString Respon
 	const FString OcclusionIDs_temp = ResponseIn.Replace(TEXT("["), TEXT("")).Replace(TEXT("]"), TEXT(""));
 	const int32 Samples = OcclusionIDs_temp.ParseIntoArray(OcclusionIDsStringArr, TEXT(","), true);
 
-	UE_LOG(LogExperiment, Log, TEXT("[AExperimentServiceMonitor::HandleGetOcclusionsResponse] Number of occlusions in configuration: %i"),Samples);
+	UE_LOG(LogExperiment, Log, TEXT("[HandleGetOcclusionsResponse] Number of occlusions in configuration: %i"),Samples);
 
 	/* convert to integer array */
 	int32 SamplesLost = 0; 
-	for (FString value : OcclusionIDsStringArr) {
-		if (FCString::IsNumeric(*value)) OcclusionIDsTemp.Add(FCString::Atoi(*value));
+	for (FString OcclusionValue : OcclusionIDsStringArr) {
+		if (FCString::IsNumeric(*OcclusionValue)) OcclusionIDsTemp.Add(FCString::Atoi(*OcclusionValue));
 		else { SamplesLost++; }
 	}
 
 	OcclusionsStruct.SetCurrentLocationsByIndex(OcclusionIDsTemp);
 	OcclusionsStruct.SetVisibilityArr(OcclusionIDsTemp, false, true);
 	
-	if (!GetOcclusionsRequest->IsValidLowLevelFast()) {
-		UE_LOG(LogExperiment, Error,TEXT("[AExperimentServiceMonitor::HandleGetOcclusionsResponse] Failed to remove delegates, GetOcclusionsRequest not valid."));
-		return;
+	if (GetOcclusionsRequest->IsValidLowLevelFast()) {
+		UE_LOG(LogExperiment, Log,TEXT("[HandleGetOcclusionsResponse] RequestRemoveDelegates(GetOcclusionsRequest)"));
+		this->RequestRemoveDelegates(GetOcclusionsRequest, "GetOcclusionsRequest");
+	}else {
+		UE_LOG(LogExperiment, Error,TEXT("[HandleGetOcclusionsResponse] Failed to remove delegates, GetOcclusionsRequest not valid."));
 	}
-
-	UE_LOG(LogExperiment, Log,TEXT("[AExperimentServiceMonitor::HandleGetOcclusionsResponse] Removed delegates for: GetOcclusionsRequest"));
-	this->RequestRemoveDelegates(GetOcclusionsRequest);
+	UE_LOG(LogExperiment, Log, TEXT("[HandleGetOcclusionsResponse] Preparing to ResetAgentTracking!"))	
+	if (!this->ResetTrackingAgent()) {
+		UE_LOG(LogExperiment, Error,
+			TEXT("[HandleGetOcclusionsResponse] ResetTrackingAgent() Failed!"))
+	} else {
+		UE_LOG(LogExperiment, Log,
+			TEXT("[HandleGetOcclusionsResponse] ResetTrackingAgent() OK!"))
+	}
 }
 
 void AExperimentServiceMonitor::HandleGetOcclusionsTimedOut() {
@@ -776,7 +814,7 @@ void AExperimentServiceMonitor::HandleGetOcclusionsTimedOut() {
 	}
 	
 	UE_LOG(LogExperiment, Log,TEXT("[AExperimentServiceMonitor::HandleGetOcclusionsResponse] Removed delegates for: GetOcclusionsRequest"));
-	this->RequestRemoveDelegates(GetOcclusionsRequest);
+	this->RequestRemoveDelegates(GetOcclusionsRequest, "GetOcclusionsRequest");
 }
 
 bool AExperimentServiceMonitor::SendGetOcclusionLocationsRequest() {
@@ -802,30 +840,23 @@ bool AExperimentServiceMonitor::SendGetOcclusionLocationsRequest() {
 /* gets location of all possible occlusions in our given experiment/world configuration */
 void AExperimentServiceMonitor::HandleGetOcclusionLocationsResponse(const FString ResponseIn) {
 
-	if (!OcclusionsStruct.bAllLocationsLoaded){ OcclusionsStruct.SetAllLocations(ResponseIn); }
+	if (!OcclusionsStruct.bAllLocationsLoaded) { OcclusionsStruct.SetAllLocations(ResponseIn); }
 	if (!OcclusionsStruct.bSpawnedAll){
 		constexpr int HeightScaleFactor = 3;
 		OcclusionsStruct.SpawnAll(GetWorld(), true, false,
 			FVector(WorldScale, WorldScale, WorldScale*HeightScaleFactor));
-	}else {
+	} else {
 		UE_LOG(LogExperiment, Log, TEXT("[SendGetOcclusionsRequest] All locations already spawned. Skipping spawn!"));
 	}
 
-	if (GetOcclusionLocationRequest) {
-		UE_LOG(LogExperiment, Log,
-			TEXT("HandleGetOcclusionLocationsResponse: Requesting to remove delegates for GetOcclusionLocationRequest"))
-		RequestRemoveDelegates(GetOcclusionLocationRequest);
-	}else {
-		UE_LOG(LogExperiment, Log,
-			TEXT("HandleGetOcclusionLocationsResponse: Failed to remove delegates for GetOcclusionLocationRequest, request not valid"))
-	}
+	RequestRemoveDelegates(GetOcclusionLocationRequest, "GetOcclusionLocationRequest");
 
 	// get locations in our specific world configuration (21_05 by defualt) 
 	if (!this->SendGetOcclusionsRequest()) {
-		UE_LOG(LogExperiment, Log, TEXT("[SendGetOcclusionsRequest] send request false!"));
-	} else {
 		UE_LOG(LogExperiment, Log,
 			TEXT("HandleGetOcclusionLocationsResponse: Failed to SendGetOcclusionsRequest"))
+	} else {
+		UE_LOG(LogExperiment, Log, TEXT("HandleGetOcclusionLocationsResponse: Sent SendGetOcclusionsRequest OK!"))
 	}
 }
 
@@ -896,6 +927,10 @@ bool AExperimentServiceMonitor::Test() {
 
 	if (!this->RoutePredatorMessages()) {
 		UE_LOG(LogExperiment, Error, TEXT("RoutePredatorMessages FAILED!"))
+	}
+
+	if (!this->SubscribeToTracking()) {
+		UE_LOG(LogExperiment, Error, TEXT("SubscribeToTracking FAILED!"))
 	}
 
 	/* Bind to Pawn's OnMovementDetected() */

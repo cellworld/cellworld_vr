@@ -11,15 +11,18 @@
 #include "cellworld_vr/cellworld_vr.h"
 
 
-
 AGameModeMain::AGameModeMain() {
 	// vr or WASD?
-	if (bUseVR) { PlayerControllerClass = APlayerControllerVR::StaticClass(); }
-	else { PlayerControllerClass = AMouseKeyboardPlayerController::StaticClass(); }
+	if (bUseVR) {
+		PlayerControllerClass = APlayerControllerVR::StaticClass();
+	} else {
+		PlayerControllerClass = AMouseKeyboardPlayerController::StaticClass();
+	}
 
+	UE_LOG(LogExperiment, Log, TEXT("USING VR??: %i"),bUseVR)
 	DefaultPawnClass = APawnMain::StaticClass();
 	GameStateClass = AGameStateMain::StaticClass();
-
+	
 	PrimaryActorTick.bStartWithTickEnabled = false;
 	PrimaryActorTick.bCanEverTick = false;
 }

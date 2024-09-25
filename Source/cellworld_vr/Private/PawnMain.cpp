@@ -96,7 +96,6 @@ APawnMain::APawnMain() : Super() {
 // Called to bind functionality to input
 void APawnMain::SetupPlayerInputComponent(class UInputComponent* InInputComponent) {
 	Super::SetupPlayerInputComponent(InInputComponent);
-	
 }
 
 UCameraComponent* APawnMain::GetCameraComponent()
@@ -316,6 +315,12 @@ void APawnMain::BeginPlay() {
 	// 	UE_LOG(LogExperiment, Error, TEXT("Failed to init PlayerHUD widget"));
 	// }
 
+	if (!this->StartPositionSamplingTimer(90.0f)) {
+		UE_LOG(LogExperiment, Error, TEXT("PawnMain: StartPositionSamplingTimer(90.0f) Failed!"))
+	}else {
+		UE_LOG(LogExperiment, Log, TEXT("PawnMain: StartPositionSamplingTimer(90.0f) OK!"))
+	}
+
 	// todo: check? seems to work fine in both. will leave as-is for now bc I may need to revisit this later
 	if (bUseVR) { Camera->bUsePawnControlRotation = false; }
 	else { Camera->bUsePawnControlRotation = true; }
@@ -369,8 +374,7 @@ void APawnMain::UpdateMovementComponent(FVector InputVector, bool bForce) {
 		TeleportType);
 }
 
-void APawnMain::MoveForward(float AxisValue)
-{
+void APawnMain::MoveForward(float AxisValue) {
 	if (AxisValue != 0.0f) {
 		if (OurMovementComponentChar && (OurMovementComponentChar->UpdatedComponent == RootComponent)) {
 			FVector CameraForwardVector = this->Camera->GetForwardVector();

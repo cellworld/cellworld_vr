@@ -20,7 +20,9 @@ DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnExperimentStatusChanged, EExperim
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnEpisodeFinished, int, PlayerIndex, float, Duration); // todo: bind this to PlayerPawn->FExperimentData.
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FNotifyOnExperimentFinished, int, PlayerIndex); 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnSubscribeResultDelegate, bool, bSubscribeResult); 
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnResetResultDelegate, bool, bResetResult); 
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnResetResultDelegate, bool, bResetResult);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FSubscribeStatusChangedDelegate, bool, bResetResult);
+
 
 //todo: move this to its own file in ExperimentPlugin or BotEvadeModule
 UCLASS(Blueprintable)
@@ -28,6 +30,7 @@ class  UExperimentManager : public UObject {
 	GENERATED_BODY()
 	UExperimentManager():MaxEpisodeTotalTime(1800.0f) {
 		OnEpisodeFinishedDelegate.AddDynamic(this, &UExperimentManager::OnEpisodeFinished);
+		OnSubscribeStatusChangedDelegate.AddDynamic(this, &UExperimentManager::OnSubscribeStatusChanged);
 	}
 public:
 	UPROPERTY(EditAnywhere)
@@ -45,7 +48,18 @@ public:
 	FOnEpisodeFinished OnEpisodeFinishedDelegate;
 	FOnSubscribeResultDelegate OnSubscribeResultDelegate;
 	FOnResetResultDelegate OnResetResultDelegate;
-	
+	FSubscribeStatusChangedDelegate OnSubscribeStatusChangedDelegate; 
+
+	/* flag to see if we are subscribed to CellworldGame */
+	UPROPERTY(EditAnywhere)
+	bool bSubscribed = false; 
+
+	UFUNCTION()
+	void OnSubscribeStatusChanged(const bool bSubscribeStatus) {
+		bSubscribed = bSubscribeStatus;
+		UE_LOG(LogExperiment, Log, TEXT("[OnSubscribeStatusChanged] bSubscribed = %i"),
+			bSubscribed)
+	}
 	
 	/* adds new player to ActivePlayer array.
 	 * @return Index of new player. -1 if Index is already used or error. 
@@ -436,8 +450,6 @@ public:
 	UFUNCTION()
 		void OnStatusChanged(const EExperimentStatus ExperimentStatusIn);
 
-	UPROPERTY(EditAnywhere)
-		bool bSubscribed = false; 
 	UFUNCTION(BlueprintCallable, Category = Experiment)
 		bool SubscribeToTracking();
 	UFUNCTION(BlueprintCallable, Category = Experiment)
@@ -445,7 +457,7 @@ public:
 	UFUNCTION(BlueprintCallable, Category = Experiment)
 		void HandleSubscribeToTrackingTimedOut();
 	UFUNCTION(BlueprintCallable, Category = Experiment)
-		void RequestRemoveDelegates(URequest* RequestIn);
+		void RequestRemoveDelegates(URequest* InRequest, const FString& InRequestString = "");
 	
 	/* update predator stuff */
 	UFUNCTION()
