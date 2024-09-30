@@ -55,6 +55,13 @@ void AGameModeMain::EndGame()
 	FGenericPlatformMisc::RequestExit(false);
 }
 
+void AGameModeMain::ExecuteConsoleCommand(const FString& InCommand) {
+	UE_LOG(LogExperiment, Log, TEXT("[ExecuteConsoleCommand] Command: %s"), *InCommand)
+	if (GEngine) {
+		GEngine->Exec(GWorld, *InCommand); 
+	}
+}
+
 AActor* AGameModeMain::GetLevelActorFromName(const FName& ActorNameIn) const
 {
 	// Assuming this code is within a member function of an actor or game mode
@@ -146,19 +153,16 @@ void AGameModeMain::SpawnGetCLMonitorComponentActor()
 * right now, there's only one, but im gonna call this function to maintain consitency.
 */
 
-void AGameModeMain::SpawnAllLoggingActor()
-{
+void AGameModeMain::SpawnAllLoggingActor() {
 	/* eye-tracker */
 	//AGameModeMain::SpawnGetCLMonitorComponentActor();
 }
 
-void AGameModeMain::StartLoadingScreen()
-{
+void AGameModeMain::StartLoadingScreen() {
 	UAsyncLoadingScreenLibrary::SetEnableLoadingScreen(true);
 }
 
-void AGameModeMain::StopLoadingScreen()
-{
+void AGameModeMain::StopLoadingScreen() {
 	UAsyncLoadingScreenLibrary::StopLoadingScreen();
 }
 
@@ -192,8 +196,7 @@ void AGameModeMain::OnExperimentStatusChanged(const EExperimentStatus Experiment
 	}
 }
 
-void AGameModeMain::OnTimerFinished()
-{
+void AGameModeMain::OnTimerFinished() {
 	if (GEngine) GEngine->AddOnScreenDebugMessage(-1, 3.0f, FColor::Red,
 	                                              FString::Printf(TEXT("[AGameModeMain::OnTimerFinished()]!")));
 }
@@ -209,7 +212,9 @@ void AGameModeMain::StartPlay() {
 
 	FVector SpawnLocationVR = UExperimentUtils::CanonicalToVr(SpawnLocation, 235.185, this->WorldScale);
 
-	if (!bUseVR) { SpawnLocationVR.Z += 100; }
+	if (!bUseVR) {
+		SpawnLocationVR.Z += 100;
+	}
 
 	// this->SpawnAndPossessPlayer(SpawnLocationVR, FRotator::ZeroRotator);
 	/*
@@ -217,19 +222,25 @@ void AGameModeMain::StartPlay() {
 	 * - player pawn can bind to ExperimentService->FOnTimerUpdated.AddDynamic(APawnMain*, APawnMain::UpdatePlayerHUD)
 	 */
 	
+	/* spawn ExperimentServiceActor */
+	if (bSpawnExperimentService) {
+		this->SpawnExperimentServiceMonitor();
+		// this->ExecuteConsoleCommand("netprofile");
+	} else {
+		UE_LOG(LogExperiment, Warning, TEXT("[AGameModeMain::StartPlay()] Not spawning Experiment Service!"));
+	}
+
+	/* start update HUD timer */
 	if (bSpawnExperimentService && bUpdateHUDTimer) {
-		UE_LOG(LogExperiment, Log, TEXT("Running HUD update timer!"))
+		UE_LOG(LogExperiment, Log, TEXT("[AGameModeMain::StartPlay()] Running HUD update timer!"))
 		HUDTimer = NewObject<UEventTimer>(this, UEventTimer::StaticClass());
 		if (HUDTimer) {
 			HUDTimer->SetRateHz(10.0f);
 			HUDTimer->bLoop = true;
 			HUDTimer->OnTimerFinishedDelegate.AddDynamic(this, &AGameModeMain::OnUpdateHUDTimer);
-			if (HUDTimer->Start()) { UE_LOG(LogExperiment, Log, TEXT("Started v2 timer for OnUpdateHUDTimer")); } 
+			if (HUDTimer->Start()) { UE_LOG(LogExperiment, Log, TEXT("[AGameModeMain::StartPlay()] Started v2 timer for OnUpdateHUDTimer")); } 
 		}
 	}
-
-	if (bSpawnExperimentService) { AGameModeMain::SpawnExperimentServiceMonitor(); }
-	else { UE_LOG(LogExperiment, Warning, TEXT("[AGameModeMain::StartPlay()] Not spawning Experiment Service!")); }
 
 	AGameModeMain::StopLoadingScreen();
 }

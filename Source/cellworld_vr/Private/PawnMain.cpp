@@ -180,7 +180,8 @@ void APawnMain::OnMovementDetected() {
 			FinalRotation = HMDRotation;
 			UpdateRoomScaleLocation();
 		} else {
-			UE_LOG(LogExperiment, Error, TEXT("OnMovementDetected: HMD is not being worn! Using WASD mode!"))
+			UE_LOG(LogExperiment, Error, TEXT("[OnMovementDetected] HMD is not being worn! Returning."))
+			return; 
 			FinalLocation = RootComponent->GetComponentLocation();
 			FinalRotation = GetActorRotation();
 		}
@@ -315,10 +316,11 @@ void APawnMain::BeginPlay() {
 	// 	UE_LOG(LogExperiment, Error, TEXT("Failed to init PlayerHUD widget"));
 	// }
 
-	if (!this->StartPositionSamplingTimer(90.0f)) {
-		UE_LOG(LogExperiment, Error, TEXT("PawnMain: StartPositionSamplingTimer(90.0f) Failed!"))
-	}else {
-		UE_LOG(LogExperiment, Log, TEXT("PawnMain: StartPositionSamplingTimer(90.0f) OK!"))
+	const float FS = 60.0f;
+	if (!this->StartPositionSamplingTimer(FS)) {
+		UE_LOG(LogExperiment, Error, TEXT("PawnMain: StartPositionSamplingTimer(%0.2f) Failed!"), FS)
+	} else {
+		UE_LOG(LogExperiment, Log, TEXT("PawnMain: StartPositionSamplingTimer(%0.2f) OK!"), FS)
 	}
 
 	// todo: check? seems to work fine in both. will leave as-is for now bc I may need to revisit this later

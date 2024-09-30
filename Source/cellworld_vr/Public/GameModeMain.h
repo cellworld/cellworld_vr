@@ -16,13 +16,15 @@ public:
 	virtual void EndGame();
 	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Debug")
-	bool bUseVR = true;
+	bool bUseVR = false;
 	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Debug")
 	bool bSpawnExperimentService = true;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Debug")
 	bool bUpdateHUDTimer = false;
+
+	void ExecuteConsoleCommand(const FString& InCommand);
 	
 	/* world and coordinate system stuff */
 	AActor* GetLevelActorFromName(const FName& ActorNameIn) const;
