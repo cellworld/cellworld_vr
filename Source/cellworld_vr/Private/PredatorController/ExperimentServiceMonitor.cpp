@@ -427,8 +427,7 @@ void AExperimentServiceMonitor::HandleResetRequestResponse(const FString InRespo
 }
 
 void AExperimentServiceMonitor::HandleResetRequestTimedOut() {
-	UE_LOG(LogExperiment, Error, TEXT("[HandleResetRequestTimedOut] Reset request timed out!"))
-
+	UE_LOG(LogExperiment, Fatal, TEXT("[HandleResetRequestTimedOut] Reset request timed out!"))
 	if (PlayerPawn && PlayerPawn->PlayerHUD) {
 		UE_LOG(LogExperiment, Log,
 			TEXT("[HandleResetRequestTimedOut] Notifying timeout to PlayerPawn->PlayerHUD!"))
@@ -750,14 +749,14 @@ void AExperimentServiceMonitor::OnStatusChanged(EExperimentStatus ExperimentStat
 
 bool AExperimentServiceMonitor::SendGetOcclusionsRequest() {
 	if (!Client) {
-		UE_LOG(LogExperiment, Error, TEXT("[SendGetOcclusionsRequest()] Cant send get occlusion request, Experiment service client NULL."));
+		UE_LOG(LogExperiment, Error, TEXT("[SendGetOcclusionsRequest] Cant send get occlusion request, Experiment service client NULL."));
 		return false;
 	} // experiment service client not valid
 
 	GetOcclusionsRequest = Client->SendRequest("get_occlusions", "21_05", TimeOut);
 
 	if (!GetOcclusionsRequest) {
-		UE_LOG(LogExperiment, Error, TEXT("[AExperimentServiceMonitor::SendGetOcclusionsRequest] SendGetOcclusionsRequest Failed. GetOcclusionsRequest NULL."))
+		UE_LOG(LogExperiment, Error, TEXT("[SendGetOcclusionsRequest] SendGetOcclusionsRequest Failed. GetOcclusionsRequest NULL."))
 		return false;
 	}
 	
@@ -796,6 +795,7 @@ void AExperimentServiceMonitor::HandleGetOcclusionsResponse(const FString Respon
 	}else {
 		UE_LOG(LogExperiment, Error,TEXT("[HandleGetOcclusionsResponse] Failed to remove delegates, GetOcclusionsRequest not valid."));
 	}
+	
 	UE_LOG(LogExperiment, Log, TEXT("[HandleGetOcclusionsResponse] Preparing to ResetAgentTracking!"))	
 	if (!this->ResetTrackingAgent()) {
 		UE_LOG(LogExperiment, Error,
@@ -846,7 +846,7 @@ void AExperimentServiceMonitor::HandleGetOcclusionLocationsResponse(const FStrin
 		OcclusionsStruct.SpawnAll(GetWorld(), true, false,
 			FVector(WorldScale, WorldScale, WorldScale*HeightScaleFactor));
 	} else {
-		UE_LOG(LogExperiment, Log, TEXT("[SendGetOcclusionsRequest] All locations already spawned. Skipping spawn!"));
+		UE_LOG(LogExperiment, Log, TEXT("[HandleGetOcclusionLocationsResponse] All locations already spawned. Skipping spawn!"));
 	}
 
 	RequestRemoveDelegates(GetOcclusionLocationRequest, "GetOcclusionLocationRequest");
@@ -854,7 +854,7 @@ void AExperimentServiceMonitor::HandleGetOcclusionLocationsResponse(const FStrin
 	// get locations in our specific world configuration (21_05 by defualt) 
 	if (!this->SendGetOcclusionsRequest()) {
 		UE_LOG(LogExperiment, Log,
-			TEXT("HandleGetOcclusionLocationsResponse: Failed to SendGetOcclusionsRequest"))
+			TEXT("[HandleGetOcclusionLocationsResponse] Failed to SendGetOcclusionsRequest"))
 	} else {
 		UE_LOG(LogExperiment, Log, TEXT("HandleGetOcclusionLocationsResponse: Sent SendGetOcclusionsRequest OK!"))
 	}
