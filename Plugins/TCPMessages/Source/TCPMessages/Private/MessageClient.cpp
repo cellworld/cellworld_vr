@@ -64,7 +64,10 @@ URequest* UMessageClient::SendRequest(const FString& Header, const FString& Body
 	FMessage request_message(Header);
 	request_message.body = Body;
 	PendingRequests.Add(request_message.id, request);
-	SendMessage(request_message);
+	if (!SendMessage(request_message)) {
+		UE_LOG(LogTemp, Error, TEXT("UMessageClient::SendRequest Failed Failed at SendMessage()"))	
+		return nullptr;
+	}
 	return request;
 }
 

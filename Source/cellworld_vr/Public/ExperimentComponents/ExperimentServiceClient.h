@@ -126,7 +126,7 @@ protected:
 
 	/* world and coordinate system stuff */
 	const float MapLength = 235.185;
-	int WorldScale        = 15; 
+	int WorldScale;
 	int FrameCount        = 0; 
 
 	/* setup */

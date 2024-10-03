@@ -2,14 +2,13 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/GameModeBase.h"
-#include "ConfigManager.h"
+#include "MiscUtils/Timer/EventTimer.h"
 #include "PawnMain.h"
 #include "PredatorController/ExperimentServiceMonitor.h"
 #include "GameModeMain.generated.h"
 
 UCLASS()
-class CELLWORLD_VR_API AGameModeMain : public AGameModeBase
-{
+class CELLWORLD_VR_API AGameModeMain : public AGameModeBase {
 public:
 	AGameModeMain();
 	
@@ -18,12 +17,21 @@ public:
 	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Debug")
 	bool bUseVR = false;
+	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Debug")
 	bool bSpawnExperimentService = true;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Debug")
+	bool bUpdateHUDTimer = false;
+
+	void ExecuteConsoleCommand(const FString& InCommand);
 	
 	/* world and coordinate system stuff */
-	AActor* GetLevelActorFromName(const FName& ActorNameIn);
-	
+	AActor* GetLevelActorFromName(const FName& ActorNameIn) const;
+
+	UPROPERTY(EditAnywhere)
+	TObjectPtr<UEventTimer> HUDTimer;  
+
 	/* debug */
 	TObjectPtr<UClass> PawnClassToSpawn;
 	UPROPERTY(EditAnywhere)
@@ -32,7 +40,7 @@ public:
 	FRotator InitialPlayerRotation;
 
 	/* spawning player */
-	float WorldScale = 6.0f;
+	float WorldScale = 5.0f;
 	// FVector spawn_location_player  = { -1700.0,1500.000000,30.000000 };
 	// FRotator spawn_rotation_player = { 0.0,0.0, 0.0 };
 	void SpawnAndPossessPlayer(FVector spawn_location, FRotator spawn_rotation);
@@ -53,7 +61,8 @@ public:
 	void StopLoadingScreen();
 
 	/* player HUD bindings to ExperimentServiceMonitor */
-	void OnUpdateHUDTimer();
+	UFUNCTION()
+		void OnUpdateHUDTimer();
 	UFUNCTION()
 		void OnExperimentStatusChanged(EExperimentStatus ExperimentStatusIn);
 
@@ -61,7 +70,7 @@ public:
 
 	/* to store waypoint info  */
 	virtual void InitGame(const FString& MapName, const FString& Options, FString& ErrorMessage) override;
-	virtual void InitGameState();
+	virtual void InitGameState() override;
 	virtual void StartPlay() override;
 	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 	virtual void Tick(float DeltaTime) override;

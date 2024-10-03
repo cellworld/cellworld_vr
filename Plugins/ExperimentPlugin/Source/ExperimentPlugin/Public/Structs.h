@@ -65,12 +65,14 @@ enum class EExperimentStatus : uint8
 	
 
 	// error flags
-	ErrorStartExperiment 	 UMETA(DisplayName = "FailedStartExperiment"),
-	ErrorStartEpisode    	 UMETA(DisplayName = "FailedStartEpisode"),
-	ErrorFinishedExperiment  UMETA(DisplayName = "FailedFinishedExperiment"),
-	ErrorFinishEpisode		 UMETA(DisplayName = "FailedFinishEpisode"),
-	ErrorTimedOutExperiment	 UMETA(DisplayName="TimedOutExperiment"),
-	ErrorTimedOutEpisode	 UMETA(DisplayName="TimedOutEpisode"),
+	ErrorStartExperiment 	 UMETA(DisplayName = "ErrorStartExperiment"),
+	ErrorStartEpisode    	 UMETA(DisplayName = "ErrorStartEpisode"),
+	ErrorFinishedExperiment  UMETA(DisplayName = "ErrorFinishedExperiment"),
+	ErrorFinishEpisode		 UMETA(DisplayName = "ErrorFinishEpisode"),
+	ErrorResetTrackingAgent  UMETA(DisplayName = "ErrorResetTrackingAgent"),
+	ErrorTimedOutExperiment	 UMETA(DisplayName = "TimedOutExperiment"),
+	ErrorTimedOutEpisode	 UMETA(DisplayName = "TimedOutEpisode"),
+	ErrorTimedOutReset	     UMETA(DisplayName = "ErrorTimedOutReset"),
 	
 	// there's always stuff we don't expect, right? 
 	Unknown				     UMETA(DisplayName = "Unknown"),

@@ -7,15 +7,15 @@
 #include "Interfaces/HUDExperiment.h"
 #include "HeadMountedDisplay.h"
 #include "Containers/Array.h" 
-#include "GameFramework/CharacterMovementComponent.h" // test 
+#include "GameFramework/CharacterMovementComponent.h" // test
 #include "MotionControllerComponent.h"
+#include "MiscUtils/Timer/EventTimer.h"
 #include "PawnMain.generated.h"
 
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnMovementDetected, FVector, Location);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnMovementDetected, FVector, Location, FRotator, Rotation);
 
 UCLASS()
-class CELLWORLD_VR_API APawnMain : public APawn
-{
+class CELLWORLD_VR_API APawnMain : public APawn {
 	GENERATED_BODY()
 
 public:
@@ -31,7 +31,7 @@ public:
 	FOnMovementDetected MovementDetectedEvent;
 
 	UPROPERTY(EditAnywhere)
-		bool bUseVR = false;
+		bool bUseVR = true;
 
 	void ResetOrigin();
 	void RestartGame();
@@ -39,11 +39,17 @@ public:
 	APlayerController* GetGenericController();
 	bool HUDResetTimer(float DurationIn) const;
 	bool CreateAndInitializeWidget();
+	bool StartPositionSamplingTimer(const float InRateHz);
+	bool StopPositionSamplingTimer();
 	void DestroyHUD();
 
 	/* temp */
 	FVector RelLoc;
 
+	UPROPERTY(EditAnywhere)
+		// TObjectPtr<UEventTimer> EventTimer;
+		UEventTimer* EventTimer;
+	
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
@@ -71,12 +77,16 @@ public:
 	USceneComponent* VROrigin; 
 	UCapsuleComponent* CapsuleComponent;
 	UCustomCharacterMovementComponent* MovementComponent; 
-	class UMotionControllerComponent* MotionControllerLeft;
-	class UMotionControllerComponent* MotionControllerRight;
+	UMotionControllerComponent* MotionControllerLeft;
+	UMotionControllerComponent* MotionControllerRight;
+	UCustomStereoLayerComponent* StereoLayerComponent;
 
 	UPROPERTY(EditAnywhere)
 	TSubclassOf<class UHUDExperiment> PlayerHUDClass;
 
+	FTimerHandle TimerHandleDetectMovement;
+	FTimerHandle* TimerHandleDetectMovementPtr = &TimerHandleDetectMovement; 
+	
 	UPROPERTY()
 	class UHUDExperiment* PlayerHUD = nullptr;
 	
@@ -90,7 +100,8 @@ public:
 	void OnOverlapEnd(class UPrimitiveComponent* OverlappedComp, class AActor* OtherActor, class UPrimitiveComponent* OtherComp, int32 OtherBodyIndex);
 
 	// to store overlap characters
-	UPrimitiveComponent* OverlappedComponent;
+	UPROPERTY()
+		TObjectPtr<UPrimitiveComponent> OverlappedComponent;
 
 	/* Movement Component */
 	FHitResult OutHit;
@@ -98,25 +109,30 @@ public:
 
 	/* helpers for camera stuff */
 	UCameraComponent* GetCameraComponent();
-	void StartExperiment();
-	void StartEpisode();
+	void DbgStartExperiment();
+	void DbgStopExperiment();
+	void DbgStopEpisode();
+	void DbgStartEpisode();
 	void ValidateHMD();
 	bool DetectMovementVR();
 	bool DetectMovementWASD();
 
 private: 
-	const float _capsule_radius      = 30.0f;
-	const float _player_height       = 175.0f; // 1.75 m
-	const float _capsule_half_height = _player_height / 2;
-	const FVector _camera_location = FVector(0.0f, 0.0f, _capsule_half_height);
+	const float CapsuleRadius      = 30.0f;
+	const float PlayerHeight       = 175.0f; // 1.75 m
+	const float CapsuleHalfHeight = PlayerHeight / 2;
 
 	FVector current_location; 
 	FVector HMDPosition;
 	FXRHMDData HMDData;
 
-	bool DetectMovement();
-	void OnMovementDetected();
-	void UpdateRoomScaleLocation();
+	UFUNCTION()
+		bool DetectMovement();
+	UFUNCTION()
+		void OnMovementDetected();
+	UFUNCTION()
+		void UpdateRoomScaleLocation();
+
 	FVector _old_location; 
 	FVector _new_location;
 	float _movement_threshold = 5; 

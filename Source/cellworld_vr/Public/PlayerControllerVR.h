@@ -19,14 +19,14 @@ public:
 	/* overrides */
 	virtual void BeginPlay() override;
 	virtual void SetupInputComponent() override;
-	void StartExperiment();
-	void StartEpisode();
 	virtual void Tick(float DeltaTime) override;
 	//AGameModeMain* GameMode;
 
 	/* game flow */
 	void ResetOrigin();
 	void QuitGame();
+	void MoveForward(float AxisValue);
+	void MoveRight(float AxisValue);
 	void RestartGame();
 
 	/* pawn to control */

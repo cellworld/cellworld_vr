@@ -37,6 +37,28 @@ void AMouseKeyboardPlayerController::SetupInputComponent()
 	InputComponent->BindAction("ResetOrigin", EInputEvent::IE_Pressed, this, &AMouseKeyboardPlayerController::ResetOrigin);
 	InputComponent->BindAction("QuitGame", EInputEvent::IE_Pressed, this, &AMouseKeyboardPlayerController::QuitGame);
 	InputComponent->BindAction("RestartGame", EInputEvent::IE_Pressed, this, &AMouseKeyboardPlayerController::RestartGame);
+
+	// debugging - manipulate experiment flow 	
+	InputComponent->BindAction("DbgStartExperiment", EInputEvent::IE_Pressed, this, &AMouseKeyboardPlayerController::DbgStartExperiment);
+	InputComponent->BindAction("DbgStopExperiment", EInputEvent::IE_Pressed, this, &AMouseKeyboardPlayerController::DbgStopExperiment);
+	InputComponent->BindAction("DbgStopEpisode", EInputEvent::IE_Pressed, this, &AMouseKeyboardPlayerController::DbgStopEpisode);
+	InputComponent->BindAction("DbgStartEpisode", EInputEvent::IE_Pressed, this, &AMouseKeyboardPlayerController::DbgStartEpisode);
+}
+
+void AMouseKeyboardPlayerController::DbgStartExperiment() {
+	return; 
+}
+
+void AMouseKeyboardPlayerController::DbgStopExperiment() {
+	return; 
+}
+
+void AMouseKeyboardPlayerController::DbgStopEpisode() {
+	return; 
+}
+
+void AMouseKeyboardPlayerController::DbgStartEpisode(){
+	return; 
 }
 
 void AMouseKeyboardPlayerController::RestartGame()
