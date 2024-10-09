@@ -856,12 +856,32 @@ bool AExperimentServiceMonitor::RoutePredatorMessages() {
 	}
 	
 	MessageRoutePredator = TrackingClient->AddRoute(ExperimentHeaders.PredatorStep);
-	if (!MessageRoutePredator) {printScreen("[AExperimentServiceMonitor::RoutePredatorMessages()] RoutePredatorStep not valid."); return false; }
+	if (!MessageRoutePredator) {
+		UE_LOG(LogExperiment, Error, TEXT("[AExperimentServiceMonitor::RoutePredatorMessages] MessageRoutePredator not valid."));
+		return false;
+	}
 
 	MessageRoutePredator->MessageReceived.AddDynamic(this, &AExperimentServiceMonitor::HandleUpdatePredator);
 	TrackingClient->UnroutedMessageEvent.AddDynamic(this, &AExperimentServiceMonitor::HandleUnroutedMessage);
 
-	printScreen("[AExperimentServiceMonitor::RoutePredatorMessages()] OK");
+	UE_LOG(LogExperiment, Error, TEXT("[AExperimentServiceMonitor::RoutePredatorMessages] OK"));
+	return true;
+}
+
+bool AExperimentServiceMonitor::RouteOnCapture() {
+	if (!this->ValidateClient(TrackingClient)) {
+		printScreen("[AExperimentServiceMonitor::RouteOnCapture] TrackingClient not valid.");
+		return false;
+	}
+	
+	MessageRouteOnCapture = TrackingClient->AddRoute("on_capture");
+	if (!MessageRouteOnCapture) {
+		UE_LOG(LogExperiment, Error, TEXT("[AExperimentServiceMonitor::RouteOnCapture] MessageRouteOnCapture not valid."));
+		return false;
+	}
+
+	MessageRouteOnCapture->MessageReceived.AddDynamic(this, &AExperimentServiceMonitor::HandleOnCapture);
+	UE_LOG(LogExperiment, Error, TEXT("[AExperimentServiceMonitor::RouteOnCapture] OK"));
 	return true;
 }
 
@@ -872,11 +892,11 @@ bool AExperimentServiceMonitor::RemoveDelegatesPredatorRoute() {
 
 bool AExperimentServiceMonitor::Test() {
 	/* run netprofile console command */
-	const FString InCommand = "netprofile";
-	UE_LOG(LogExperiment, Log, TEXT("[ExecuteConsoleCommand] Command: %s"), *InCommand)
-	if (GEngine) {
-		GEngine->Exec(GWorld, *InCommand); 
-	}
+	// const FString InCommand = "netprofile";
+	// UE_LOG(LogExperiment, Log, TEXT("[ExecuteConsoleCommand] Command: %s"), *InCommand)
+	// if (GEngine) {
+	// 	GEngine->Exec(GWorld, *InCommand); 
+	// }
 
 	Client         = this->CreateNewClient();
 	TrackingClient = this->CreateNewClient();
@@ -896,6 +916,10 @@ bool AExperimentServiceMonitor::Test() {
 
 	if (!this->RoutePredatorMessages()) {
 		UE_LOG(LogExperiment, Error, TEXT("RoutePredatorMessages FAILED!"))
+	}
+
+	if (!this->RouteOnCapture()) {
+		UE_LOG(LogExperiment, Error, TEXT("RouteOnCapture FAILED!"))
 	}
 
 	if (!this->SubscribeToTracking()) {
@@ -922,6 +946,15 @@ bool AExperimentServiceMonitor::Test() {
 void AExperimentServiceMonitor::HandleUpdatePredator(const FMessage MessageIn) {
 	// UE_LOG(LogExperiment, Warning, TEXT("Predator: %s"), *MessageIn.body);
 	this->UpdatePredator(MessageIn);
+}
+
+void AExperimentServiceMonitor::HandleOnCapture(const FMessage MessageIn) {
+	UE_LOG(LogExperiment, Log, TEXT("[AExperimentServiceMonitor::HandleOnCapture] %s"), *MessageIn.body);
+	if (!this->StopEpisode()) {
+		UE_LOG(LogExperiment, Error, TEXT("[AExperimentServiceMonitor::HandleOnCapture] StopEpisode() Call FAILED."));
+	}else {
+		UE_LOG(LogExperiment, Log, TEXT("[AExperimentServiceMonitor::HandleOnCapture] StopEpisode() Call OK."));
+	}
 }
 
 float AExperimentServiceMonitor::GetTimeRemaining() const {

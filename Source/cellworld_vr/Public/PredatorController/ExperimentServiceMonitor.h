@@ -346,27 +346,13 @@ public:
 	UPROPERTY()
 		TObjectPtr<UMessageClient> TrackingClient;
 
-	/* routes */
+	/* Message Routes */
+	UPROPERTY()
+		TObjectPtr<UMessageRoute> MessageRouteOnCapture;
 	UPROPERTY()
 		TObjectPtr<UMessageRoute> MessageRoutePredator;
-	UPROPERTY()
-		TObjectPtr<UMessageRoute> MessageRoutePrey;
-	UPROPERTY()
-		TObjectPtr<UMessageRoute> MessageRoute;
-	UPROPERTY()
-		TObjectPtr<UMessageRoute> TrackingServiceRoute;
-	UPROPERTY()
-		TObjectPtr<UMessageRoute> TrackingServiceRoutePrey; 
-	UPROPERTY()
-		TObjectPtr<UMessageRoute> TrackingServiceRoutePredator; 
-	UPROPERTY()
-		TObjectPtr<UMessageRoute> RouteOnEpisodeStarted;
-	UPROPERTY()
-		TObjectPtr<UMessageRoute> RoutePredatorStep;
-	UPROPERTY()
-		TObjectPtr<UMessageRoute> RouteAgent;
 
-	/* ==== requests ==== */
+	/* Requests */
 	UPROPERTY()
 		TObjectPtr<URequest> StartExperimentRequest;
 	UPROPERTY()
@@ -463,6 +449,8 @@ public:
 	UFUNCTION()
 		void HandleUpdatePredator(const FMessage MessageIn);
 	UFUNCTION()
+		void HandleOnCapture(const FMessage MessageIn);
+	UFUNCTION()
 		float GetTimeRemaining() const;
 	float GetTimeElapsed() const;
 
@@ -546,6 +534,8 @@ public:
 		static bool ConnectToServer(UMessageClient* ClientIn, const int MaxAttemptsIn, const FString& IPAddressIn, const int PortIn);
 	UFUNCTION()
 		bool RoutePredatorMessages();
+	UFUNCTION()
+		bool RouteOnCapture();
 	UFUNCTION()
 		bool RemoveDelegatesPredatorRoute();
 
