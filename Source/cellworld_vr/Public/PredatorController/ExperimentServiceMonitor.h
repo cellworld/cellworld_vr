@@ -250,12 +250,16 @@ USTRUCT(Blueprintable)
 struct FExperimentHeaders
 {
 	GENERATED_BODY()
+	
 	/* headers */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = ExperimentHeaders)
 	FString PreyStep     = "prey_step";
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = ExperimentHeaders)
 	FString PredatorStep = "predator_step";
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = ExperimentHeaders)
+	FString OnCapture = "on_capture";
 };
 
 USTRUCT(Blueprintable)
@@ -334,7 +338,6 @@ public:
 	
 	UFUNCTION()
 	void OnExperimentFinished(const int InPlayerIndex);
-
 	
 	FTimerHandle TimerHandle;
 	FTimerHandle* TimerHandlePtr = &TimerHandle;
@@ -467,6 +470,7 @@ public:
 		void OnSubscribeResult(bool bSubscribeResult);
 	UFUNCTION()
 		void OnResetResult(bool bResetResult);
+	void SetPredatorIsVisible(bool bNewVisibility);
 	UFUNCTION()
 		void HandleStartEpisodeRequestTimedOut();
 	UFUNCTION()
