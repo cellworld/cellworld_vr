@@ -19,7 +19,7 @@ public:
 	bool bUseVR = true;
 	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Debug")
-	bool bSpawnExperimentService = true;
+	bool bSpawnExperimentService = false;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Debug")
 	bool bUpdateHUDTimer = false;

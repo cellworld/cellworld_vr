@@ -3,7 +3,7 @@
 #include "EngineUtils.h"
 #include "PawnMain.h"
 #include "GameStateMain.h"
-#include "HeadMountedDisplayFunctionLibrary.h"
+#include "GameInstanceMain.h"
 #include "PredatorController/AIControllerPredator.h"
 #include "AsyncLoadingScreenLibrary.h"
 #include "MouseKeyboardPlayerController.h"
@@ -212,37 +212,34 @@ void AGameModeMain::StartPlay() {
 
 	FVector SpawnLocationVR = UExperimentUtils::CanonicalToVr(SpawnLocation, 235.185, this->WorldScale);
 
-	if (!bUseVR) {
-		SpawnLocationVR.Z += 100;
-	}
+	if (!bUseVR) { SpawnLocationVR.Z += 100; }
 
-	// this->SpawnAndPossessPlayer(SpawnLocationVR, FRotator::ZeroRotator);
-	/*
-	 * todo: manage this from experiment service and create a timer delegate broadcast where the
-	 * - player pawn can bind to ExperimentService->FOnTimerUpdated.AddDynamic(APawnMain*, APawnMain::UpdatePlayerHUD)
-	 */
+	UGameInstanceMain* GameInstance = Cast<UGameInstanceMain>(GetGameInstance());
+	if (!GameInstance) {
+		UE_LOG(LogExperiment, Error, TEXT("[UMainMenuWidget::OnSpawnExperimentServerCheckBoxStateChanged] GameInstance NULL!"));
+		return;
+	}
 	
 	/* spawn ExperimentServiceActor */
+	bSpawnExperimentService = GameInstance->ExperimentParameters->bSpawnExperimentService;
 	if (bSpawnExperimentService) {
 		this->SpawnExperimentServiceMonitor();
 		// this->ExecuteConsoleCommand("netprofile");
+
+		if (bUpdateHUDTimer) {
+			UE_LOG(LogExperiment, Log, TEXT("[AGameModeMain::StartPlay()] Running HUD update timer!"))
+			HUDTimer = NewObject<UEventTimer>(this, UEventTimer::StaticClass());
+			if (HUDTimer) {
+				HUDTimer->SetRateHz(10.0f);
+				HUDTimer->bLoop = true;
+				HUDTimer->OnTimerFinishedDelegate.AddDynamic(this, &AGameModeMain::OnUpdateHUDTimer);
+				if (HUDTimer->Start()) { UE_LOG(LogExperiment, Log, TEXT("[AGameModeMain::StartPlay()] Started v2 timer for OnUpdateHUDTimer")); } 
+			}
+		}
 	} else {
 		UE_LOG(LogExperiment, Warning, TEXT("[AGameModeMain::StartPlay()] Not spawning Experiment Service!"));
 	}
-
-	/* start update HUD timer */
-	if (bSpawnExperimentService && bUpdateHUDTimer) {
-		UE_LOG(LogExperiment, Log, TEXT("[AGameModeMain::StartPlay()] Running HUD update timer!"))
-		HUDTimer = NewObject<UEventTimer>(this, UEventTimer::StaticClass());
-		if (HUDTimer) {
-			HUDTimer->SetRateHz(10.0f);
-			HUDTimer->bLoop = true;
-			HUDTimer->OnTimerFinishedDelegate.AddDynamic(this, &AGameModeMain::OnUpdateHUDTimer);
-			if (HUDTimer->Start()) { UE_LOG(LogExperiment, Log, TEXT("[AGameModeMain::StartPlay()] Started v2 timer for OnUpdateHUDTimer")); } 
-		}
-	}
-
-	AGameModeMain::StopLoadingScreen();
+	this->StopLoadingScreen();
 }
 
 void AGameModeMain::EndPlay(const EEndPlayReason::Type EndPlayReason) {

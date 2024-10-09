@@ -1,24 +1,28 @@
 #include "GameInstanceMain.h"
 #include "Subsystems/GameInstanceSubsystem.h"
 #include "EngineUtils.h"
+#include "Kismet/GameplayStatics.h"
 
-UGameInstanceMain::UGameInstanceMain()
-{
+UGameInstanceMain::UGameInstanceMain() {
+	
 }
 
-void UGameInstanceMain::Init()
-{
+void UGameInstanceMain::Init() {
 	Super::Init();
+	UE_LOG(LogExperiment, Warning, TEXT("Initializing UGameInstanceMain"))
 
-
+	ExperimentParameters = MakeShared<FExperimentParameters>();
+	if (ExperimentParameters) {
+		UE_LOG(LogExperiment, Log, TEXT("[UGameInstanceMain::Init] FExperimentParameters Created."))
+	}else {
+		UE_LOG(LogExperiment, Error, TEXT("[UGameInstanceMain::Init] FExperimentParameters NULL!."))
+	}
 }
 
-void UGameInstanceMain::Shutdown()
-{
+void UGameInstanceMain::Shutdown() {
 }
 
-void UGameInstanceMain::StartGameInstance()
-{
+void UGameInstanceMain::StartGameInstance() {
 	Super::StartGameInstance();
 }
 
@@ -47,8 +51,12 @@ FVector UGameInstanceMain::GetLevelScale(const AActor* LevelActor) {
 	return LevelActor->GetActorScale3D(); 
 }
 
-void UGameInstanceMain::SetWorldScale(const float WorldScaleIn)
-{
+void UGameInstanceMain::OpenLevel(const FString& InLevelName) {
+	UE_LOG(LogTemp, Warning, TEXT("[UGameInstanceMain::OpenLevel] Attempting to OpenLevel: `%s`"), *InLevelName);
+	UGameplayStatics::OpenLevel(this, FName(*InLevelName));
+}
+
+void UGameInstanceMain::SetWorldScale(const float WorldScaleIn) {
 	UE_LOG(LogTemp, Warning, TEXT("[UGameInstanceMain::SetWorldScale]: New scale: %f"), WorldScaleIn);
 	this->WorldScale = WorldScaleIn; 
 }
