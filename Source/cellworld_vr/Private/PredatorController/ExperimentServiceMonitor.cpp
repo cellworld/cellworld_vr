@@ -493,7 +493,7 @@ void AExperimentServiceMonitor::HandleStopEpisodeRequestResponse(const FString r
 				UE_LOG(LogExperiment, Log, TEXT("[HandleStopEpisodeRequestResponse] DataTemp->EpisodesCompletedTime: %s"),*MessageOut.body)
 			}
 		}
-		
+		 
 		UE_LOG(LogExperiment, Log, TEXT("[HandleStopEpisodeRequestResponse] StopEpisode to AT: %s"), *MessageOut.body)
 		const bool bMessageResult = TrackingClient->SendMessage(MessageOut);
 		if (!bMessageResult) {
