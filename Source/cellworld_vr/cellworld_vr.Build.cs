@@ -11,8 +11,7 @@ public class cellworld_vr : ModuleRules
 		PCHUsage = PCHUsageMode.UseExplicitOrSharedPCHs;
 	
 		PublicDependencyModuleNames.AddRange(new string[] { 
-            "Core", "CoreUObject", "Engine", "InputCore", 
-            "EyeTracker","InputCore","UMG","NavigationSystem",
+            "Core", "CoreUObject", "Engine", "InputCore", "UMG","NavigationSystem",
             "TCPMessages", "ExperimentPlugin", "AIModule", "GameplayTasks",
             "Json", "JsonUtilities", "AsyncLoadingScreen","UnrealEngineTemplateModule",
             "MiscUtils"
@@ -20,11 +19,9 @@ public class cellworld_vr : ModuleRules
         PrivateDependencyModuleNames.AddRange(new string[] { "HeadMountedDisplay", "XRBase", "Slate", "SlateCore" });
 
         PublicIncludePaths.AddRange(new string[] {
-            // "cellworld_vr/PredatorController",
             "cellworld_vr/Public/Interfaces",
             "cellworld_vr/Public/Test",
             "cellworld_vr/Public"
-            //"AsyncLoadingScreen/AsyncLoadingScreenLibrary.h"
         });
         // To include OnlineSubsystemSteam, add it to the plugins section in your uproject file with the Enabled attribute set to true
     }

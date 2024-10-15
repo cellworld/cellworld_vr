@@ -252,7 +252,7 @@ public:
 };
 
 USTRUCT(Blueprintable)
-struct FWorldInfo
+struct FWorldInfoV2
 {
 	GENERATED_BODY()
 public:
@@ -286,7 +286,7 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Experiment)
 		FString experiment_name = "";
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Experiment)
-		FWorldInfo world_info;
+		FWorldInfoV2 world_info;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Experiment)
 		FString start_date;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Experiment)
@@ -311,7 +311,7 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Experiment)
 		FString start_date = "";
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Experiment)
-		FWorldInfo world; 
+		FWorldInfoV2 world; 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Experiment)
 		FString subject_name = "";
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Experiment)
@@ -329,7 +329,7 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Experiment)
 		FString suffix = "suffix";
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Experiment)
-		FWorldInfo world;
+		FWorldInfoV2 world;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Experiment)
 		FString subject_name = "vr_dude";
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Experiment)

@@ -65,7 +65,7 @@ public:
 	UFUNCTION(BlueprintCallable, Category = Experiment)
 		static FString StartEpisodeRequestToJsonString(FStartEpisodeRequest structInput);
 	UFUNCTION(BlueprintCallable, Category = Experiment)
-		static FString WorldInfoToJsonString(FWorldInfo structInput);
+		static FString WorldInfoToJsonString(FWorldInfoV2 structInput);
 	UFUNCTION(BlueprintCallable, Category = Experiment)
 		static FString GetExperimentRequestToJsonString(FGetExperimentRequest structInput);
 	UFUNCTION(BlueprintCallable, Category = Experiment)
@@ -103,8 +103,7 @@ public:
 	UFUNCTION(BlueprintCallable, Category = Experiment)
 		static FString LoadWorldImplementation(FString filePath);
 	
-
 	/* helpers */
 	UFUNCTION(BlueprintCallable, Category = Experiment)
-		static FWorldInfo GenerateWorldInfo(const FString WorldConfigurationIn, const FString WorldImplementationIn, const FString OcclusionsIn);
+		static FWorldInfoV2 GenerateWorldInfo(const FString WorldConfigurationIn, const FString WorldImplementationIn, const FString OcclusionsIn);
 };

@@ -140,7 +140,7 @@ FString UExperimentUtils::StartEpisodeRequestToJsonString(FStartEpisodeRequest s
 	return jsonString;
 }
 
-FString UExperimentUtils::WorldInfoToJsonString(FWorldInfo structInput) {
+FString UExperimentUtils::WorldInfoToJsonString(FWorldInfoV2 structInput) {
 	FString jsonString;
 	FJsonObjectConverter::UStructToJsonObjectString(structInput, jsonString, 0, 0, 0);
 	return jsonString;
@@ -268,9 +268,8 @@ FString UExperimentUtils::LoadWorldImplementation(FString filePath)
 	return jsonString;
 }
 
-FWorldInfo UExperimentUtils::GenerateWorldInfo(const FString WorldConfigurationIn, const FString WorldImplementationIn, const FString OcclusionsIn)
-{
-	FWorldInfo WorldInfo; 
+FWorldInfoV2 UExperimentUtils::GenerateWorldInfo(const FString WorldConfigurationIn, const FString WorldImplementationIn, const FString OcclusionsIn) {
+	FWorldInfoV2 WorldInfo; 
 	WorldInfo.occlusions		   = OcclusionsIn; 
 	WorldInfo.world_configuration  = WorldConfigurationIn; 
 	WorldInfo.world_implementation = WorldImplementationIn;

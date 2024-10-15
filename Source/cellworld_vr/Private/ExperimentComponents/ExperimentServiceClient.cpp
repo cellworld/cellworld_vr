@@ -29,7 +29,7 @@ bool AExperimentServiceClient::StartExperiment(const FString InSubjectName) {
 	if (!Client->IsConnected()) { UE_LOG(LogTemp, Error, TEXT("Can't start experiment, Experiment Service client not connected.")); return false; }
 
 	/* set up world info (defaults to hexagonal and canonical) */
-	FWorldInfo WorldInfo;
+	FWorldInfoV2 WorldInfo;
 	WorldInfo.occlusions = "21_05";
 
 	/* set up request body */

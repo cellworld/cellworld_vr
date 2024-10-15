@@ -148,10 +148,9 @@ void AExperimentServiceMonitor::HandleStopExperimentTimedOut()
 	UE_LOG(LogExperiment, Error, TEXT("[AExperimentServiceMonitor::HandleFinishExperimentTimedOut()] Finish experiment request timed out!"))
 }
 
-URequest* AExperimentServiceMonitor::SendStartExperimentRequest(UMessageClient* ClientIn, FString ExperimentNameIn)
-{
+URequest* AExperimentServiceMonitor::SendStartExperimentRequest(UMessageClient* ClientIn, FString ExperimentNameIn) {
 	/* set up world info (defaults to hexagonal and canonical) */
-	FWorldInfo WorldInfo;
+	FWorldInfoV2 WorldInfo;
 	WorldInfo.occlusions = "21_05";
 
 	/* set up request body */
