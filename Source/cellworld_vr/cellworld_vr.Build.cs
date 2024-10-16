@@ -14,9 +14,9 @@ public class cellworld_vr : ModuleRules
             "Core", "CoreUObject", "Engine", "InputCore", "UMG","NavigationSystem",
             "TCPMessages", "ExperimentPlugin", "AIModule", "GameplayTasks",
             "Json", "JsonUtilities", "AsyncLoadingScreen","UnrealEngineTemplateModule",
-            "MiscUtils"
-        });
-        PrivateDependencyModuleNames.AddRange(new string[] { "HeadMountedDisplay", "XRBase", "Slate", "SlateCore" });
+            "MiscUtils","AndroidPermission","OculusXRAnchors","OculusXRHMD"
+		});
+        PrivateDependencyModuleNames.AddRange(new string[] { "HeadMountedDisplay", "AugmentedReality", "XRBase", "Slate", "SlateCore" });
 
         PublicIncludePaths.AddRange(new string[] {
             "cellworld_vr/Public/Interfaces",

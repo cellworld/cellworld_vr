@@ -2,8 +2,15 @@
 #include "CoreMinimal.h"
 #include "Components/CustomCharacterMovementComponent.h"
 #include "Components/StaticMeshComponent.h"
-#include "GameFramework/Pawn.h"
 #include "Components/WidgetComponent.h"
+#include "Components/StaticMeshComponent.h"
+#include "Components/CapsuleComponent.h"
+#include "Components/SceneComponent.h"
+#include <Components/SplineComponent.h>
+#include <Components/SplineMeshComponent.h>
+#include "Components/SkeletalMeshComponent.h"
+#include "Camera/CameraComponent.h"
+#include "GameFramework/Pawn.h"
 #include "Interfaces/HUDExperiment.h"
 #include "HeadMountedDisplay.h"
 #include "Containers/Array.h" 
@@ -53,7 +60,9 @@ public:
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
-	uint32 samps = 0; 
+	uint32 samps = 0;
+
+	void UpdateSplineMesh(); 
 	
 	//AGameModeMain* GameMode = nullptr; 
 
@@ -71,19 +80,41 @@ public:
 	void LookUp(float AxisValue);
 	/* === properties === */
 	//UPROPERTY(VisibleDefaultsOnly, meta = (Category = "Default"))
-	class UCameraComponent* Camera;
+	UPROPERTY(EditAnywhere)
+	TObjectPtr<UCameraComponent> Camera;
 	UPROPERTY(EditAnywhere)
 	UWidgetComponent* HUDWidgetComponent; 
-	USceneComponent* VROrigin; 
-	UCapsuleComponent* CapsuleComponent;
-	UCustomCharacterMovementComponent* MovementComponent; 
-	UMotionControllerComponent* MotionControllerLeft;
-	UMotionControllerComponent* MotionControllerRight;
-	UCustomStereoLayerComponent* StereoLayerComponent;
-
+	UPROPERTY(EditAnywhere)
+	TObjectPtr<USceneComponent> VROrigin;
+	UPROPERTY(EditAnywhere)
+	TObjectPtr<UCapsuleComponent> CapsuleComponent;
+	UPROPERTY(EditAnywhere)
+	TObjectPtr<UCustomCharacterMovementComponent> MovementComponent;
+	UPROPERTY(EditAnywhere)
+	TObjectPtr<UMotionControllerComponent> MotionControllerLeft;
+	UPROPERTY(EditAnywhere)
+	TObjectPtr<UMotionControllerComponent> MotionControllerRight;
+	UPROPERTY(EditAnywhere)
+	TObjectPtr<UCustomStereoLayerComponent> StereoLayerComponent;
+	UPROPERTY(EditAnywhere)
+	TObjectPtr<USceneComponent> MainMenuAttachmentPoint;
+	UPROPERTY(EditAnywhere)
+	TObjectPtr<USceneComponent> ModelAttachmentPoint;
+	UPROPERTY(EditAnywhere)
+	TObjectPtr<USceneComponent> ModelSpawnPoint;
+	UPROPERTY(EditAnywhere)
+	TObjectPtr<UXRDeviceVisualizationComponent> XRDeviceVisualizationRight;
+	UPROPERTY(EditAnywhere)
+	TObjectPtr<USplineComponent> SplineComponent;
+	UPROPERTY(EditAnywhere)
+	TObjectPtr<USplineMeshComponent> SplineMesh;
+	UPROPERTY(EditAnywhere)
+	TObjectPtr<USceneComponent> AnchorMenuAttachmentPoint;
+	
 	UPROPERTY(EditAnywhere)
 	TSubclassOf<class UHUDExperiment> PlayerHUDClass;
 
+	
 	FTimerHandle TimerHandleDetectMovement;
 	FTimerHandle* TimerHandleDetectMovementPtr = &TimerHandleDetectMovement; 
 	

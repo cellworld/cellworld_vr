@@ -1,18 +1,12 @@
 #include "PawnMain.h"
 #include "GameModeMain.h"
-#include "Camera/CameraComponent.h"
 #include "Camera/PlayerCameraManager.h"
-#include "Components/CapsuleComponent.h"
-#include "Components/SceneComponent.h"
-#include "Components/SkeletalMeshComponent.h"
 #include "HeadMountedDisplayFunctionLibrary.h"
 #include "cellworld_vr/cellworld_vr.h"
 #include "Components/EditableTextBox.h"
-#include "Components/StereoLayerComponent.h"
-#include "Engine/TextureRenderTarget2D.h"
+#include "XRDeviceVisualizationComponent.h"
 #include "GameFramework/PlayerController.h"
 #include "GameFramework/CharacterMovementComponent.h" // test 
-#include "InstanceCulling/InstanceCullingContext.h"
 #include "Kismet/GameplayStatics.h"
 
 // Sets default values
@@ -80,6 +74,41 @@ APawnMain::APawnMain() : Super() {
 	OurMovementComponentChar->bDeferUpdateMoveComponent = false;
 	OurMovementComponentChar->SetActive(true);
 	OurMovementComponentChar->UpdatedComponent = RootComponent;
+
+	// Main Menu Attachment Point - Where to attach menu relative to motion controller
+	MainMenuAttachmentPoint = CreateDefaultSubobject<USceneComponent>(TEXT("MainMenuAttachmentPoint"));
+	MainMenuAttachmentPoint->SetupAttachment(MotionControllerRight);
+	MainMenuAttachmentPoint->SetRelativeRotation(FRotator(60.0f, -180.0f, 0.0f));
+	MainMenuAttachmentPoint->SetRelativeScale3D(FVector(0.05f,0.05f,0.05f));
+
+	// Model Attachment Point - Where to attach model before spawn (anchor)
+	ModelAttachmentPoint = CreateDefaultSubobject<USceneComponent>(TEXT("ModelAttachmentPoint"));
+	ModelAttachmentPoint->SetupAttachment(MotionControllerRight);
+
+	// Model Spawn Point - Where to attach spawned model (anchor)
+	ModelSpawnPoint = CreateDefaultSubobject<USceneComponent>(TEXT("ModelSpawnPoint"));
+	ModelSpawnPoint->SetupAttachment(MotionControllerRight);
+	ModelSpawnPoint->SetRelativeLocation(FVector(7.0f,0.0f,13.0f));
+	
+	// XR Device Visualization Right - To visualize motion controller
+	XRDeviceVisualizationRight = CreateDefaultSubobject<UXRDeviceVisualizationComponent>(TEXT("XRDeviceVisualizationRight"));
+	XRDeviceVisualizationRight->SetupAttachment(MotionControllerRight);
+
+	// Spline Component - Spatial Anchoring Stuff
+	SplineComponent = CreateDefaultSubobject<USplineComponent>(TEXT("Spline"));
+	SplineComponent->SetupAttachment(MotionControllerRight);
+
+	// Spline Mesh - Attach to Spline Component
+	SplineMesh = CreateDefaultSubobject<USplineMeshComponent>(TEXT("SplineMesh"));
+	SplineMesh->SetupAttachment(SplineComponent);
+
+	// Anchor Menu Attachment Point
+	AnchorMenuAttachmentPoint = CreateDefaultSubobject<USceneComponent>(TEXT("AnchorMenuAttachmentPoint"));
+	AnchorMenuAttachmentPoint->SetupAttachment(SplineMesh);
+	AnchorMenuAttachmentPoint->SetRelativeLocation(FVector(0.0f,13.5f,10.0f));
+	AnchorMenuAttachmentPoint->SetRelativeRotation(FRotator(0.0f,60.0f,-180.0f));
+	AnchorMenuAttachmentPoint->SetRelativeScale3D(FVector(0.05f,0.05f,0.05f));
+	
 
 	// const FSoftClassPath PlayerHUDClassRef(
 	// 	TEXT("/Script/UMGEditor.WidgetBlueprint'/Game/Interfaces/BP_HUDExperiment.BP_HUDExperiment_C'"));
@@ -337,6 +366,15 @@ void APawnMain::DebugHUDAddTime() {
 	}
 }
 
+// Get location and tangent of the AnchorMenu SplineComponent at point 0 and 1 then set it 
+void APawnMain::UpdateSplineMesh() {
+	if (SplineComponent && SplineMesh) {
+		FVector StartLocation, StartTangent, EndLocation, EndTangent;
+		SplineComponent->GetLocationAndTangentAtSplinePoint(0, StartLocation, StartTangent, ESplineCoordinateSpace::Local);
+		SplineComponent->GetLocationAndTangentAtSplinePoint(1, EndLocation, EndTangent, ESplineCoordinateSpace::Local);
+		SplineMesh->SetStartAndEnd(StartLocation, StartTangent, EndLocation, EndTangent, true);
+	}
+}
 void APawnMain::Tick(float DeltaTime) {
 	Super::Tick(DeltaTime);
 }
