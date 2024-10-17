@@ -9,6 +9,9 @@
 #include <Components/SplineComponent.h>
 #include <Components/SplineMeshComponent.h>
 #include "Components/SkeletalMeshComponent.h"
+#include "OculusXRFunctionLibrary.h"
+#include "OculusXRPassthroughLayerComponent.h"
+#include "XRDeviceVisualizationComponent.h"
 #include "Camera/CameraComponent.h"
 #include "GameFramework/Pawn.h"
 #include "Interfaces/HUDExperiment.h"
@@ -21,6 +24,9 @@
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnMovementDetected, FVector, Location, FRotator, Rotation);
 
+
+class UOculusXRPassthroughLayerComponent;
+class UOculusXRStereoLayerShapeReconstructed; 
 UCLASS()
 class CELLWORLD_VR_API APawnMain : public APawn {
 	GENERATED_BODY()
@@ -80,40 +86,51 @@ public:
 	void LookUp(float AxisValue);
 	/* === properties === */
 	//UPROPERTY(VisibleDefaultsOnly, meta = (Category = "Default"))
-	UPROPERTY(EditAnywhere)
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "SpatialComponents")
 	TObjectPtr<UCameraComponent> Camera;
-	UPROPERTY(EditAnywhere)
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "SpatialComponents")
 	UWidgetComponent* HUDWidgetComponent; 
-	UPROPERTY(EditAnywhere)
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "SpatialComponents")
 	TObjectPtr<USceneComponent> VROrigin;
-	UPROPERTY(EditAnywhere)
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "SpatialComponents")
 	TObjectPtr<UCapsuleComponent> CapsuleComponent;
-	UPROPERTY(EditAnywhere)
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "SpatialComponents")
 	TObjectPtr<UCustomCharacterMovementComponent> MovementComponent;
-	UPROPERTY(EditAnywhere)
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "SpatialComponents")
 	TObjectPtr<UMotionControllerComponent> MotionControllerLeft;
-	UPROPERTY(EditAnywhere)
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "SpatialComponents")
 	TObjectPtr<UMotionControllerComponent> MotionControllerRight;
-	UPROPERTY(EditAnywhere)
-	TObjectPtr<UCustomStereoLayerComponent> StereoLayerComponent;
-	UPROPERTY(EditAnywhere)
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "SpatialComponents")
 	TObjectPtr<USceneComponent> MainMenuAttachmentPoint;
-	UPROPERTY(EditAnywhere)
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "SpatialComponents")
 	TObjectPtr<USceneComponent> ModelAttachmentPoint;
-	UPROPERTY(EditAnywhere)
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "SpatialComponents")
 	TObjectPtr<USceneComponent> ModelSpawnPoint;
-	UPROPERTY(EditAnywhere)
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "SpatialComponents")
 	TObjectPtr<UXRDeviceVisualizationComponent> XRDeviceVisualizationRight;
-	UPROPERTY(EditAnywhere)
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "SpatialComponents")
 	TObjectPtr<USplineComponent> SplineComponent;
-	UPROPERTY(EditAnywhere)
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "SpatialComponents")
 	TObjectPtr<USplineMeshComponent> SplineMesh;
-	UPROPERTY(EditAnywhere)
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "SpatialComponents")
 	TObjectPtr<USceneComponent> AnchorMenuAttachmentPoint;
+
+	// UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "SpatialComponents")
+	// TObjectPtr<UActorComponent> SpatialAnchorManager;
+	// UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "SpatialComponents")
+	// TObjectPtr<UActorComponent> MenuManagerComponent;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "SpatialComponents")
+	TObjectPtr<UOculusXRPassthroughLayerComponent> XRPassthroughLayer;
+	
 	
 	UPROPERTY(EditAnywhere)
+	UClass* SpatialAnchorManagerBPClass;
+	UPROPERTY(EditAnywhere)
 	TSubclassOf<class UHUDExperiment> PlayerHUDClass;
-
 	
 	FTimerHandle TimerHandleDetectMovement;
 	FTimerHandle* TimerHandleDetectMovementPtr = &TimerHandleDetectMovement; 

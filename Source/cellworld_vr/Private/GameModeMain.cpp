@@ -7,6 +7,8 @@
 #include "PredatorController/AIControllerPredator.h"
 #include "AsyncLoadingScreenLibrary.h"
 #include "MouseKeyboardPlayerController.h"
+#include "OculusXRAnchorBPFunctionLibrary.h"
+#include "OculusXRFunctionLibrary.h"
 #include "PlayerControllerVR.h"
 #include "cellworld_vr/cellworld_vr.h"
 

@@ -4,7 +4,7 @@
 #include "HeadMountedDisplayFunctionLibrary.h"
 #include "cellworld_vr/cellworld_vr.h"
 #include "Components/EditableTextBox.h"
-#include "XRDeviceVisualizationComponent.h"
+#include "IStereoLayers.h"
 #include "GameFramework/PlayerController.h"
 #include "GameFramework/CharacterMovementComponent.h" // test 
 #include "Kismet/GameplayStatics.h"
@@ -15,7 +15,6 @@ AGameModeMain* GameMode; // forward declare to avoid circular dependency
 APawnMain::APawnMain() : Super() {
 	PrimaryActorTick.bStartWithTickEnabled = true;
 	PrimaryActorTick.bCanEverTick = true;
-
 	/* create origin for tracking */
 	VROrigin = CreateDefaultSubobject<USceneComponent>(TEXT("VROrigin"));
 	RootComponent = VROrigin;
@@ -81,10 +80,6 @@ APawnMain::APawnMain() : Super() {
 	MainMenuAttachmentPoint->SetRelativeRotation(FRotator(60.0f, -180.0f, 0.0f));
 	MainMenuAttachmentPoint->SetRelativeScale3D(FVector(0.05f,0.05f,0.05f));
 
-	// Model Attachment Point - Where to attach model before spawn (anchor)
-	ModelAttachmentPoint = CreateDefaultSubobject<USceneComponent>(TEXT("ModelAttachmentPoint"));
-	ModelAttachmentPoint->SetupAttachment(MotionControllerRight);
-
 	// Model Spawn Point - Where to attach spawned model (anchor)
 	ModelSpawnPoint = CreateDefaultSubobject<USceneComponent>(TEXT("ModelSpawnPoint"));
 	ModelSpawnPoint->SetupAttachment(MotionControllerRight);
@@ -92,7 +87,22 @@ APawnMain::APawnMain() : Super() {
 	
 	// XR Device Visualization Right - To visualize motion controller
 	XRDeviceVisualizationRight = CreateDefaultSubobject<UXRDeviceVisualizationComponent>(TEXT("XRDeviceVisualizationRight"));
-	XRDeviceVisualizationRight->SetupAttachment(MotionControllerRight);
+	XRDeviceVisualizationRight->SetIsVisualizationActive(true);
+	XRDeviceVisualizationRight->SetVisibility(true);
+	XRDeviceVisualizationRight->AttachToComponent(MotionControllerRight, FAttachmentTransformRules::KeepRelativeTransform);
+	XRDeviceVisualizationRight->DisplayModelSource = FName("OculusXRHMD");
+	XRDeviceVisualizationRight->MotionSource = FName("Right");
+
+	const FString HandMeshReferencePath =
+		TEXT("/Script/Engine.StaticMesh'/OculusXR/Meshes/RightMetaQuestTouchPlus.RightMetaQuestTouchPlus'");
+	static ConstructorHelpers::FObjectFinder<UStaticMesh>
+		HandMesh(*HandMeshReferencePath);
+	if (HandMesh.Succeeded()) {
+		UE_LOG(LogExperiment, Log, TEXT("[APawnMain::APawnMain] Found BP: %s"), *HandMeshReferencePath);
+		XRDeviceVisualizationRight->SetCustomDisplayMesh(HandMesh.Object);
+	}else {
+		UE_LOG(LogExperiment, Error, TEXT("Failed to load controller mesh!"))
+	}
 
 	// Spline Component - Spatial Anchoring Stuff
 	SplineComponent = CreateDefaultSubobject<USplineComponent>(TEXT("Spline"));
@@ -104,12 +114,66 @@ APawnMain::APawnMain() : Super() {
 
 	// Anchor Menu Attachment Point
 	AnchorMenuAttachmentPoint = CreateDefaultSubobject<USceneComponent>(TEXT("AnchorMenuAttachmentPoint"));
-	AnchorMenuAttachmentPoint->SetupAttachment(SplineMesh);
+	AnchorMenuAttachmentPoint->SetupAttachment(MotionControllerRight);
 	AnchorMenuAttachmentPoint->SetRelativeLocation(FVector(0.0f,13.5f,10.0f));
 	AnchorMenuAttachmentPoint->SetRelativeRotation(FRotator(0.0f,60.0f,-180.0f));
 	AnchorMenuAttachmentPoint->SetRelativeScale3D(FVector(0.05f,0.05f,0.05f));
-	
 
+	// // SpatialAnchorManager = CreateDefaultSubobject<UActorComponent>(TEXT("SpatialAnchorManager"));
+	// const FSoftClassPath SpatialAnchorManagerBPClassRef(
+	// 	TEXT("/Script/Engine.Blueprint'/Game/SpatialAnchorsSample/Blueprints/Components/BP_SpatialAnchorManagerComponent.BP_SpatialAnchorManagerComponent_C'"));
+	// SpatialAnchorManagerBPClass = SpatialAnchorManagerBPClassRef.TryLoadClass<UActorComponent>();
+	//
+	// if (SpatialAnchorManagerBPClass) {
+	// 	UE_LOG(LogExperiment, Log, TEXT("[APawnMain::APawnMain] Found BP class: %s!"),
+	// 		*SpatialAnchorManagerBPClassRef.ToString());
+	// 	if (GetWorld()) {
+	// 		constexpr bool bManualAttachment = false;
+	// 		constexpr bool bDeferredFinish   = false;
+	// 		SpatialAnchorManager = CreateDefaultSubobject<SpatialAnchorManagerBPClassRef>(TEXT("SpatialAnchorManager_AC"));
+	// 		// SpatialAnchorManager = this->AddComponent(TEXT("SpatialAnchorManager"), bManualAttachment,
+	// 		// 	FTransform(), SpatialAnchorManagerBPClass, bDeferredFinish);
+	// 		if (SpatialAnchorManager) {
+	// 			SpatialAnchorManager->
+	// 			// 
+	// 		}else {
+	// 			if (GEngine) GEngine->AddOnScreenDebugMessage(1, 10.0f, FColor::Red,
+	// 				TEXT("Failed to attach: SpatialAnchorManager "));
+	// 			UE_LOG(LogExperiment, Log, TEXT("[APawnMain::APawnMain] SpatialAnchorManager is null!"));
+	// 		}
+	// 	}
+	// } else {
+	// 	UE_LOG(LogExperiment, Error,
+	// 		TEXT("[APawnMain::APawnMain] Failed to load BP: %s"),*SpatialAnchorManagerBPClassRef.ToString());
+	// }
+		
+	XRPassthroughLayer = CreateDefaultSubobject<UOculusXRPassthroughLayerComponent>(TEXT("OculusXRPassthroughLayer"));
+	if (XRPassthroughLayer) {
+		UE_LOG(LogExperiment, Log, TEXT("PawnMain - XRPassthroughLayer valid"))
+		XRPassthroughLayer->SetMobility(EComponentMobility::Movable);
+		XRPassthroughLayer->SetVisibility(true);
+		XRPassthroughLayer->bLiveTexture    = false;
+		XRPassthroughLayer->bSupportsDepth  = false;
+		XRPassthroughLayer->bNoAlphaChannel = false;
+		XRPassthroughLayer->bAutoActivate   = false;
+		XRPassthroughLayer->SetPriority(0);
+		// XRPassthroughLayer->SetUVRect(FBox2d{FVector2d<double>{0.0,0.0},FVector2d<double>{100.0,100.0}});
+		// XRPassthroughLayer->SetQuadSize(FVector2d(0.0,100.0));
+	}else {
+		UE_LOG(LogExperiment, Error, TEXT("PawnMain - XRPassthroughLayer null "));
+	}
+
+	// MyXRPassthroughLayerBase = CreateDefaultSubobject<UOculusXRPassthroughLayerBase>(TEXT("OculusXRPassthroughLayer2"));
+	// if (MyXRPassthroughLayerBase) {
+	// 	UE_LOG(LogExperiment, Error, TEXT("PawnMain - XRPassthroughLayerBase valid"))
+	// 	IStereoLayers::FLayerDesc LayerDesc;
+	// 	LayerDesc.PositionType = IStereoLayers::FaceLocked;
+	// 	// LayerDesc.SetShape<UOculusXRStereoLayerShapeReconstructed>();
+	// 	LayerDesc.Priority = 0;
+	// 	MyXRPassthroughLayerBase->ApplyShape(LayerDesc);
+	// 	MyXRPassthroughLayerBase->EnableEdgeColor(false);
+	// 	MyXRPassthroughLayerBase->EnableColorMap(false);
+	// }
 	// const FSoftClassPath PlayerHUDClassRef(
 	// 	TEXT("/Script/UMGEditor.WidgetBlueprint'/Game/Interfaces/BP_HUDExperiment.BP_HUDExperiment_C'"));
 	// PlayerHUDClass = PlayerHUDClassRef.TryLoadClass<UHUDExperiment>();
@@ -341,9 +405,12 @@ bool APawnMain::StopPositionSamplingTimer() {
 void APawnMain::BeginPlay() {
 	Super::BeginPlay();
 
+
 	// if (!this->CreateAndInitializeWidget()) {
 	// 	UE_LOG(LogExperiment, Error, TEXT("Failed to init PlayerHUD widget"));
 	// }
+
+	UHeadMountedDisplayFunctionLibrary::SetTrackingOrigin(EHMDTrackingOrigin::Floor);
 
 	const float FS = 60.0f;
 	if (!this->StartPositionSamplingTimer(FS)) {
@@ -375,6 +442,7 @@ void APawnMain::UpdateSplineMesh() {
 		SplineMesh->SetStartAndEnd(StartLocation, StartTangent, EndLocation, EndTangent, true);
 	}
 }
+
 void APawnMain::Tick(float DeltaTime) {
 	Super::Tick(DeltaTime);
 }
