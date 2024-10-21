@@ -83,7 +83,7 @@ bool AExperimentServiceMonitor::SpawnAndPossessPredator() {
 		return false;
 	}
 
-	this->PredatorBasic->SetActorScale3D(FVector(1.0f, 1.0f, 1.0f)*this->PredatorScaleFactor*this->WorldScale);
+	// this->PredatorBasic->SetActorScale3D(FVector(1.0f, 1.0f, 1.0f)*this->PredatorScaleFactor*this->WorldScale);
 	this->SetPredatorIsVisible(false);
 	return true;
 }
@@ -327,13 +327,13 @@ void AExperimentServiceMonitor::HandleStartEpisodeRequestResponse(const FString 
 
 	this->RequestRemoveDelegates(StartEpisodeRequest, "StartEpisodeRequest");
 
-	UE_LOG(LogExperiment, Log, TEXT("[HandleGetOcclusionsResponse] Preparing to ResetAgentTracking!"))	
+	UE_LOG(LogExperiment, Log, TEXT("[HandleStartEpisodeRequestResponse] Preparing to ResetAgentTracking!"))	
 	if (!this->ResetTrackingAgent()) {
 		UE_LOG(LogExperiment, Error,
-			TEXT("[HandleGetOcclusionsResponse] ResetTrackingAgent() Failed!"))
+			TEXT("[HandleStartEpisodeRequestResponse] ResetTrackingAgent() Failed!"))
 	} else {
 		UE_LOG(LogExperiment, Log,
-			TEXT("[HandleGetOcclusionsResponse] ResetTrackingAgent() OK!"))
+			TEXT("[HandleStartEpisodeRequestResponse] ResetTrackingAgent() OK!"))
 	}
 }
 
@@ -835,8 +835,13 @@ void AExperimentServiceMonitor::HandleGetOcclusionLocationsTimedOut() {
 }
 
 bool AExperimentServiceMonitor::ConnectToServer(UMessageClient* ClientIn, const int MaxAttemptsIn, const FString& IPAddressIn, const int PortIn) {
+	UE_LOG(LogExperiment, Log,
+		TEXT("[AExperimentServiceMonitor::ConnectToServer] Attempting connection: %s:%i"),
+		*IPAddressIn, PortIn)
+
 	if (!ClientIn->IsValidLowLevel()) {
 		UE_LOG(LogExperiment, Error, TEXT("[ConnectToServer()] Failed to validate client!"));
+		return false; 
 	}
 	uint8 AttemptCurr = 0;
 
@@ -850,7 +855,8 @@ bool AExperimentServiceMonitor::ConnectToServer(UMessageClient* ClientIn, const 
 
 	if (!ClientIn->IsConnected()) {
 		UE_LOG(LogExperiment, Error, TEXT("[AExperimentServiceMonitor::ConnectToServer()] Failed to connect to server!"));
-		return false; }
+		return false;
+	}
 	
 	return true;
 }
@@ -907,19 +913,60 @@ bool AExperimentServiceMonitor::Test() {
 	Client         = this->CreateNewClient();
 	TrackingClient = this->CreateNewClient();
 
-	/* connect tracking service */
-	constexpr int AttemptsMax = 1;
-	UE_LOG(LogExperiment, Log,TEXT("[AExperimentServiceMonitor::Test()] Attempting to connect to Experiment Service Client."));
-	if (!this->ConnectToServer(Client, AttemptsMax, ServerIPMessage, ServerPort)) {
-		printScreen("[AExperimentServiceMonitor::Test] Connect SERVER failed."); return false;
+	/* define what to use: */
+	FString ServerIPToUse = ServerIPMessage; // main pc .199
+	const bool bUseBackpackServer = true;
+	if (bUseBackpackServer) {
+		ServerIPToUse = ServerIPMessageBackpack; // .200
 	}
+	UE_LOG(LogExperiment, Log,TEXT("[AExperimentServiceMonitor::Test()] Connecting to IP: %s."), *ServerIPToUse);
+
+	/* connect tracking service */
+	constexpr int AttemptsMax = 3;
+	UE_LOG(LogExperiment, Log,TEXT("[AExperimentServiceMonitor::Test()] Attempting to connect to Experiment Service Client."));
+	if (!this->ConnectToServer(Client, AttemptsMax, ServerIPToUse, ServerPort)) {
+		UE_LOG(LogExperiment, Fatal,
+			TEXT("[AExperimentServiceMonitor::Test()] Connect to ExperimentService: Failed! (IP: %s)"),
+			*ServerIPToUse);
+		return false;
+	} 
+	UE_LOG(LogExperiment, Log,
+		TEXT("[AExperimentServiceMonitor::Test()] Connect to ExperimentService: OK! (IP: %s)"), *ServerIPToUse);
 
 	/* connect to agent tracking */
-	UE_LOG(LogExperiment,Log,TEXT("[AExperimentServiceMonitor::Test()] Attempting to connect to Agent Tracking Client."));
-	if (!this->ConnectToServer(TrackingClient, AttemptsMax, ServerIPMessage, TrackingPort)) {
-		printScreen("Connect to Tracking: failed."); return false;
+	UE_LOG(LogExperiment,Log,TEXT("[AExperimentServiceMonitor::Test()] Attempting to connect to Agent Tracking Client. %s"),
+		*ServerIPToUse);
+
+	if (!this->ConnectToServer(TrackingClient, AttemptsMax, ServerIPToUse, TrackingPort)) {
+		UE_LOG(LogExperiment, Fatal,
+			TEXT("[AExperimentServiceMonitor::Test()] Connect to Tracking: Failed! (IP: %s)"), *ServerIPToUse);
+		return false;
 	}
 
+	UE_LOG(LogExperiment, Log,
+		TEXT("[AExperimentServiceMonitor::Test()] Connect to Tracking: OK! (IP: %s)"), *ServerIPToUse);
+	
+	// if (this->ConnectToServer(TrackingClient, AttemptsMax, ServerIPMessage, TrackingPort)) {
+	// 	UE_LOG(LogExperiment,Log,
+	// 		TEXT("[AExperimentServiceMonitor::Test()] Connect to Tracking: OK (IP: %s"), *ServerIPMessage);
+	// } else {
+	// 	UE_LOG(LogExperiment, Warning,
+	// 		TEXT("[AExperimentServiceMonitor::Test()] Connect to Tracking: Failed (IP: %s)"),
+	// 		*ServerIPMessage);
+	// 	UE_LOG(LogExperiment, Warning,
+	// 		TEXT("[AExperimentServiceMonitor::Test()] Connect to Tracking: Attempting connection to backup PC (IP: %s"),
+	// 		*ServerIPMessageBackup);
+	// 	if (this->ConnectToServer(TrackingClient, AttemptsMax, ServerIPMessageBackup, TrackingPort)) {
+	// 		UE_LOG(LogExperiment, Log,
+	// 			TEXT("[AExperimentServiceMonitor::Test()] Connect to Tracking BACKUP: OK (IP: %s"),
+	// 			*ServerIPMessageBackup);
+	// 	}else { // todo: change to 'Error' once tested  
+	// 		UE_LOG(LogExperiment, Fatal,
+	// 			TEXT("[AExperimentServiceMonitor::Test()] Connect to Tracking BACKUP: Failed (IP: %s"),
+	// 			*ServerIPMessageBackup);
+	// 	}
+	// }
+	
 	if (!this->RoutePredatorMessages()) {
 		UE_LOG(LogExperiment, Error, TEXT("RoutePredatorMessages FAILED!"))
 	}

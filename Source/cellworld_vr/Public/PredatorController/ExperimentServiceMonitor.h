@@ -23,7 +23,6 @@ DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnSubscribeResultDelegate, bool, bS
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnResetResultDelegate, bool, bResetResult);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FSubscribeStatusChangedDelegate, bool, bResetResult);
 
-
 //todo: move this to its own file in ExperimentPlugin or BotEvadeModule
 UCLASS(Blueprintable)
 class  UExperimentManager : public UObject {
@@ -315,7 +314,8 @@ public:
 	AExperimentServiceMonitor();
 
 	/* ==== server stuff ==== */
-	const FString ServerIPMessage = "192.168.1.200";  // static vr backpack win11 PACKAGED ONLY
+	const FString ServerIPMessage = "192.168.1.199";  // static vr backpack win11 PACKAGED ONLY
+	const FString ServerIPMessageBackpack = "192.168.1.200";  // static vr backpack win11 PACKAGED ONLY
 	const int ServerPort	      = 4970;
 	const int TrackingPort	      = 4790;
 	

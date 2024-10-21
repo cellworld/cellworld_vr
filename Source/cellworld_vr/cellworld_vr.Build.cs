@@ -9,7 +9,9 @@ public class cellworld_vr : ModuleRules
 	{
 		
 		PCHUsage = PCHUsageMode.UseExplicitOrSharedPCHs;
-	
+		// PCHUsage = PCHUsageMode.UseSharedPCHs;
+		// PrivatePCHHeaderFile = "cellworld_vr.h";
+		
 		PublicDependencyModuleNames.AddRange(new string[] { 
             "Core", "CoreUObject", "Engine", "InputCore", "UMG","NavigationSystem",
             "TCPMessages", "ExperimentPlugin", "AIModule", "GameplayTasks",

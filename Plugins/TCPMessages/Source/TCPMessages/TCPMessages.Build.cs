@@ -10,7 +10,7 @@ public class TCPMessages : ModuleRules
 		
 		PublicIncludePaths.AddRange(
 			new string[] {
-				"TCPMessages/Public"
+				// "TCPMessages/Public"
 				// ... add public include paths required here ...
 			}
 			);

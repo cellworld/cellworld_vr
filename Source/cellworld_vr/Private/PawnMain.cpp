@@ -4,6 +4,7 @@
 #include "HeadMountedDisplayFunctionLibrary.h"
 #include "cellworld_vr/cellworld_vr.h"
 #include "Components/EditableTextBox.h"
+#include "Engine/Engine.h"
 #include "IStereoLayers.h"
 #include "GameFramework/PlayerController.h"
 #include "GameFramework/CharacterMovementComponent.h" // test 
@@ -118,7 +119,7 @@ APawnMain::APawnMain() : Super() {
 	AnchorMenuAttachmentPoint->SetRelativeLocation(FVector(0.0f,13.5f,10.0f));
 	AnchorMenuAttachmentPoint->SetRelativeRotation(FRotator(0.0f,60.0f,-180.0f));
 	AnchorMenuAttachmentPoint->SetRelativeScale3D(FVector(0.05f,0.05f,0.05f));
-
+	
 	// // SpatialAnchorManager = CreateDefaultSubobject<UActorComponent>(TEXT("SpatialAnchorManager"));
 	// const FSoftClassPath SpatialAnchorManagerBPClassRef(
 	// 	TEXT("/Script/Engine.Blueprint'/Game/SpatialAnchorsSample/Blueprints/Components/BP_SpatialAnchorManagerComponent.BP_SpatialAnchorManagerComponent_C'"));
@@ -150,13 +151,13 @@ APawnMain::APawnMain() : Super() {
 	XRPassthroughLayer = CreateDefaultSubobject<UOculusXRPassthroughLayerComponent>(TEXT("OculusXRPassthroughLayer"));
 	if (XRPassthroughLayer) {
 		UE_LOG(LogExperiment, Log, TEXT("PawnMain - XRPassthroughLayer valid"))
-		XRPassthroughLayer->SetMobility(EComponentMobility::Movable);
-		XRPassthroughLayer->SetVisibility(true);
-		XRPassthroughLayer->bLiveTexture    = false;
-		XRPassthroughLayer->bSupportsDepth  = false;
-		XRPassthroughLayer->bNoAlphaChannel = false;
-		XRPassthroughLayer->bAutoActivate   = false;
-		XRPassthroughLayer->SetPriority(0);
+		// XRPassthroughLayer->SetMobility(EComponentMobility::Movable);
+		// XRPassthroughLayer->SetVisibility(true);
+		// XRPassthroughLayer->bLiveTexture    = false;
+		// XRPassthroughLayer->bSupportsDepth  = false;
+		// XRPassthroughLayer->bNoAlphaChannel = false;
+		// XRPassthroughLayer->bAutoActivate   = false;
+		// XRPassthroughLayer->SetPriority(0);
 		// XRPassthroughLayer->SetUVRect(FBox2d{FVector2d<double>{0.0,0.0},FVector2d<double>{100.0,100.0}});
 		// XRPassthroughLayer->SetQuadSize(FVector2d(0.0,100.0));
 	}else {
@@ -405,14 +406,14 @@ bool APawnMain::StopPositionSamplingTimer() {
 void APawnMain::BeginPlay() {
 	Super::BeginPlay();
 
-
 	// if (!this->CreateAndInitializeWidget()) {
 	// 	UE_LOG(LogExperiment, Error, TEXT("Failed to init PlayerHUD widget"));
 	// }
 
-	UHeadMountedDisplayFunctionLibrary::SetTrackingOrigin(EHMDTrackingOrigin::Floor);
+	// UHeadMountedDisplayFunctionLibrary::SetTrackingOrigin(EHMDTrackingOrigin::Floor);
 
-	const float FS = 60.0f;
+	// ReSharper disable once CppTooWideScopeInitStatement
+	constexpr float FS = 60.0f;
 	if (!this->StartPositionSamplingTimer(FS)) {
 		UE_LOG(LogExperiment, Error, TEXT("PawnMain: StartPositionSamplingTimer(%0.2f) Failed!"), FS)
 	} else {
