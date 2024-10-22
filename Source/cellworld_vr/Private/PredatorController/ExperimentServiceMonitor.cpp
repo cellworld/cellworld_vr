@@ -300,7 +300,7 @@ bool AExperimentServiceMonitor::StopTimerEpisode(double& InElapsedTime) {
 	InElapsedTime = Stopwatch->Lap();
 	Stopwatch->Reset();
 	// Stopwatch->MarkAsGarbage();
-	UE_LOG(LogExperiment,Log,TEXT("[AExperimentServiceMonitor::StopTimerEpisode] OK"));
+	UE_LOG(LogExperiment, Log,TEXT("[AExperimentServiceMonitor::StopTimerEpisode] OK"));
 	return true;
 }
 
@@ -391,7 +391,7 @@ void AExperimentServiceMonitor::HandleResetRequestTimedOut() {
 			TEXT("[HandleResetRequestTimedOut] Can't notify with PlayerHUD. PlayerPawn or PlayerHUD is NULL!"))
 	}
 
-	if (ExperimentManager) {
+	if (ExperimentManager->IsValidLowLevelFast()) {
 		UE_LOG(LogExperiment, Log, TEXT("[HandleResetRequestTimedOut] Broadcasting OnResetResultDelegate false!"))
 		ExperimentManager->OnResetResultDelegate.Broadcast(false);
 	} else {
@@ -551,7 +551,9 @@ void AExperimentServiceMonitor::UpdatePredator(const FMessage& InMessage) {
 	if (PredatorBasic->IsValidLowLevelFast()) {
 		// ReSharper disable once CppUseStructuredBinding
 		const FStep StepOut = UExperimentUtils::JsonStringToStep(InMessage.body);
-		PredatorBasic->SetActorLocation(UExperimentUtils::CanonicalToVr(StepOut.location, MapLength, WorldScale));
+		FVector NewLocation = UExperimentUtils::CanonicalToVr(StepOut.location, MapLength, WorldScale);
+		NewLocation.Z = 180.0f*1.5;
+		PredatorBasic->SetActorLocation(NewLocation);
 		PredatorBasic->SetActorRotation(FRotator(0.0,StepOut.rotation,0.0f));
 		FrameCountPredator++;
 	} else {
@@ -915,7 +917,7 @@ bool AExperimentServiceMonitor::Test() {
 
 	/* define what to use: */
 	FString ServerIPToUse = ServerIPMessage; // main pc .199
-	const bool bUseBackpackServer = false;
+	const bool bUseBackpackServer = true;
 	if (bUseBackpackServer) {
 		ServerIPToUse = ServerIPMessageBackpack; // .200
 		TrackingPort = TrackingPortBackpack;
