@@ -105,12 +105,12 @@ UMessageClient* AExperimentServiceMonitor::CreateNewClient() {
 }
 
 bool AExperimentServiceMonitor::StopExperiment(const FString& ExperimentNameIn) {
-	if (!this->ValidateClient(Client)) { UE_LOG(LogExperiment, Error, TEXT("[AExperimentServiceMonitor::StopExperiment] Can't stop experiment, Experiment Service client not valid.")); return false; }
+	if (!this->ValidateClient(TrackingClient)) { UE_LOG(LogExperiment, Error, TEXT("[AExperimentServiceMonitor::StopExperiment] Can't stop experiment, Experiment Service client not valid.")); return false; }
 	if (ExperimentInfo.ExperimentNameActive == "") {
 		UE_LOG(LogExperiment, Error, TEXT("[AExperimentServiceMonitor::StopExperiment] Can't stop experiment, not an active experiment."));
 		return false;
 	}
-
+	return true;
 	FFinishExperimentRequest RequestBody;
 	RequestBody.experiment_name = ExperimentInfo.ExperimentNameActive;
 
@@ -182,27 +182,36 @@ bool AExperimentServiceMonitor::StartEpisode(UMessageClient* ClientIn, const FSt
 		return false;
 	}
 	
-	if (!this->ValidateClient(ClientIn)) {
-		UE_LOG(LogExperiment, Error, TEXT("[AExperimentServiceMonitor::StartEpisode] Can't start episode, client not valid."));
-		return false;
+	// if (!this->ValidateClient(ClientIn)) {
+	// 	UE_LOG(LogExperiment, Error, TEXT("[AExperimentServiceMonitor::StartEpisode] Can't start episode, client not valid."));
+	// 	return false;
+	// }
+	//
+	// if (!this->ValidateExperimentName(ExperimentNameIn)){
+	// 	UE_LOG(LogExperiment, Error, TEXT("[AExperimentServiceMonitor::StartEpisode] Can't start episode, experiment name not valid."));
+	// 	return false;
+	// }
+	//
+	// FStartEpisodeRequest RequestBody;
+	// RequestBody.experiment_name = ExperimentInfo.ExperimentNameActive;
+	//
+	// const FString RequestString = UExperimentUtils::StartEpisodeRequestToJsonString(RequestBody);
+	// StartEpisodeRequest = ClientIn->SendRequest("start_episode", RequestString, TimeOut);
+	//
+	// if (!StartEpisodeRequest) { return false; }
+	//
+	// StartEpisodeRequest->ResponseReceived.AddDynamic(this, &AExperimentServiceMonitor::HandleStartEpisodeRequestResponse);
+	// StartEpisodeRequest->TimedOut.AddDynamic(this, &AExperimentServiceMonitor::HandleStartEpisodeRequestTimedOut);
+	//
+	
+	UE_LOG(LogExperiment, Log, TEXT("[HandleStartEpisodeRequestResponse] Preparing to ResetAgentTracking!"))	
+	if (!this->ResetTrackingAgent()) {
+		UE_LOG(LogExperiment, Error,
+			TEXT("[HandleStartEpisodeRequestResponse] ResetTrackingAgent() Failed!"))
+	} else {
+		UE_LOG(LogExperiment, Log,
+			TEXT("[HandleStartEpisodeRequestResponse] ResetTrackingAgent() OK!"))
 	}
-	
-	if (!this->ValidateExperimentName(ExperimentNameIn)){
-		UE_LOG(LogExperiment, Error, TEXT("[AExperimentServiceMonitor::StartEpisode] Can't start episode, experiment name not valid."));
-		return false;
-	}
-
-	FStartEpisodeRequest RequestBody;
-	RequestBody.experiment_name = ExperimentInfo.ExperimentNameActive;
-	
-	const FString RequestString = UExperimentUtils::StartEpisodeRequestToJsonString(RequestBody);
-	StartEpisodeRequest = ClientIn->SendRequest("start_episode", RequestString, TimeOut);
-	
-	if (!StartEpisodeRequest) { return false; }
-
-	StartEpisodeRequest->ResponseReceived.AddDynamic(this, &AExperimentServiceMonitor::HandleStartEpisodeRequestResponse);
-	StartEpisodeRequest->TimedOut.AddDynamic(this, &AExperimentServiceMonitor::HandleStartEpisodeRequestTimedOut);
-	
 	return true;
 }
 
@@ -220,8 +229,7 @@ bool AExperimentServiceMonitor::ValidateClient(UMessageClient* ClientIn)
 	return true;
 }
 
-bool AExperimentServiceMonitor::ValidateExperimentName(const FString& ExperimentNameIn)
-{
+bool AExperimentServiceMonitor::ValidateExperimentName(const FString& ExperimentNameIn) {
 	if (ExperimentNameIn == "") { return false; }
 	return true;
 }
@@ -246,24 +254,47 @@ bool AExperimentServiceMonitor::StopEpisode() {
 		UE_LOG(LogExperiment, Error, TEXT("Failed to StopTimerEpisode() in StopEpisode()"))
 	}
 	
-	if (!ValidateClient(Client)) {
-		UE_LOG(LogExperiment, Fatal, TEXT("[AExperimentServiceMonitor::StopEpisode()] Can't stop episode, Experiment Service client not valid."));
-		return false;
-	}
+	// if (!ValidateClient(Client)) {
+	// 	UE_LOG(LogExperiment, Fatal, TEXT("[AExperimentServiceMonitor::StopEpisode()] Can't stop episode, Experiment Service client not valid."));
+	// 	return false;
+	// }
 
 	// ExperimentInfo.SetStatus(EExperimentStatus::WaitingEpisode);
 	FFinishEpisodeRequest RequestBody;
 	RequestBody.experiment_name = ExperimentInfo.ExperimentNameActive;
+
+	if (this->ValidateClient(TrackingClient)) {
+		FMessage MessageOut;
+		MessageOut.header = "stop";
+		MessageOut.body   = ""; //todo: add time elapsed info
 		
-	const FString RequestString = UExperimentUtils::FinishEpisodeRequestToJsonString(RequestBody);
-	StopEpisodeRequest = Client->SendRequest("finish_episode", RequestString, 5.0f);
-	if (!StopEpisodeRequest->IsValidLowLevelFast()) {
-		UE_LOG(LogExperiment, Fatal, TEXT("[AExperimentServiceMonitor::StopEpisode] StopEpisodeRequest not valid. Failed to Bind Responses."))
-		return false;
+		if (ExperimentManager->IsValidLowLevel()) {
+			if (const UExperimentMonitorData* DataTemp = ExperimentManager->GetDataByIndex(PlayerIndex)) {
+				MessageOut.body = FString::SanitizeFloat(DataTemp->EpisodesCompletedTime);
+				UE_LOG(LogExperiment, Log, TEXT("[HandleStopEpisodeRequestResponse] DataTemp->EpisodesCompletedTime: %s"),*MessageOut.body)
+			}
+		}
+		 
+		UE_LOG(LogExperiment, Log, TEXT("[HandleStopEpisodeRequestResponse] StopEpisode to AT: %s"), *MessageOut.body)
+		const bool bMessageResult = TrackingClient->SendMessage(MessageOut);
+		if (!bMessageResult) {
+			UE_LOG(LogExperiment, Error,
+				TEXT("[HandleStopEpisodeRequestResponse] Failed to send STOP! Is TrackingClient connected?"));
+		}
+	} else {
+		UE_LOG(LogExperiment, Error,
+				TEXT("[HandleStopEpisodeRequestResponse] TrackingClient not valid! Failed to send STOP!"));
 	}
 	
-	StopEpisodeRequest->ResponseReceived.AddDynamic(this, &AExperimentServiceMonitor::HandleStopEpisodeRequestResponse);
-	StopEpisodeRequest->TimedOut.AddDynamic(this, &AExperimentServiceMonitor::HandleStopEpisodeRequestTimedOut);
+	// const FString RequestString = UExperimentUtils::FinishEpisodeRequestToJsonString(RequestBody);
+	// StopEpisodeRequest = Client->SendRequest("finish_episode", RequestString, 5.0f);
+	// if (!StopEpisodeRequest->IsValidLowLevelFast()) {
+	// 	UE_LOG(LogExperiment, Fatal, TEXT("[AExperimentServiceMonitor::StopEpisode] StopEpisodeRequest not valid. Failed to Bind Responses."))
+	// 	return false;
+	// }
+	//
+	// StopEpisodeRequest->ResponseReceived.AddDynamic(this, &AExperimentServiceMonitor::HandleStopEpisodeRequestResponse);
+	// StopEpisodeRequest->TimedOut.AddDynamic(this, &AExperimentServiceMonitor::HandleStopEpisodeRequestTimedOut);
 	return true;
 }
 
@@ -376,7 +407,7 @@ void AExperimentServiceMonitor::HandleResetRequestResponse(const FString InRespo
 
 	/* get cell locations */
 	if (!this->SendGetOcclusionLocationsRequest()) {
-		UE_LOG(LogExperiment, Error, TEXT("HandleStartEpisodeRequestResponse: Failed to SendGetOcclusionLocationsRequest"))
+		UE_LOG(LogExperiment, Error, TEXT("[HandleStartEpisodeRequestResponse] Failed to SendGetOcclusionLocationsRequest"))
 	}
 }
 
@@ -481,28 +512,28 @@ void AExperimentServiceMonitor::HandleStopEpisodeRequestResponse(const FString r
 	this->SetPredatorIsVisible(false);
 	
 	// todo: make this primary function
-	if (TrackingClient->IsValidLowLevelFast()) {
-		FMessage MessageOut;
-		MessageOut.header = "stop";
-		MessageOut.body   = ""; //todo: add time elapsed info
-		
-		if (ExperimentManager->IsValidLowLevel()) {
-			if (const UExperimentMonitorData* DataTemp = ExperimentManager->GetDataByIndex(PlayerIndex)) {
-				MessageOut.body = FString::SanitizeFloat(DataTemp->EpisodesCompletedTime);
-				UE_LOG(LogExperiment, Log, TEXT("[HandleStopEpisodeRequestResponse] DataTemp->EpisodesCompletedTime: %s"),*MessageOut.body)
-			}
-		}
-		 
-		UE_LOG(LogExperiment, Log, TEXT("[HandleStopEpisodeRequestResponse] StopEpisode to AT: %s"), *MessageOut.body)
-		const bool bMessageResult = TrackingClient->SendMessage(MessageOut);
-		if (!bMessageResult) {
-			UE_LOG(LogExperiment, Error,
-				TEXT("[HandleStopEpisodeRequestResponse] Failed to send STOP! Is TrackingClient connected?"));
-		}
-	} else {
-		UE_LOG(LogExperiment, Error,
-				TEXT("[HandleStopEpisodeRequestResponse] TrackingClient not valid! Failed to send STOP!"));
-	}
+	// if (TrackingClient->IsValidLowLevelFast()) {
+	// 	FMessage MessageOut;
+	// 	MessageOut.header = "stop";
+	// 	MessageOut.body   = ""; //todo: add time elapsed info
+	// 	
+	// 	if (ExperimentManager->IsValidLowLevel()) {
+	// 		if (const UExperimentMonitorData* DataTemp = ExperimentManager->GetDataByIndex(PlayerIndex)) {
+	// 			MessageOut.body = FString::SanitizeFloat(DataTemp->EpisodesCompletedTime);
+	// 			UE_LOG(LogExperiment, Log, TEXT("[HandleStopEpisodeRequestResponse] DataTemp->EpisodesCompletedTime: %s"),*MessageOut.body)
+	// 		}
+	// 	}
+	// 	 
+	// 	UE_LOG(LogExperiment, Log, TEXT("[HandleStopEpisodeRequestResponse] StopEpisode to AT: %s"), *MessageOut.body)
+	// 	const bool bMessageResult = TrackingClient->SendMessage(MessageOut);
+	// 	if (!bMessageResult) {
+	// 		UE_LOG(LogExperiment, Error,
+	// 			TEXT("[HandleStopEpisodeRequestResponse] Failed to send STOP! Is TrackingClient connected?"));
+	// 	}
+	// } else {
+	// 	UE_LOG(LogExperiment, Error,
+	// 			TEXT("[HandleStopEpisodeRequestResponse] TrackingClient not valid! Failed to send STOP!"));
+	// }
 
 	// cleanup
 	if (StopEpisodeRequest->IsValidLowLevelFast()) {
@@ -551,7 +582,9 @@ void AExperimentServiceMonitor::UpdatePredator(const FMessage& InMessage) {
 	if (PredatorBasic->IsValidLowLevelFast()) {
 		// ReSharper disable once CppUseStructuredBinding
 		const FStep StepOut = UExperimentUtils::JsonStringToStep(InMessage.body);
-		PredatorBasic->SetActorLocation(UExperimentUtils::CanonicalToVr(StepOut.location, MapLength, WorldScale));
+		FVector NewLocation = UExperimentUtils::CanonicalToVr(StepOut.location, MapLength, WorldScale);
+		NewLocation.Z = 182.0f*2; // 6ft
+		PredatorBasic->SetActorLocation(NewLocation);
 		PredatorBasic->SetActorRotation(FRotator(0.0,StepOut.rotation,0.0f));
 		FrameCountPredator++;
 	} else {
@@ -731,7 +764,8 @@ bool AExperimentServiceMonitor::SendGetOcclusionsRequest() {
 		return false;
 	} // experiment service client not valid
 
-	GetOcclusionsRequest = Client->SendRequest("get_occlusions", "21_05", TimeOut);
+	GetOcclusionsRequest = TrackingClient->SendRequest("get_occlusions", "21_05", TimeOut);
+	// GetOcclusionsRequest = Client->SendRequest("get_occlusions", "21_05", TimeOut);
 
 	if (!GetOcclusionsRequest) {
 		UE_LOG(LogExperiment, Error, TEXT("[SendGetOcclusionsRequest] SendGetOcclusionsRequest Failed. GetOcclusionsRequest NULL."))
@@ -788,7 +822,7 @@ void AExperimentServiceMonitor::HandleGetOcclusionsTimedOut() {
 
 bool AExperimentServiceMonitor::SendGetOcclusionLocationsRequest() {
 	UE_LOG(LogExperiment, Log, TEXT("[AExperimentServiceMonitor::SendGetOcclusionLocationsRequest()] Starting request."));
-	if (!this->ValidateClient(Client)) {
+	if (!this->ValidateClient(TrackingClient)) {
 		UE_LOG(LogExperiment, Error,
 			TEXT("[AExperimentServiceMonitor::SendGetOcclusionLocationsRequest()] Cant send get occlusion request, Experiment service client not valid."));
 		return false;
@@ -796,7 +830,8 @@ bool AExperimentServiceMonitor::SendGetOcclusionLocationsRequest() {
 	
 	const FString BodyOut   = "21_05";
 	const FString HeaderOut = "get_cell_locations";
-	GetOcclusionLocationRequest = Client->SendRequest("get_cell_locations", "21_05", 10.0f);
+	GetOcclusionLocationRequest = TrackingClient->SendRequest("get_cell_locations", "21_05", 10.0f);
+	// GetOcclusionLocationRequest = Client->SendRequest("get_cell_locations", "21_05", 10.0f);
 	
 	if (!GetOcclusionLocationRequest) { return false; }
 	
@@ -919,7 +954,7 @@ bool AExperimentServiceMonitor::Test() {
 	if (bUseBackpackServer) {
 		ServerIPToUse = ServerIPMessageBackpack; // .200
 		TrackingPort = TrackingPortBackpack;
-		UE_LOG(LogExperiment, Log, TEXT("[AExperimentServiceMonitor::Test] Connecting to Backpack Server!"))
+		UE_LOG(LogExperiment, Log, TEXT("[AExperimentServiceMonitor::Test] Will use Backpack Server!"))
 	}
 	
 	UE_LOG(LogExperiment, Log,TEXT("[AExperimentServiceMonitor::Test] Connecting to IP: %s."), *ServerIPToUse);
@@ -930,14 +965,14 @@ bool AExperimentServiceMonitor::Test() {
 	constexpr int AttemptsMax = 3;
 	UE_LOG(LogExperiment, Log,TEXT("[AExperimentServiceMonitor::Test()] Attempting to connect to Experiment Service Client."));
 	if (!this->ConnectToServer(Client, AttemptsMax, ServerIPToUse, ServerPort)) {
-		UE_LOG(LogExperiment, Fatal,
+		UE_LOG(LogExperiment, Error,
 			TEXT("[AExperimentServiceMonitor::Test()] Connect to ExperimentService: Failed! (IP: %s)"),
 			*ServerIPToUse);
-		return false;
+		// return false;
 	} 
 	UE_LOG(LogExperiment, Log,
 		TEXT("[AExperimentServiceMonitor::Test()] Connect to ExperimentService: OK! (IP: %s)"), *ServerIPToUse);
-
+	
 	/* connect to agent tracking */
 	UE_LOG(LogExperiment,Log,TEXT("[AExperimentServiceMonitor::Test()] Attempting to connect to Agent Tracking Client. %s"),
 		*ServerIPToUse);
@@ -995,8 +1030,12 @@ bool AExperimentServiceMonitor::Test() {
 	}
 
 	/* start experiment  */
-	StartExperimentRequest = this->SendStartExperimentRequest(Client, "ExperimentNameIn");
-	if (!StartExperimentRequest) { return false; }
+	if (bUseBackpackServer) {
+		StartExperimentRequest = this->SendStartExperimentRequest(Client, "ExperimentNameIn");
+		if (!StartExperimentRequest) {
+			return false;
+		}
+	}
 
 	return true;
 }
