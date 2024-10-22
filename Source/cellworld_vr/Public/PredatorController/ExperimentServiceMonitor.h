@@ -304,20 +304,20 @@ public:
 		return EnumAsString.Mid(Index + 2);
 	}
 };
-	
+
 UCLASS()
-class CELLWORLD_VR_API AExperimentServiceMonitor : public AActor
-{ 
+class CELLWORLD_VR_API AExperimentServiceMonitor : public AActor { 
 	GENERATED_BODY()
 	
 public:	
 	AExperimentServiceMonitor();
 
 	/* ==== server stuff ==== */
-	const FString ServerIPMessage = "192.168.1.199";  // static vr backpack win11 PACKAGED ONLY
+	const FString ServerIPMessage         = "192.168.1.199";  // static vr backpack win11 PACKAGED ONLY
 	const FString ServerIPMessageBackpack = "192.168.1.200";  // static vr backpack win11 PACKAGED ONLY
-	const int ServerPort	      = 4970;
-	const int TrackingPort	      = 4790;
+	const int ServerPort	       = 4970;
+	int TrackingPort	           = 4791;
+	const int TrackingPortBackpack = 4790;
 	
 	/* DEBUG */
 	bool bTimerRunning = false;

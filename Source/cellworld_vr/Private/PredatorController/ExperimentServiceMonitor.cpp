@@ -915,11 +915,16 @@ bool AExperimentServiceMonitor::Test() {
 
 	/* define what to use: */
 	FString ServerIPToUse = ServerIPMessage; // main pc .199
-	const bool bUseBackpackServer = true;
+	const bool bUseBackpackServer = false;
 	if (bUseBackpackServer) {
 		ServerIPToUse = ServerIPMessageBackpack; // .200
+		TrackingPort = TrackingPortBackpack;
+		UE_LOG(LogExperiment, Log, TEXT("[AExperimentServiceMonitor::Test] Connecting to Backpack Server!"))
 	}
-	UE_LOG(LogExperiment, Log,TEXT("[AExperimentServiceMonitor::Test()] Connecting to IP: %s."), *ServerIPToUse);
+	
+	UE_LOG(LogExperiment, Log,TEXT("[AExperimentServiceMonitor::Test] Connecting to IP: %s."), *ServerIPToUse);
+	UE_LOG(LogExperiment, Log,TEXT("[AExperimentServiceMonitor::Test] Port ExperimentService: %i."), ServerPort);
+	UE_LOG(LogExperiment, Log,TEXT("[AExperimentServiceMonitor::Test] Port Tracking: %i."), TrackingPort);
 
 	/* connect tracking service */
 	constexpr int AttemptsMax = 3;
