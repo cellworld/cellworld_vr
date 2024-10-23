@@ -272,8 +272,8 @@ void AGameModeMain::Tick(float DeltaTime)
 
 bool AGameModeMain::ExperimentStartEpisode() {
 	if (!IsValid(ExperimentServiceMonitor)) { return false; }
-	return ExperimentServiceMonitor->StartEpisode(ExperimentServiceMonitor->Client,
-	                                              ExperimentServiceMonitor->ExperimentInfo.ExperimentNameActive);
+	UE_LOG(LogExperiment, Log, TEXT("[AGameModeMain::ExperimentStartEpisode] Calling StartEpisode()"))
+	return ExperimentServiceMonitor->StartEpisode();
 }
 
 bool AGameModeMain::ExperimentStopEpisode() {
@@ -282,7 +282,8 @@ bool AGameModeMain::ExperimentStopEpisode() {
 		       TEXT("[AGameModeMain::ExperimentStopEpisode()] Failed to destroy, Already pending kill."));
 		return false;
 	}
-	return ExperimentServiceMonitor->StopEpisode();
+	UE_LOG(LogExperiment, Log, TEXT("[AGameModeMain::ExperimentStartEpisode] Calling StopEpisode(false)"))
+	return ExperimentServiceMonitor->StopEpisode(false);
 }
 
 bool AGameModeMain::ExperimentStopExperiment(const FString ExperimentNameIn)

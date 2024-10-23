@@ -164,7 +164,6 @@ public:
 		bool bCurrentLocationsLoaded = false;
 	UPROPERTY(EditAnywhere)
 		bool bSpawnedAll = false;
-
 	UPROPERTY(EditAnywhere)
 		TArray<AOcclusion*> OcclusionAllArr {};
 	UPROPERTY(EditAnywhere)
@@ -182,6 +181,10 @@ public:
 	}
 
 	void SetCurrentLocationsByIndex(const TArray<int32>& OcclusionIndexIn) {
+		
+		UE_LOG(LogExperiment,Log,
+			TEXT("[FOcclusions::SetCurrentLocationsByIndex] Number of occlusions in configuration: %i"),
+			OcclusionIndexIn.Num())
 		OcclusionIDsIntArr = OcclusionIndexIn; 
 		bCurrentLocationsLoaded = true;
 	}
@@ -230,8 +233,8 @@ public:
 	/* set visibility and collisions given an array of occlusion index/IDs */
 	void SetVisibilityArr(const TArray<int32> IndexArray, const bool bActorHiddenInGame, const bool bEnableCollision) {
 		for (int i = 0; i < IndexArray.Num(); i++) {
-			OcclusionAllArr[IndexArray[i]]->SetActorHiddenInGame(false);
-			OcclusionAllArr[IndexArray[i]]->SetActorEnableCollision(true);
+			OcclusionAllArr[IndexArray[i]]->SetActorHiddenInGame(bActorHiddenInGame);
+			OcclusionAllArr[IndexArray[i]]->SetActorEnableCollision(bEnableCollision);
 		}
 	}
 
@@ -421,9 +424,9 @@ public:
 	bool StopExperiment(const FString& ExperimentNameIn);
 	
 	UFUNCTION(BlueprintCallable, Category = Experiment)
-		bool StartEpisode(UMessageClient* ClientIn, const FString& ExperimentNameIn);
+		bool StartEpisode();
 	UFUNCTION(BlueprintCallable, Category = Experiment)
-		bool StopEpisode();
+		bool StopEpisode(const bool bForce = false);
 
 	UFUNCTION(BlueprintCallable, Category = Experiment)
 		bool StartTimerEpisode();
