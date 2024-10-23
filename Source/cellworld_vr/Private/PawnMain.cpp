@@ -274,8 +274,7 @@ void APawnMain::OnMovementDetected() {
 			FinalRotation = HMDRotation;
 			UpdateRoomScaleLocation();
 		} else {
-			UE_LOG(LogExperiment, Error, TEXT("[OnMovementDetected] HMD is not being worn! Returning."))
-			return; 
+			// UE_LOG(LogExperiment, Error, TEXT("[OnMovementDetected] HMD is not being worn! Returning."))
 			FinalLocation = RootComponent->GetComponentLocation();
 			FinalRotation = GetActorRotation();
 		}

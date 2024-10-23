@@ -254,7 +254,7 @@ void AGameModeMain::EndPlay(const EEndPlayReason::Type EndPlayReason) {
 	Super::EndPlay(EndPlayReason);
 	if (bSpawnExperimentService && this->ExperimentServiceMonitor->IsValidLowLevelFast()) {
 		this->ExperimentStopEpisode();
-		this->ExperimentStopExperiment(ExperimentServiceMonitor->ExperimentNameActive);
+		// this->ExperimentStopExperiment(ExperimentServiceMonitor->ExperimentNameActive);
 	}
 
 	// remove all timers from this object
@@ -276,10 +276,8 @@ bool AGameModeMain::ExperimentStartEpisode() {
 	                                              ExperimentServiceMonitor->ExperimentInfo.ExperimentNameActive);
 }
 
-bool AGameModeMain::ExperimentStopEpisode()
-{
-	if (!IsValid(ExperimentServiceMonitor))
-	{
+bool AGameModeMain::ExperimentStopEpisode() {
+	if (!IsValid(ExperimentServiceMonitor)) {
 		UE_LOG(LogExperiment, Warning,
 		       TEXT("[AGameModeMain::ExperimentStopEpisode()] Failed to destroy, Already pending kill."));
 		return false;

@@ -289,7 +289,7 @@ public:
 	
 	void SetStatus(EExperimentStatus ExperimentStatusIn){
 		const FString StatusString = FExperimentInfo::GetStatusString(&ExperimentStatusIn);
-		UE_LOG(LogExperiment, Warning, TEXT("[SetStatus] New Status set: %s"), *StatusString);
+		UE_LOG(LogExperiment, Log, TEXT("[FExperimentInfo::SetStatus] New Status set: %s"), *StatusString);
 		Status = ExperimentStatusIn;
 		OnExperimentStatusChangedEvent.Broadcast(ExperimentStatusIn);
 	}
@@ -300,9 +300,21 @@ public:
 		const FString EnumAsString = UEnum::GetValueAsString(ExperimentStatusInByted.GetValue());
 		int32 Index;
 		if (!EnumAsString.FindChar(TEXT(':'), Index)) { return FString("ConversionError"); }
-
 		return EnumAsString.Mid(Index + 2);
 	}
+};
+
+USTRUCT(Blueprintable)
+struct FServerInfo {
+	GENERATED_BODY()
+public:
+	FServerInfo() :
+		Port(4791),
+		IP(TEXT("192.168.1.199")) // main machine 
+		{}
+	
+	int Port;
+	FString IP;  // static vr backpack win11 PACKAGED ONLY
 };
 
 UCLASS()
@@ -312,12 +324,12 @@ class CELLWORLD_VR_API AExperimentServiceMonitor : public AActor {
 public:	
 	AExperimentServiceMonitor();
 
+	UPROPERTY(EditAnywhere, Blueprintable)
+	FServerInfo ServerInfo = FServerInfo();
+	
 	/* ==== server stuff ==== */
-	const FString ServerIPMessage         = "192.168.1.199";  // static vr backpack win11 PACKAGED ONLY
-	const FString ServerIPMessageBackpack = "192.168.1.200";  // static vr backpack win11 PACKAGED ONLY
-	const int ServerPort	       = 4970;
-	int TrackingPort	           = 4791;
-	const int TrackingPortBackpack = 4790;
+	// const FString ServerIP         = "192.168.1.199";  // static vr backpack win11 PACKAGED ONLY
+	// const int TrackingPort	           = 4791;
 	
 	/* DEBUG */
 	bool bTimerRunning = false;

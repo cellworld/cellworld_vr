@@ -1,6 +1,7 @@
 #include "PredatorBasic.h"
 
 #include "MovieSceneSequenceID.h"
+#include "StaticMeshAttributes.h"
 #include "cellworld_vr/cellworld_vr.h"
 #include "Chaos/Collision/ContactPointsMiscShapes.h"
 #include "PhysicsEngine/ShapeElem.h"
@@ -10,7 +11,7 @@ APredatorBasic::APredatorBasic() : Super()
 	UE_LOG(LogExperiment, Log, TEXT("[APredatorBasic::APredatorBasic()]"));
 	// Set this actor to call Tick() every frame. You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = false;
-
+	SetActorEnableCollision(false);
 	SetActorRotation(FRotator::ZeroRotator);
 	
 	// Create a sphere component
