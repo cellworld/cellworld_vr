@@ -42,6 +42,7 @@ public:
 	// AActor* GetLevelActorFromName(const FName& NameIn);
 	FVector GetLevelScale(const AActor* LevelActor);
 	void OpenLevel(const FString& InLevelName);
+	UFUNCTION(BlueprintCallable)
 	void SetWorldScale(float WorldScaleIn);
 	UPROPERTY(EditAnywhere)
 	float WorldScale = 5.0f;

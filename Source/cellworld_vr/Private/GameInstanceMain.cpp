@@ -12,6 +12,8 @@ void UGameInstanceMain::Init() {
 	UE_LOG(LogExperiment, Warning, TEXT("Initializing UGameInstanceMain"))
 
 	ExperimentParameters = MakeShared<FExperimentParameters>();
+	ExperimentParameters->bSpawnExperimentService = true;
+	
 	if (ExperimentParameters) {
 		UE_LOG(LogExperiment, Log, TEXT("[UGameInstanceMain::Init] FExperimentParameters Created."))
 	}else {

@@ -23,6 +23,11 @@ public:
 	header(header),
 	id(FGuid::NewGuid().ToString(EGuidFormats::DigitsWithHyphens)){	}
 
+	FMessage(const FString &header, const FString &body):
+	header(header),
+	body(body),
+	id(FGuid::NewGuid().ToString(EGuidFormats::DigitsWithHyphens)){	}
+
 	static FString CleanJson(const FString& jsonString) {
 		return jsonString.Replace(TEXT("\r"), TEXT("")).Replace(TEXT("\n"), TEXT("")).Replace(TEXT("\t"), TEXT("")).Replace(TEXT("\"iD\""), TEXT("\"id\""));
 	}

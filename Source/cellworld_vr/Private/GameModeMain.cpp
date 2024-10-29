@@ -7,11 +7,8 @@
 #include "PredatorController/AIControllerPredator.h"
 #include "AsyncLoadingScreenLibrary.h"
 #include "MouseKeyboardPlayerController.h"
-#include "OculusXRAnchorBPFunctionLibrary.h"
-#include "OculusXRFunctionLibrary.h"
 #include "PlayerControllerVR.h"
 #include "cellworld_vr/cellworld_vr.h"
-
 
 AGameModeMain::AGameModeMain() {
 	// vr or WASD?
@@ -45,8 +42,6 @@ void AGameModeMain::SpawnExperimentServiceMonitor()
 		ExperimentServiceMonitor = GetWorld()->SpawnActorDeferred<AExperimentServiceMonitor>(
 			AExperimentServiceMonitor::StaticClass(), SpawnTransformExperimentServiceMonitor, this, nullptr, CollisionHandlingMethod);
 		ExperimentServiceMonitor->WorldScale = this->WorldScale;
-		ExperimentServiceMonitor->ExperimentInfo.OnExperimentStatusChangedEvent.AddDynamic(
-			this, &AGameModeMain::OnExperimentStatusChanged);
 		ExperimentServiceMonitor->FinishSpawning(SpawnTransformExperimentServiceMonitor);
 	}
 }
@@ -169,33 +164,12 @@ void AGameModeMain::StopLoadingScreen() {
 }
 
 void AGameModeMain::OnUpdateHUDTimer() {
-	// both should be the same (true/false) at all times
-	check(bSpawnExperimentService == ExperimentServiceMonitor->IsValidLowLevelFast());
-
-	double TimeElapsed = 0.0f;
-	if (ExperimentServiceMonitor->IsValidLowLevelFast() &&  
-		ExperimentServiceMonitor->ExperimentInfo.Status == EExperimentStatus::InEpisode &&
-		ExperimentServiceMonitor->Stopwatch && ExperimentServiceMonitor->Stopwatch->IsRunning()) {
-		TimeElapsed = ExperimentServiceMonitor->Stopwatch->GetElapsedTime();
-	} else {
-		UE_LOG(LogExperiment, Log, TEXT("OnUpdateHUDTimer: Skipping. "))
-		return; 
-	}
-
-	if (PlayerPawn->IsValidLowLevelFast() && PlayerPawn->PlayerHUD->IsValidLowLevelFast()) {
-		PlayerPawn->PlayerHUD->SetTimeRemaining(FString::Printf(TEXT("%0.2f"), TimeElapsed));
-	}
+	UE_LOG(LogExperiment, Log, TEXT("[AGameModeMain::OnUpdateHUDTimer]"))
 }
 
 // todo: bug - either playerpawn or enum as string is not valid
 void AGameModeMain::OnExperimentStatusChanged(const EExperimentStatus ExperimentStatusIn) {
-	const TEnumAsByte<EExperimentStatus> ExperimentStatusInByted = ExperimentStatusIn;
-	const FString EnumAsString = UEnum::GetValueAsString(ExperimentStatusInByted.GetValue());
-
-	int32 Index;
-	if (PlayerPawn->IsValidLowLevelFast() && EnumAsString.FindChar(TEXT(':'), Index)) {
-		PlayerPawn->PlayerHUD->SetCurrentStatus(EnumAsString.Mid(Index + 2));
-	}
+	UE_LOG(LogExperiment, Log, TEXT("[AGameModeMain::OnExperimentStatusChanged]"))
 }
 
 void AGameModeMain::OnTimerFinished() {
@@ -261,13 +235,8 @@ void AGameModeMain::EndPlay(const EEndPlayReason::Type EndPlayReason) {
 	GetWorldTimerManager().ClearAllTimersForObject(this);
 }
 
-void AGameModeMain::Tick(float DeltaTime)
-{
+void AGameModeMain::Tick(float DeltaTime) {
 	Super::Tick(DeltaTime);
-	// if (!PlayerPawn->IsValidLowLevelFast())
-	// {
-	// 	GetWorld()->GetFirstPlayerController()
-	// }
 }
 
 bool AGameModeMain::ExperimentStartEpisode() {
@@ -279,10 +248,10 @@ bool AGameModeMain::ExperimentStartEpisode() {
 bool AGameModeMain::ExperimentStopEpisode() {
 	if (!IsValid(ExperimentServiceMonitor)) {
 		UE_LOG(LogExperiment, Warning,
-		       TEXT("[AGameModeMain::ExperimentStopEpisode()] Failed to destroy, Already pending kill."));
+		       TEXT("[AGameModeMain::ExperimentStopEpisode] Failed to destroy, Already pending kill."));
 		return false;
 	}
-	UE_LOG(LogExperiment, Log, TEXT("[AGameModeMain::ExperimentStartEpisode] Calling StopEpisode(false)"))
+	UE_LOG(LogExperiment, Log, TEXT("[AGameModeMain::ExperimentStopEpisode] Calling StopEpisode(false)"))
 	return ExperimentServiceMonitor->StopEpisode(false);
 }
 

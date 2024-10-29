@@ -487,20 +487,17 @@ void APawnMain::MoveForward(float AxisValue) {
 		if (OurMovementComponentChar && (OurMovementComponentChar->UpdatedComponent == RootComponent)) {
 			FVector CameraForwardVector = this->Camera->GetForwardVector();
 			CameraForwardVector.Z = 0.0;
-			this->UpdateMovementComponent(CameraForwardVector * AxisValue * 20, /*force*/ true);
+			this->UpdateMovementComponent(CameraForwardVector * AxisValue * 10, /*force*/ true);
 		}
 	}
 }
 
-void APawnMain::MoveRight(float AxisValue)
-{
-	if (AxisValue != 0.0f)
-	{
-		if (OurMovementComponentChar && (OurMovementComponentChar->UpdatedComponent == RootComponent))
-		{
+void APawnMain::MoveRight(float AxisValue) {
+	if (AxisValue != 0.0f) {
+		if (OurMovementComponentChar && (OurMovementComponentChar->UpdatedComponent == RootComponent)) {
 			FVector CameraRightVector = this->Camera->GetRightVector();
 			CameraRightVector.Z = 0.0;
-			this->UpdateMovementComponent(CameraRightVector * AxisValue * 2, /* force */true);
+			this->UpdateMovementComponent(CameraRightVector * AxisValue * 10, /* force */true);
 		}
 	}
 }
