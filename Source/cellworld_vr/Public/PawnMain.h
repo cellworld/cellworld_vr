@@ -26,7 +26,8 @@ DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnMovementDetected, FVector, Locat
 
 
 class UOculusXRPassthroughLayerComponent;
-class UOculusXRStereoLayerShapeReconstructed; 
+class UOculusXRStereoLayerShapeReconstructed;
+
 UCLASS()
 class CELLWORLD_VR_API APawnMain : public APawn {
 	GENERATED_BODY()

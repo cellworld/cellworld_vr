@@ -413,7 +413,7 @@ void APawnMain::BeginPlay() {
 
 	// ReSharper disable once CppTooWideScopeInitStatement
 	constexpr float FS = 60.0f;
-	if (!this->StartPositionSamplingTimer(FS)) {
+	if (!ensure(this->StartPositionSamplingTimer(FS))) {
 		UE_LOG(LogExperiment, Error, TEXT("PawnMain: StartPositionSamplingTimer(%0.2f) Failed!"), FS)
 	} else {
 		UE_LOG(LogExperiment, Log, TEXT("PawnMain: StartPositionSamplingTimer(%0.2f) OK!"), FS)
@@ -503,16 +503,14 @@ void APawnMain::MoveRight(float AxisValue) {
 }
 
 /* doesn't work with VR */
-void APawnMain::Turn(float AxisValue)
-{
+void APawnMain::Turn(float AxisValue) {
 	FRotator NewRotation = this->Camera->GetRelativeRotation();
 	NewRotation.Yaw += AxisValue;
 	this->Camera->SetRelativeRotation(NewRotation);
 }
 
 /* doesn't work with VR */
-void APawnMain::LookUp(float AxisValue)
-{
+void APawnMain::LookUp(float AxisValue) {
 	FRotator NewRotation = this->Camera->GetRelativeRotation();
 	NewRotation.Pitch += AxisValue;
 	this->Camera->SetRelativeRotation(NewRotation);

@@ -60,12 +60,6 @@ bool ABotEvadeGameMode::ExperimentStopEpisode() {
 	
 }
 
-void ABotEvadeGameMode::Tick(float DeltaSeconds) {
-	Super::Tick(DeltaSeconds);
-}
-void ABotEvadeGameMode::Logout(AController* Exiting) {
-	Super::Logout(Exiting);
-}
 void ABotEvadeGameMode::EndPlay(const EEndPlayReason::Type EndPlayReason) {
 	Super::EndPlay(EndPlayReason);
 	if (bSpawnExperimentService && this->ExperimentServiceMonitor->IsValidLowLevelFast()) {

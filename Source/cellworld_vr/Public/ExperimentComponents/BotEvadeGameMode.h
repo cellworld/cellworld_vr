@@ -36,8 +36,8 @@ public:
 	bool ExperimentStopEpisode();
 	
 private:
-	virtual void Tick(float DeltaSeconds) override;
-	virtual void Logout(AController* Exiting) override;
+	// virtual void Tick(float DeltaSeconds) override;
+	// virtual void Logout(AController* Exiting) override;
 	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 	virtual void EndMatch() override;
 	virtual void StartPlay() override;
