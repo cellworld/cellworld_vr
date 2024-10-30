@@ -248,6 +248,8 @@ bool APawnMain::DetectMovement() {
 	return true;
 }
 
+
+
 void APawnMain::UpdateRoomScaleLocation() {
 	const FVector CapsuleLocation = this->CapsuleComponent->GetComponentLocation();
 
@@ -409,7 +411,7 @@ void APawnMain::BeginPlay() {
 	// 	UE_LOG(LogExperiment, Error, TEXT("Failed to init PlayerHUD widget"));
 	// }
 
-	// UHeadMountedDisplayFunctionLibrary::SetTrackingOrigin(EHMDTrackingOrigin::Floor);
+	UHeadMountedDisplayFunctionLibrary::SetTrackingOrigin(EHMDTrackingOrigin::Stage);
 
 	// ReSharper disable once CppTooWideScopeInitStatement
 	constexpr float FS = 60.0f;
@@ -430,16 +432,6 @@ void APawnMain::DebugHUDAddTime() {
 	{
 		PlayerHUD->SetTimeRemaining(FString::FromInt(DebugTimeRemaining));
 		PlayerHUD->SetCurrentStatus(FString::FromInt(DebugTimeRemaining));
-	}
-}
-
-// Get location and tangent of the AnchorMenu SplineComponent at point 0 and 1 then set it 
-void APawnMain::UpdateSplineMesh() {
-	if (SplineComponent && SplineMesh) {
-		FVector StartLocation, StartTangent, EndLocation, EndTangent;
-		SplineComponent->GetLocationAndTangentAtSplinePoint(0, StartLocation, StartTangent, ESplineCoordinateSpace::Local);
-		SplineComponent->GetLocationAndTangentAtSplinePoint(1, EndLocation, EndTangent, ESplineCoordinateSpace::Local);
-		SplineMesh->SetStartAndEnd(StartLocation, StartTangent, EndLocation, EndTangent, true);
 	}
 }
 
