@@ -248,17 +248,12 @@ bool APawnMain::DetectMovement() {
 	return true;
 }
 
-
-
 void APawnMain::UpdateRoomScaleLocation() {
 	const FVector CapsuleLocation = this->CapsuleComponent->GetComponentLocation();
-
 	FVector CameraLocation = Camera->GetComponentLocation();
 	CameraLocation.Z = 0.0f;
-
 	FVector DeltaLocation = CameraLocation - CapsuleLocation;
 	DeltaLocation.Z = 0.0f;
-
 	AddActorWorldOffset(DeltaLocation, false, nullptr, ETeleportType::TeleportPhysics);
 	VROrigin->AddWorldOffset(-DeltaLocation, false, nullptr, ETeleportType::TeleportPhysics);
 	this->CapsuleComponent->SetWorldLocation(CameraLocation);

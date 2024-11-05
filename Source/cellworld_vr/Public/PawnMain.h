@@ -127,7 +127,6 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "SpatialComponents")
 	TObjectPtr<UOculusXRPassthroughLayerComponent> XRPassthroughLayer;
 	
-	
 	UPROPERTY(EditAnywhere)
 	UClass* SpatialAnchorManagerBPClass;
 	UPROPERTY(EditAnywhere)

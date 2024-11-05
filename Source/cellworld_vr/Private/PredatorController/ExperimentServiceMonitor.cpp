@@ -804,6 +804,15 @@ bool AExperimentServiceMonitor::Test() {
 	return true;
 }
 
+void AExperimentServiceMonitor::SetOcclusionVisibility(bool bNewVisibility) {
+	UE_LOG(LogExperiment, Log, TEXT("[AExperimentServiceMonitor::SetOcclusionVisibility] Called"))
+	if (ensure(OcclusionsStruct.bCurrentLocationsLoaded)) {
+		UE_LOG(LogExperiment, Log, TEXT("[AExperimentServiceMonitor::SetOcclusionVisibility] Using last loaded locations (%i)"),
+			OcclusionsStruct.OcclusionIDsIntArr.Num())
+		OcclusionsStruct.SetVisibilityArr(OcclusionsStruct.OcclusionIDsIntArr, !bNewVisibility, false);
+	}
+}
+
 void AExperimentServiceMonitor::OnEpisodeStarted() {
 
 	// todo: get proper index from ExperimentManager; either fetch or pass as input 
@@ -811,11 +820,11 @@ void AExperimentServiceMonitor::OnEpisodeStarted() {
 		TEXT("[AExperimentServiceMonitor::OnEpisodeStarted] Episode started player index: %i"),
 		PlayerIndex)
 
-	if (ensure(OcclusionsStruct.bCurrentLocationsLoaded)) {
-		UE_LOG(LogExperiment, Log, TEXT("[AExperimentServiceMonitor::OnEpisodeStarted] Using last loaded locations (%i)"),
-			OcclusionsStruct.OcclusionIDsIntArr.Num())
-		OcclusionsStruct.SetVisibilityArr(OcclusionsStruct.OcclusionIDsIntArr, false, false);
-	}
+	// if (ensure(OcclusionsStruct.bCurrentLocationsLoaded)) {
+	// 	UE_LOG(LogExperiment, Log, TEXT("[AExperimentServiceMonitor::OnEpisodeStarted] Using last loaded locations (%i)"),
+	// 		OcclusionsStruct.OcclusionIDsIntArr.Num())
+	// 	OcclusionsStruct.SetVisibilityArr(OcclusionsStruct.OcclusionIDsIntArr, false, false);
+	// }
 
 	if (!ensure(PlayerPawn->IsValidLowLevel())) { return; }
 	

@@ -454,13 +454,14 @@ public:
 	}
 
 	/* Set visibility of ALREADY SPAWNED OCCLUSIONS */
-	void SetCurrentVisibility(const bool bVisibilityIn, const bool bEnableCollisonIn) {
+	void SetCurrentVisibility(const bool bVisibilityIn) {
 		for (int i = 0; i < OcclusionIDsIntArr.Num(); i++) {
 			OcclusionAllArr[OcclusionIDsIntArr[i]]->SetActorHiddenInGame(bVisibilityIn);
-			OcclusionAllArr[OcclusionIDsIntArr[i]]->SetActorEnableCollision(bEnableCollisonIn);
-			UE_LOG(LogTemp, Log, TEXT("SetCirrentVisibility (%i)"), i);
+			OcclusionAllArr[OcclusionIDsIntArr[i]]->SetActorEnableCollision(false);
+			UE_LOG(LogTemp, Log, TEXT("[FOcclusions::SetCurrentVisibility] (%i)"), i);
 		}
 	}
+
 };
 
 USTRUCT(Blueprintable)
@@ -746,9 +747,11 @@ public:
 		void ResetWorldState();
 	UFUNCTION()
 		void OnEpisodeFinished();
-
+	UFUNCTION(BlueprintCallable)
+		void SetOcclusionVisibility(bool bNewVisibility);
 protected:
 	bool Test();
+	
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
 	const FString SubjectName = "vr_dude";

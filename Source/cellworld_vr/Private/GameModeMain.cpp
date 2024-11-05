@@ -204,23 +204,24 @@ void AGameModeMain::StartPlay() {
 	}
 
 	// todo: make sure this doesn't break if we don't use main menu 
-	if (true) {
+	if (bSpawnExperimentService) {
 		this->SpawnExperimentServiceMonitor();
 		// this->ExecuteConsoleCommand("netprofile");
 
-		if (bUpdateHUDTimer) {
-			UE_LOG(LogExperiment, Log, TEXT("[AGameModeMain::StartPlay] Running HUD update timer!"))
-			HUDTimer = NewObject<UEventTimer>(this, UEventTimer::StaticClass());
-			if (HUDTimer) {
-				HUDTimer->SetRateHz(10.0f);
-				HUDTimer->bLoop = true;
-				HUDTimer->OnTimerFinishedDelegate.AddDynamic(this, &AGameModeMain::OnUpdateHUDTimer);
-				if (HUDTimer->Start()) { UE_LOG(LogExperiment, Log, TEXT("[AGameModeMain::StartPlay] Started v2 timer for OnUpdateHUDTimer")); } 
-			}
-		}
+		// if (bUpdateHUDTimer) {
+		// 	UE_LOG(LogExperiment, Log, TEXT("[AGameModeMain::StartPlay] Running HUD update timer!"))
+		// 	HUDTimer = NewObject<UEventTimer>(this, UEventTimer::StaticClass());
+		// 	if (HUDTimer) {
+		// 		HUDTimer->SetRateHz(10.0f);
+		// 		HUDTimer->bLoop = true;
+		// 		HUDTimer->OnTimerFinishedDelegate.AddDynamic(this, &AGameModeMain::OnUpdateHUDTimer);
+		// 		if (HUDTimer->Start()) { UE_LOG(LogExperiment, Log, TEXT("[AGameModeMain::StartPlay] Started v2 timer for OnUpdateHUDTimer")); } 
+		// 	}
+		// }
 	} else {
 		UE_LOG(LogExperiment, Warning, TEXT("[AGameModeMain::StartPlay] Not spawning Experiment Service!"));
 	}
+
 	this->StopLoadingScreen();
 }
 
@@ -240,13 +241,13 @@ void AGameModeMain::Tick(float DeltaTime) {
 }
 
 bool AGameModeMain::ExperimentStartEpisode() {
-	if (!IsValid(ExperimentServiceMonitor)) { return false; }
+	if (!ensure(IsValid(ExperimentServiceMonitor))) { return false; }
 	UE_LOG(LogExperiment, Log, TEXT("[AGameModeMain::ExperimentStartEpisode] Calling StartEpisode()"))
 	return ExperimentServiceMonitor->StartEpisode();
 }
 
 bool AGameModeMain::ExperimentStopEpisode() {
-	if (!IsValid(ExperimentServiceMonitor)) {
+	if (!ensure(IsValid(ExperimentServiceMonitor))) {
 		UE_LOG(LogExperiment, Warning,
 		       TEXT("[AGameModeMain::ExperimentStopEpisode] Failed to destroy, Already pending kill."));
 		return false;

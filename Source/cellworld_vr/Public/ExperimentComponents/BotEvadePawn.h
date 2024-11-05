@@ -18,6 +18,7 @@ class ABotEvadePawn : public APawn {
 	GENERATED_BODY()
 public:
 	ABotEvadePawn();
+	UFUNCTION(BlueprintCallable)
 	void SetupUpdateRoomScaleLocation(UCameraComponent* InCameraComponent);
 	void UpdateRoomScaleLocation();
 	UFUNCTION()
@@ -37,21 +38,19 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "SpatialComponents")
 	TObjectPtr<UCameraComponent> CameraUpdateRoomscaleLocation; 	
 
-	UFUNCTION()
+	UFUNCTION(BlueprintCallable)
 	bool StartPositionSamplingTimer(const float InRateHz = 60.0f);
 
-	UFUNCTION()
+	UFUNCTION(BlueprintCallable)
 	bool StopPositionSamplingTimer();
 
+	UFUNCTION(BlueprintCallable)
 	virtual void BeginPlay() override;
+	UFUNCTION(BlueprintCallable)
 	virtual void Tick(float DeltaTime) override;
+	UFUNCTION(BlueprintCallable)
 	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
-	virtual void Reset() override;
 
-	void MoveForward(float AxisValue);
-	void MoveRight(float AxisValue);
-	void Turn(float AxisValue);
-	void LookUp(float AxisValue);
 protected:
 	bool bSetupUpdateRoomScaleLocationComplete = false; 
 };
