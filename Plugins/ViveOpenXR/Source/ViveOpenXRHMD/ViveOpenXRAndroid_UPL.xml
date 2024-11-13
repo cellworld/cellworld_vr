@@ -1,0 +1,154 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root xmlns:android="http://schemas.android.com/apk/res/android">
+	<init>
+		<log text="ViveOpenXRAndroid init"/>
+		<setBool result="bViveOpenXRAndroidSupported" value="false"/>
+		<isArch arch="arm64-v8a">
+			<log text="ViveOpenXRAndroid is supported on this build arm64-v8a!" />
+			<setBool result="bViveOpenXRAndroidSupported" value="true"/>
+		</isArch>
+		<setString result="ViveOpenXRRuntimeSettings" value="/Script/ViveOpenXRRuntimeSettings.ViveOpenXRRuntimeSettings"/>
+		<setBoolFromProperty result="bSimultaneousInteractionEnabled" ini="Engine" section="$S(ViveOpenXRRuntimeSettings)" property="bEnableSimultaneousInteraction" default="false"/>
+		<setBoolFromProperty result="bFacialTrackingEnabled" ini="Engine" section="$S(ViveOpenXRRuntimeSettings)" property="bEnableFacialTracking" default="false"/>
+		<setBoolFromProperty result="bHandInteractionEnabled" ini="Engine" section="$S(ViveOpenXRRuntimeSettings)" property="bEnableHandInteraction" default="false"/>
+		<setBoolFromProperty result="bWristTrackerEnabled" ini="Engine" section="$S(ViveOpenXRRuntimeSettings)" property="bEnableWristTracker" default="false"/>
+		<setBoolFromProperty result="bHandTrackingEnabled" ini="Engine" section="$S(ViveOpenXRRuntimeSettings)" property="bEnableHandTracking" default="false"/>
+		<setBoolFromProperty result="bEyeTrackingEnabled" ini="Engine" section="$S(ViveOpenXRRuntimeSettings)" property="bEnableEyeTracking" default="false"/>
+		<setBoolFromProperty result="bXrTrackerEnabled" ini="Engine" section="$S(ViveOpenXRRuntimeSettings)" property="bEnableXrTracker" default="false"/>
+		<setBoolFromProperty result="bHTCEyeTrackingEnabled" ini="Engine" section="$S(ViveOpenXRRuntimeSettings)" property="bEnableHTCEyeTracker" default="false"/>
+	</init>
+
+	<!-- optional updates applied to AndroidManifest.xml -->
+	<androidManifestUpdates>
+		<if condition="bViveOpenXRAndroidSupported">
+			<true>
+				<addElements tag="queries">
+					<provider android:name="org.khronos.openxr" />
+					<provider android:name="com.htc.openxr.runtime_config" android:authorities="runtime_config" />
+				</addElements>
+				<loopElements tag="application">
+					<addElements tag="$">
+						<meta-data android:name="com.htc.ViveOpenXR.SdkVersion" android:value="2.4.0"/>
+					</addElements>
+				</loopElements>
+				<loopElements tag="activity">
+					<setStringFromAttribute result="activityName" tag="$" name="android:name"/>
+					<setBoolIsEqual result="bSplashActivity" arg1="$S(activityName)" arg2="com.epicgames.unreal.SplashActivity"/>
+					<if condition="bSplashActivity">
+						<true>
+							<setElement result="intentInfo" value="category"/>
+							<addAttribute tag="$intentInfo" name="android:name" value="org.khronos.openxr.intent.category.IMMERSIVE_HMD"/>
+							<addElement tag="intent-filter" name="intentInfo"/>
+						</true>
+					</if>
+					<setBoolIsEqual result="bGameActivity" arg1="$S(activityName)" arg2="com.epicgames.unreal.GameActivity"/>
+					<if condition="bGameActivity">
+						<true>
+							<addElements tag="$">
+								<intent-filter>
+									<action android:name="android.intent.action.MAIN" />
+									<category android:name="org.khronos.openxr.intent.category.IMMERSIVE_HMD" />
+								</intent-filter>
+							</addElements>
+						</true>
+					</if>
+				</loopElements>
+				<if condition="bSimultaneousInteractionEnabled">
+					<true>
+						<log text="Simultaneous Interaction is enabled, set 'wave.feature.simultaneous_interaction' to true."/>
+						<addFeature android:name="wave.feature.simultaneous_interaction" android:required="true"/>
+					</true>
+				</if>
+				<if condition="bFacialTrackingEnabled">
+					<true>
+						<log text="Facial Tracking is enabled, set 'wave.feature.eyetracking' and 'wave.feature.lipexpression' to true."/>
+						<addFeature android:name="wave.feature.eyetracking" android:required="true"/>
+						<addFeature android:name="wave.feature.lipexpression" android:required="true"/>
+					</true>
+				</if>
+				<if condition="bHandInteractionEnabled">
+					<true>
+						<log text="Hand Interaction is enabled, set 'wave.feature.handtracking' to true."/>
+						<addFeature android:name="wave.feature.handtracking" android:required="true"/>
+					</true>
+				</if>
+				<if condition="bWristTrackerEnabled">
+					<true>
+						<log text="Wrist Tracker is enabled, set 'wave.feature.handtracking' and 'wave.feature.tracker' to true."/>
+						<addFeature android:name="wave.feature.handtracking" android:required="true"/>
+						<addFeature android:name="wave.feature.tracker" android:required="true"/>
+					</true>
+				</if>
+				<if condition="bHandTrackingEnabled">
+					<true>
+						<log text="Hand Tracking is enabled, set 'wave.feature.handtracking' to true."/>
+						<addFeature android:name="wave.feature.handtracking" android:required="true"/>
+					</true>
+				</if>
+				<if condition="bEyeTrackingEnabled">
+					<true>
+						<log text="Eye Tracking is enabled, set 'wave.feature.eyetracking' to true."/>
+						<addFeature android:name="wave.feature.eyetracking" android:required="true"/>
+					</true>
+				</if>
+				<if condition="bHTCEyeTrackingEnabled">
+					<true>
+						<log text="HTC Eye Tracking is enabled, set 'wave.feature.eyetracking' to true."/>
+						<addFeature android:name="wave.feature.eyetracking" android:required="true"/>
+					</true>
+				</if>
+				<if condition="bXrTrackerEnabled">
+					<true>
+						<log text="Xr Tracker is enabled, set 'wave.feature.tracker' to true."/>
+						<addFeature android:name="wave.feature.tracker" android:required="true"/>
+					</true>
+				</if>
+			</true>
+		</if>
+	</androidManifestUpdates>
+
+	<!-- optional files or directories to copy to Intermediate/Android/APK -->
+	<resourceCopies>
+		<isArch arch="arm64-v8a">
+			<log text="Copying libVIVEopenxr_loader.so"/>
+			<copyFile src="$S(PluginDir)/../ViveOpenXRLoader/lib/android/arm64-v8a/libVIVEopenxr_loader.so"
+						  dst="$S(BuildDir)/libs/arm64-v8a/libVIVEopenxr_loader.so"/>
+		</isArch>
+	</resourceCopies>
+
+	<!-- optional properties to add to gradle.properties -->
+	<gradleProperties>
+		<!-- ANDROID_TOOLS_BUILD_GRADLE_VERSION is com.android.tools.build:gradle:7.4.2 by default in UE5.3, see more at UEDeployAndroid.cs -->
+		<!-- The distributionUrl of gradle-wrapper.properties is https\://services.gradle.org/distributions/gradle-7.5-all.zip in UE5.3, see more at gradle-wrapper.properties -->
+		<insert>
+                       <!-- Override ANDROID_TOOLS_BUILD_GRADLE_VERSION if needed.
+                       ANDROID_TOOLS_BUILD_GRADLE_VERSION=com.android.tools.build:gradle:7.4.2
+			-->
+		</insert>
+	</gradleProperties>
+
+	<!--buildscriptGradleAdditions>
+		<insert>
+		</insert>
+	</buildscriptGradleAdditions-->
+
+	<!--baseBuildGradleAdditions>
+		<insert>
+		</insert>
+	</baseBuildGradleAdditions-->
+
+	<buildGradleAdditions>
+		<insert>
+			<!--It seems enabled by default
+			android {
+				buildFeatures {
+					prefab true
+				}
+			}
+			-->
+			dependencies {
+				implementation 'org.khronos.openxr:openxr_loader_for_android:1.0.32.1'
+			}
+		</insert>
+	</buildGradleAdditions>
+</root>

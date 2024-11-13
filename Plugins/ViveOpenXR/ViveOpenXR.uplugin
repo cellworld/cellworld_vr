@@ -1,0 +1,183 @@
+{
+	"FileVersion": 3,
+	"Version": 1,
+	"VersionName": "2.4.2",
+	"FriendlyName": "Vive OpenXR",
+	"Description": "Features of VIVE OpenXR.",
+	"Category": "Virtual Reality",
+	"CreatedBy": "HTC Corporation",
+	"CreatedByURL": "https://www.vive.com/",
+	"DocsURL": "https://developer.vive.com/resources/openxr/unreal/unreal-overview/",
+	"MarketplaceURL": "",
+	"SupportURL": "https://developer.vive.com/",
+	"EngineVersion": "5.3.0",
+	"CanContainContent": true,
+	"Installed": true,
+	"SupportedTargetPlatforms": [
+		"Win64",
+		"Android"
+	],
+	"Modules": [
+		{
+			"Name": "ViveOpenXRRuntimeSettings",
+			"Type": "Runtime",
+			"LoadingPhase": "PostEngineInit",
+			"PlatformAllowList": [
+				"Win64",
+				"Android"
+			]
+		},
+		{
+			"Name": "ViveOpenXREditor",
+			"Type": "Editor",
+			"LoadingPhase": "PostEngineInit",
+			"PlatformAllowList": [
+				"Win64"
+			]
+		},
+		{
+			"Name": "ViveOpenXRHMD",
+			"Type": "Runtime",
+			"LoadingPhase": "PostConfigInit",
+			"PlatformAllowList": [
+				"Win64",
+				"Android"
+			]
+		},
+		{
+			"Name": "ViveOpenXRSceneUnderstanding",
+			"Type": "Runtime",
+			"LoadingPhase": "PostConfigInit",
+			"PlatformAllowList": [
+				"Win64",
+				"Android"
+			]
+		},
+		{
+			"Name": "ViveOpenXRFacialTracking",
+			"Type": "Runtime",
+			"LoadingPhase": "PostConfigInit",
+			"PlatformAllowList": [
+				"Win64",
+				"Android"
+			]
+		},
+		{
+			"Name": "ViveOpenXRHandInteraction",
+			"Type": "Runtime",
+			"LoadingPhase": "PostConfigInit",
+			"PlatformAllowList": [
+				"Win64",
+				"Android"
+			]
+		},
+		{
+			"Name": "ViveOpenXRCosmosController",
+			"Type": "Runtime",
+			"LoadingPhase": "PostConfigInit",
+			"PlatformAllowList": [
+				"Win64",
+				"Android"
+			]
+		},
+		{
+			"Name": "ViveOpenXRFocus3Controller",
+			"Type": "Runtime",
+			"LoadingPhase": "PostConfigInit",
+			"PlatformAllowList": [
+				"Win64",
+				"Android"
+			]
+		},
+		{
+			"Name": "ViveCustomHandGesture",
+			"Type": "Runtime",
+			"LoadingPhase": "PostConfigInit",
+			"PlatformAllowList": [
+				"Win64",
+				"Android"
+			]
+		},
+		{
+			"Name": "ViveOpenXRPassthrough",
+			"Type": "Runtime",
+			"LoadingPhase": "PostConfigInit",
+			"PlatformAllowList": [
+				"Win64",
+				"Android"
+			]
+		},
+		{
+			"Name": "ViveOpenXRXrTracker",
+			"Type": "Runtime",
+			"LoadingPhase": "PostConfigInit",
+			"PlatformAllowList": [
+				"Win64",
+				"Android"
+			]
+		},
+		{
+			"Name": "ViveOpenXRWristTracker",
+			"Type": "Runtime",
+			"LoadingPhase": "PostConfigInit",
+			"PlatformAllowList": [
+				"Win64",
+				"Android"
+			]
+		},
+		{
+			"Name": "ViveRenderDoc",
+			"Type": "Runtime",
+			"LoadingPhase": "PostConfigInit",
+			"PlatformAllowList": [
+				"Android"
+			]
+		},
+		{
+			"Name": "ViveOpenXRDisplayRefreshRate",
+			"Type": "Runtime",
+			"LoadingPhase": "PostConfigInit",
+			"PlatformAllowList": [
+				"Win64",
+				"Android"
+			]
+		},
+		{
+			"Name": "ViveOpenXRAnchor",
+			"Type": "Runtime",
+			"LoadingPhase": "PostConfigInit",
+			"PlatformAllowList": [
+				"Win64",
+				"Android"
+			]
+		},
+		{
+			"Name": "ViveOpenXREyeTracker",
+			"Type": "Runtime",
+			"LoadingPhase": "PostConfigInit",
+			"PlatformAllowList": [
+				"Win64",
+				"Android"
+			]
+		},
+		{
+			"Name": "ViveOpenXRPlaneDetection",
+			"Type": "Runtime",
+			"LoadingPhase": "PostConfigInit",
+			"PlatformAllowList": [
+				"Win64",
+				"Android"
+			]
+		}
+	],
+	"Plugins": [
+		{
+			"Name": "OpenXR",
+			"Enabled": true
+		},
+		{
+			"Name": "LiveLink",
+			"Enabled": true
+		}
+	]
+}
