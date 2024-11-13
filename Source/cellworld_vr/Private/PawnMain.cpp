@@ -402,10 +402,6 @@ bool APawnMain::StopPositionSamplingTimer() {
 void APawnMain::BeginPlay() {
 	Super::BeginPlay();
 
-	// if (!this->CreateAndInitializeWidget()) {
-	// 	UE_LOG(LogExperiment, Error, TEXT("Failed to init PlayerHUD widget"));
-	// }
-
 	UHeadMountedDisplayFunctionLibrary::SetTrackingOrigin(EHMDTrackingOrigin::Stage);
 
 	// ReSharper disable once CppTooWideScopeInitStatement

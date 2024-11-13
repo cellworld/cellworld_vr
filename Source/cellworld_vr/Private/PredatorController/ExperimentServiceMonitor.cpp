@@ -813,6 +813,7 @@ void AExperimentServiceMonitor::SetOcclusionVisibility(bool bNewVisibility) {
 	}
 }
 
+// bound to FNotifyEpisodeStarted on success! 
 void AExperimentServiceMonitor::OnEpisodeStarted() {
 
 	// todo: get proper index from ExperimentManager; either fetch or pass as input 
