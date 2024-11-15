@@ -42,8 +42,25 @@ public:
 	// AActor* GetLevelActorFromName(const FName& NameIn);
 	FVector GetLevelScale(const AActor* LevelActor);
 	void OpenLevel(const FString& InLevelName);
+
 	UFUNCTION(BlueprintCallable)
 	void SetWorldScale(float WorldScaleIn);
+
+	/* functions for door and experiment control */
+	UPROPERTY(BlueprintReadWrite)
+	TObjectPtr<AExperimentServiceMonitor> ExperimentServiceMonitor = nullptr;
+
+	UFUNCTION(BlueprintCallable, Category = Experiment)
+	bool SpawnExperimentServiceMonitor(UWorld* InWorld);
+
+	UFUNCTION(BlueprintCallable, Category = Experiment)
+	bool ExperimentStartEpisode(); 
+
+	UFUNCTION(BlueprintCallable, Category = Experiment)
+	bool ExperimentStopEpisode();
+
+	UFUNCTION(BlueprintCallable, Category = Experiment)
+	bool ExperimentStopExperiment(const FString ExperimentNameIn);
 	UPROPERTY(EditAnywhere)
 	float WorldScale = 5.0f;
 };

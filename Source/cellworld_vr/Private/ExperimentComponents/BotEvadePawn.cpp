@@ -60,7 +60,7 @@ void ABotEvadePawn::OnMovementDetected() {
 	}
 	FVector FinalLocation = {};
 	FRotator FinalRotation = {};
-	if (true) { // bUseVR
+	if (true) { // TODO: fetch from GameMode! 
 		if ((UHeadMountedDisplayFunctionLibrary::GetHMDWornState() == EHMDWornState::Worn)) {
 			FVector HMDLocation = {};
 			FRotator HMDRotation = {};
@@ -73,7 +73,8 @@ void ABotEvadePawn::OnMovementDetected() {
 			FinalLocation = RootComponent->GetComponentLocation();
 			FinalRotation = GetActorRotation();
 		}
-	} else { // only gets called when in WASD 
+	} else { // todo: fetch from GameMode!
+		// (only gets called when in WASD) 
 		FinalLocation = RootComponent->GetComponentLocation();
 		FinalRotation = GetActorRotation();
 	}

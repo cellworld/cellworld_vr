@@ -420,6 +420,7 @@ void APawnMain::BeginPlay() {
 		} else { bUseVR = false; }
 	}
 
+	bUseVR = true; // todo: temporary!!!!!
 	UE_LOG(LogExperiment, Log, TEXT("[APawnMain::BeginPlay] bUseVR = %i"), bUseVR)
 	
 	// todo: check? seems to work fine in both. will leave as-is for now bc I may need to revisit this later

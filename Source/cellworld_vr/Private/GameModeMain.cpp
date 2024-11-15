@@ -26,11 +26,8 @@ AGameModeMain::AGameModeMain() {
 	PrimaryActorTick.bCanEverTick = false;
 }
 
-void AGameModeMain::SpawnExperimentServiceMonitor()
-{
-	if (GetWorld())
-	{
-
+void AGameModeMain::SpawnExperimentServiceMonitor() {
+	if (GetWorld()) {
 		// ReSharper disable once CppLocalVariableMayBeConst
 		ESpawnActorCollisionHandlingMethod CollisionHandlingMethod =
 			ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButAlwaysSpawn;
@@ -257,8 +254,7 @@ bool AGameModeMain::ExperimentStopEpisode() {
 	return ExperimentServiceMonitor->StopEpisode(false);
 }
 
-bool AGameModeMain::ExperimentStopExperiment(const FString ExperimentNameIn)
-{
+bool AGameModeMain::ExperimentStopExperiment(const FString ExperimentNameIn) {
 	if (!IsValid(ExperimentServiceMonitor)) { return false; }
 	ExperimentServiceMonitor->StopExperiment(ExperimentNameIn);
 	return false;
