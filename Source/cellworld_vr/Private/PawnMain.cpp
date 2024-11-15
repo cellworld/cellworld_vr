@@ -8,6 +8,7 @@
 #include "IStereoLayers.h"
 #include "GameFramework/PlayerController.h"
 #include "GameFramework/CharacterMovementComponent.h" // test 
+#include "GameFramework/GameMode.h"
 #include "Kismet/GameplayStatics.h"
 
 // Sets default values
@@ -412,6 +413,15 @@ void APawnMain::BeginPlay() {
 		UE_LOG(LogExperiment, Log, TEXT("PawnMain: StartPositionSamplingTimer(%0.2f) OK!"), FS)
 	}
 
+	if (GetWorld()) {
+		AGameModeBase* GameModeBase = GetWorld()->GetAuthGameMode();
+		if (GameModeBase->IsValidLowLevelFast()) {
+			if (AGameModeMain* GameModeMain = Cast<AGameModeMain>(GameModeBase)) { bUseVR = GameModeMain->bUseVR; }
+		} else { bUseVR = false; }
+	}
+
+	UE_LOG(LogExperiment, Log, TEXT("[APawnMain::BeginPlay] bUseVR = %i"), bUseVR)
+	
 	// todo: check? seems to work fine in both. will leave as-is for now bc I may need to revisit this later
 	if (bUseVR) { Camera->bUsePawnControlRotation = false; }
 	else { Camera->bUsePawnControlRotation = true; }

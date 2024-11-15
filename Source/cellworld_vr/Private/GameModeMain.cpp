@@ -206,7 +206,8 @@ void AGameModeMain::StartPlay() {
 	// todo: make sure this doesn't break if we don't use main menu 
 	if (bSpawnExperimentService) {
 		this->SpawnExperimentServiceMonitor();
-		// this->ExecuteConsoleCommand("netprofile");
+		this->ExecuteConsoleCommand("netprofile enable");
+		this->ExecuteConsoleCommand("stat UNIT");
 
 		// if (bUpdateHUDTimer) {
 		// 	UE_LOG(LogExperiment, Log, TEXT("[AGameModeMain::StartPlay] Running HUD update timer!"))
