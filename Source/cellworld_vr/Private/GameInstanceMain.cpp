@@ -46,10 +46,8 @@ AActor* UGameInstanceMain::GetLevelActorFromTag(const FName& TagIn)
 FVector UGameInstanceMain::GetLevelScale(const AActor* LevelActor) {
 	
 	if (LevelActor->IsValidLowLevelFast()) { return LevelActor->GetActorScale3D(); }
-
 	LevelActor = this->GetLevelActorFromTag(FName("HabitatMaze")); 	// if actor passed in is null, try to get the actor yourself
 	if (!LevelActor->IsValidLowLevelFast()) { return FVector::ZeroVector; } 
-
 	return LevelActor->GetActorScale3D(); 
 }
 

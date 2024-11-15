@@ -44,7 +44,7 @@ bool AExperimentServiceMonitor::ValidateLevel(UWorld* InWorld, const FString InL
 /* todo: make this take input ACharacter and spawn that one*/
 bool AExperimentServiceMonitor::SpawnAndPossessPredator() {
 	if (!GetWorld()) {
-		UE_LOG(LogExperiment, Error, TEXT("[AExperimentServiceMonitor::SpawnAndPossessPredator()] GetWorld() failed!"));
+		UE_LOG(LogExperiment, Error, TEXT("[AExperimentServiceMonitor::SpawnAndPossessPredator] GetWorld() failed!"));
 		return false;
 	}
 
@@ -57,6 +57,10 @@ bool AExperimentServiceMonitor::SpawnAndPossessPredator() {
 	FLocation SpawnLocation;
 	SpawnLocation.x = 0.5;
 	SpawnLocation.y = 0.5;
+
+	UE_LOG(LogExperiment, Error, TEXT("[AExperimentServiceMonitor::SpawnAndPossessPredator] WorldScale: %0.2f"),
+		this->WorldScale);
+
 	const FVector SpawnVector = UExperimentUtils::CanonicalToVr(SpawnLocation, this->MapLength, this->WorldScale);
 
 	// Spawn the character
@@ -934,7 +938,7 @@ float AExperimentServiceMonitor::GetTimeRemaining() const {
 void AExperimentServiceMonitor::BeginPlay() {
 	Super::BeginPlay();
 
-	UE_LOG(LogExperiment, Log, TEXT("[AExperimentServiceMonitor::BeginPlay()] Starting!"));
+	UE_LOG(LogExperiment, Log, TEXT("[AExperimentServiceMonitor::BeginPlay] Called"));
 
 	ExperimentInfo.OnExperimentStatusChangedEvent.AddDynamic(this, &AExperimentServiceMonitor::OnStatusChanged);
 
@@ -942,7 +946,7 @@ void AExperimentServiceMonitor::BeginPlay() {
 	UGameInstanceMain* GI = Cast<UGameInstanceMain>(GetWorld()->GetGameInstance());
 	check(GI->IsValidLowLevelFast())
 	if (GI->IsValidLowLevelFast()) { this->WorldScale = GI->GetLevelScale(nullptr).X; }
-	UE_LOG(LogExperiment, Log, TEXT("[AExperimentServiceMonitor::BeginPlay()] WorldScale: %0.2f"), this->WorldScale);
+	UE_LOG(LogExperiment, Log, TEXT("[AExperimentServiceMonitor::BeginPlay] WorldScale: %0.2f"), this->WorldScale);
 
 	if (this->SpawnAndPossessPredator()) { UE_LOG(LogExperiment, Log, TEXT("Spawned predator: OK")); }
 	else {
