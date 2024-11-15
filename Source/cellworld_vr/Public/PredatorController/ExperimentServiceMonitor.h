@@ -214,6 +214,8 @@ public:
 
 	UFUNCTION()
 	bool StopTimerEpisode(double& InElapsedTime) {
+		UE_LOG(LogExperiment, Log,
+				TEXT("[UExperimentManager::StopTimerEpisode] Called"));
 		// if (!ensure(InElapsedTime)) {
 		// 	UE_LOG(LogExperiment, Error,
 		// 		TEXT("[UExperimentManager::StopTimerEpisode] Failed, InElapsedTime  is NULL."));
@@ -314,7 +316,7 @@ public:
 	void OnEpisodeFinished() {
 		UE_LOG(LogExperiment, Log, TEXT("[UExperimentManager::OnEpisodeFinished] Called"))
 		check(bInEpisode == true);
-		UE_LOG(LogExperiment, Log, TEXT("[UExperimentManager::OnEpisodeStarted] setting: bInEpisode = true"))
+		UE_LOG(LogExperiment, Log, TEXT("[UExperimentManager::OnEpisodeFinished] setting: bInEpisode = false"))
 		SetInEpisode(false);
 		NotifyEpisodeFinished.Broadcast();
 
@@ -748,7 +750,7 @@ public:
 	UFUNCTION()
 		void OnEpisodeFinished();
 	UFUNCTION(BlueprintCallable)
-		void SetOcclusionVisibility(bool bNewVisibility);
+		void SetOcclusionVisibility(const bool bNewVisibility);
 protected:
 	bool Test();
 	
