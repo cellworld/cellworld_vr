@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
+#include "Components/SphereComponent.h"
 //#include "TCPMessages.h"
 //#include "ExperimentPlugin.h"
 #include "BehaviorTree/BehaviorTree.h"
@@ -31,6 +32,8 @@ public:
 	class UBehaviorTree* BehaviorTreeComponentChar; 
 	//UBehaviorTree* BehaviorTreeComponentChar;
 
+	UPROPERTY(EditAnywhere)
+	TObjectPtr<USphereComponent> SphereComponent; 
 
 	UPROPERTY(EditAnyWhere, BlueprintReadOnly, Category = "AI")
 	class ASmartObject* SmartObject;

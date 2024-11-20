@@ -35,7 +35,7 @@
 		},
 		{
 			"Name": "OculusXR",
-			"Enabled": false,
+			"Enabled": true,
 			"MarketplaceURL": "com.epicgames.launcher://ue/marketplace/product/8313d8d7e7cf4e03a33e79eb757bccba",
 			"SupportedTargetPlatforms": [
 				"Win64",
@@ -105,7 +105,7 @@
 		},
 		{
 			"Name": "OpenXR",
-			"Enabled": true,
+			"Enabled": false,
 			"SupportedTargetPlatforms": [
 				"Win64",
 				"Linux",
@@ -113,6 +113,7 @@
 			]
 		},
 		{
+<<<<<<< HEAD
 			"Name": "OnlineSubsystemGooglePlay",
 			"Enabled": false,
 			"SupportedTargetPlatforms": [
@@ -126,6 +127,11 @@
 				"IOS",
 				"TVOS"
 			]
+=======
+			"Name": "VaFogOfWar",
+			"Enabled": true,
+			"MarketplaceURL": "com.epicgames.launcher://ue/marketplace/content/cf7668a20dde4ef6937eaab417bf55cf"
+>>>>>>> main
 		}
 	]
 }

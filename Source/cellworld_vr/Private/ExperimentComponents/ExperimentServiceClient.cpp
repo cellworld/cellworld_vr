@@ -29,7 +29,7 @@ bool AExperimentServiceClient::StartExperiment(const FString InSubjectName) {
 	if (!Client->IsConnected()) { UE_LOG(LogTemp, Error, TEXT("Can't start experiment, Experiment Service client not connected.")); return false; }
 
 	/* set up world info (defaults to hexagonal and canonical) */
-	FWorldInfo WorldInfo;
+	FWorldInfoV2 WorldInfo;
 	WorldInfo.occlusions = "21_05";
 
 	/* set up request body */
@@ -394,7 +394,7 @@ URequest* AExperimentServiceClient::SendGetOcclusionLocationsRequest()
 	if (!bInEpisode){ UE_LOG(LogTemp, Error, TEXT("[AExperimentServiceClient::SendGetOcclusionLocationsRequest()] Cant send get occlusion request, bInEpisode is false.")); return nullptr; }
 	const FString BodyOut   = "21_05";
 	const FString HeaderOut = "get_cell_locations";
-	URequest* Request = Client->SendRequest("get_cell_locations", "21_04", 10.0f);
+	URequest* Request = Client->SendRequest("get_cell_locations", "21_05", 10.0f);
 
 	if (!Request) { return nullptr; }
 
@@ -421,8 +421,7 @@ void AExperimentServiceClient::HandleGetOcclusionLocationsTimedOut() {
 	return;
 }
 
-void AExperimentServiceClient::HandleOcclusionLocation(const FMessage MessageIn)
-{
+void AExperimentServiceClient::HandleOcclusionLocation(const FMessage MessageIn) {
 	UE_LOG(LogTemp, Warning, TEXT("OcclusionLocation: %s"), *MessageIn.body);
 }
 

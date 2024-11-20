@@ -25,6 +25,8 @@ public:
 	/* game flow */
 	void ResetOrigin();
 	void QuitGame();
+	void MoveForward(float AxisValue);
+	void MoveRight(float AxisValue);
 	void RestartGame();
 
 	/* pawn to control */

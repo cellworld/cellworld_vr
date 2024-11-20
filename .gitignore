@@ -7,7 +7,7 @@ source/EyeTrackingVR/public/Keys.h
 Setup/HP_client_keys.csv
 # data
 Data/*
-
+Plugins/Developer/
 # Compiled Object files
 *.slo
 *.lo

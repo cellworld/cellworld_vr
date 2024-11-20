@@ -1,7 +1,9 @@
 #pragma once
+#include "ExperimentPlugin.h"
 #include "JsonObjectConverter.h"
 #include "Misc/Guid.h"
 #include "Structs.generated.h"
+
 
 #define STRUCTTOJSON(TYPE) \
 static F## TYPE JsonStringTo## TYPE (FString jsonString) { \
@@ -15,7 +17,31 @@ static FString TYPE ##ToJsonString (F##TYPE structInput) { \
 	FString jsonString; \
 	FJsonObjectConverter::UStructToJsonObjectString(structInput, jsonString, 0, 0, 0); \
 	return jsonString; \
-} 
+}
+
+USTRUCT()
+struct FExperimentParameters {
+	GENERATED_BODY()
+public:
+	float PredatorPreySpeedRatio = 1.0f; // pred_speed/prey_speed
+	float PredatorSpeedCanonical = 1.0f; // c.u/s => c.u*2.35 = m/s
+	float VisualRange = 1.0f; // full range
+	bool bSpawnExperimentService = false;
+
+	void SetPredatorSpeedMetric(const float InPredatorSpeedMetersPerSecond) {
+		PredatorSpeedCanonical = InPredatorSpeedMetersPerSecond/2.35; 
+		UE_LOG(LogTemp, Log,
+			TEXT("[FExperimentParameters::SetPredatorSpeedMetric] New Value: %0.3f (canonical) | %0.3f"),
+			PredatorSpeedCanonical, InPredatorSpeedMetersPerSecond)
+	}
+	
+	void SetVisualRangeMetric(const float InVisualRangeMetric) {
+		VisualRange = InVisualRangeMetric/2.35;
+		UE_LOG(LogTemp, Log,
+			TEXT("[FExperimentParameters::SetVisualRangeMetric] New Value: %0.3f (canonical) | %0.3f (meters)"),
+			VisualRange, InVisualRangeMetric)
+	}
+};
 
 
 USTRUCT(Blueprintable)
@@ -38,8 +64,6 @@ public:
 		TArray<FString> ExperimentNameArr;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Experiment)
 		int32 MaxActiveExperiments = 10;
-
-
 };
 
 UENUM(Blueprintable)
@@ -228,7 +252,7 @@ public:
 };
 
 USTRUCT(Blueprintable)
-struct FWorldInfo
+struct FWorldInfoV2
 {
 	GENERATED_BODY()
 public:
@@ -262,7 +286,7 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Experiment)
 		FString experiment_name = "";
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Experiment)
-		FWorldInfo world_info;
+		FWorldInfoV2 world_info;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Experiment)
 		FString start_date;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Experiment)
@@ -287,7 +311,7 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Experiment)
 		FString start_date = "";
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Experiment)
-		FWorldInfo world; 
+		FWorldInfoV2 world; 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Experiment)
 		FString subject_name = "";
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Experiment)
@@ -305,7 +329,7 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Experiment)
 		FString suffix = "suffix";
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Experiment)
-		FWorldInfo world;
+		FWorldInfoV2 world;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Experiment)
 		FString subject_name = "vr_dude";
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Experiment)

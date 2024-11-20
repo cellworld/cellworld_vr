@@ -3,6 +3,7 @@
 #include "Engine/GameInstance.h"
 #include "Containers/Array.h" 
 #include "GameModeMain.h"
+#include "ExperimentPlugin/Public/Structs.h"
 #include "GameInstanceMain.generated.h"
 
 /**
@@ -29,21 +30,9 @@ public:
 	virtual void StartGameInstance() override;
 	AActor* GetLevelActorFromTag(const FName& TagIn);
 
-	/* file management */
-	FString dir_project;
-	FString dir_setup;
-	FString dir_savedata;
-	FString file_hp_client_keys;
-
-	/* HP stuff */
-	FString client_id; 
-	FString access_key; 
-
-	/* timer stuff */
-	int32 InitialTimer_Instance;
-	int32 AddTimer_Instance;
-	int32 VRMode_Instance;
-
+	/* Experiment Parameters */
+	TSharedPtr<FExperimentParameters> ExperimentParameters; 
+	
 	/* can we go to next phase? terminates widget transition */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	bool bCanTransition = 0;
@@ -52,7 +41,26 @@ public:
 
 	// AActor* GetLevelActorFromName(const FName& NameIn);
 	FVector GetLevelScale(const AActor* LevelActor);
+	void OpenLevel(const FString& InLevelName);
+
+	UFUNCTION(BlueprintCallable)
 	void SetWorldScale(float WorldScaleIn);
+
+	/* functions for door and experiment control */
+	UPROPERTY(BlueprintReadWrite)
+	TObjectPtr<AExperimentServiceMonitor> ExperimentServiceMonitor = nullptr;
+
+	UFUNCTION(BlueprintCallable, Category = Experiment)
+	bool SpawnExperimentServiceMonitor(UWorld* InWorld);
+
+	UFUNCTION(BlueprintCallable, Category = Experiment)
+	bool ExperimentStartEpisode(); 
+
+	UFUNCTION(BlueprintCallable, Category = Experiment)
+	bool ExperimentStopEpisode();
+
+	UFUNCTION(BlueprintCallable, Category = Experiment)
+	bool ExperimentStopExperiment(const FString ExperimentNameIn);
 	UPROPERTY(EditAnywhere)
 	float WorldScale = 5.0f;
 };

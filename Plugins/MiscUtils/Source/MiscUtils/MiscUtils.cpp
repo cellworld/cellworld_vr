@@ -3,7 +3,7 @@
 #include "MiscUtils.h"
 
 #define LOCTEXT_NAMESPACE "FMiscUtilsModule"
-
+DEFINE_LOG_CATEGORY(LogTimer);
 
 void FMiscUtilsModule::StartupModule()
 {

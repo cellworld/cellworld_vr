@@ -3,7 +3,7 @@
 #include "EngineUtils.h"
 #include "PawnMain.h"
 #include "GameStateMain.h"
-#include "HeadMountedDisplayFunctionLibrary.h"
+#include "GameInstanceMain.h"
 #include "PredatorController/AIControllerPredator.h"
 #include "AsyncLoadingScreenLibrary.h"
 #include "MouseKeyboardPlayerController.h"
@@ -11,32 +11,23 @@
 #include "cellworld_vr/cellworld_vr.h"
 
 AGameModeMain::AGameModeMain() {
-	// vr or WASD? 
-	if (bUseVR) { PlayerControllerClass = APlayerControllerVR::StaticClass(); }
-	else { PlayerControllerClass = AMouseKeyboardPlayerController::StaticClass(); }
+	// vr or WASD?
+	if (bUseVR) {
+		PlayerControllerClass = APlayerControllerVR::StaticClass();
+	} else {
+		PlayerControllerClass = AMouseKeyboardPlayerController::StaticClass();
+	}
 
-	// if (UHeadMountedDisplayFunctionLibrary::IsHeadMountedDisplayEnabled()) {
-	// 	UE_LOG(LogExperiment, Log, TEXT("[AGameModeMain::AGameModeMain] Player controller: VR"))
-	// 	bUseVR = true; 
-	// 	PlayerControllerClass = APlayerControllerVR::StaticClass();
-	// } else {
-	// 	UE_LOG(LogExperiment, Log, TEXT("[AGameModeMain::AGameModeMain] Player controller: WASD"))
-	// 	bUseVR = false; 
-	// 	PlayerControllerClass = AMouseKeyboardPlayerController::StaticClass();
-	// }
-	
+	UE_LOG(LogExperiment, Log, TEXT("USING VR??: %i"),bUseVR)
 	DefaultPawnClass = APawnMain::StaticClass();
 	GameStateClass = AGameStateMain::StaticClass();
-
+	
 	PrimaryActorTick.bStartWithTickEnabled = false;
 	PrimaryActorTick.bCanEverTick = false;
 }
 
-void AGameModeMain::SpawnExperimentServiceMonitor()
-{
-	if (GetWorld())
-	{
-
+void AGameModeMain::SpawnExperimentServiceMonitor() {
+	if (GetWorld()) {
 		// ReSharper disable once CppLocalVariableMayBeConst
 		ESpawnActorCollisionHandlingMethod CollisionHandlingMethod =
 			ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButAlwaysSpawn;
@@ -48,8 +39,6 @@ void AGameModeMain::SpawnExperimentServiceMonitor()
 		ExperimentServiceMonitor = GetWorld()->SpawnActorDeferred<AExperimentServiceMonitor>(
 			AExperimentServiceMonitor::StaticClass(), SpawnTransformExperimentServiceMonitor, this, nullptr, CollisionHandlingMethod);
 		ExperimentServiceMonitor->WorldScale = this->WorldScale;
-		ExperimentServiceMonitor->ExperimentInfo.OnExperimentStatusChangedEvent.AddDynamic(
-			this, &AGameModeMain::OnExperimentStatusChanged);
 		ExperimentServiceMonitor->FinishSpawning(SpawnTransformExperimentServiceMonitor);
 	}
 }
@@ -58,6 +47,13 @@ void AGameModeMain::EndGame()
 {
 	UE_LOG(LogTemp, Warning, TEXT("[ AGameModeMain::EndGame()] Force quit."));
 	FGenericPlatformMisc::RequestExit(false);
+}
+
+void AGameModeMain::ExecuteConsoleCommand(const FString& InCommand) {
+	UE_LOG(LogExperiment, Log, TEXT("[ExecuteConsoleCommand] Command: %s"), *InCommand)
+	if (GEngine) {
+		GEngine->Exec(GWorld, *InCommand); 
+	}
 }
 
 AActor* AGameModeMain::GetLevelActorFromName(const FName& ActorNameIn) const
@@ -151,66 +147,34 @@ void AGameModeMain::SpawnGetCLMonitorComponentActor()
 * right now, there's only one, but im gonna call this function to maintain consitency.
 */
 
-void AGameModeMain::SpawnAllLoggingActor()
-{
+void AGameModeMain::SpawnAllLoggingActor() {
 	/* eye-tracker */
 	//AGameModeMain::SpawnGetCLMonitorComponentActor();
 }
 
-void AGameModeMain::StartLoadingScreen()
-{
+void AGameModeMain::StartLoadingScreen() {
 	UAsyncLoadingScreenLibrary::SetEnableLoadingScreen(true);
 }
 
-void AGameModeMain::StopLoadingScreen()
-{
+void AGameModeMain::StopLoadingScreen() {
 	UAsyncLoadingScreenLibrary::StopLoadingScreen();
 }
 
-void AGameModeMain::OnUpdateHUDTimer()
-{
-	// both should be the same (true/false) at all times 
-	check(bSpawnExperimentService == ExperimentServiceMonitor->IsValidLowLevelFast());
-
-	float TimeRemaining = -2.0f;
-	if (ExperimentServiceMonitor->IsValidLowLevelFast()) {
-		TimeRemaining = ExperimentServiceMonitor->GetTimeRemaining();
-	} else { TimeRemaining = -2.0f; }
-
-	if (PlayerPawn->IsValidLowLevelFast() && PlayerPawn->PlayerHUD->IsValidLowLevelFast()) {
-		// counter the round down
-		PlayerPawn->PlayerHUD->SetTimeRemaining(FString::FromInt(FMath::FloorToInt(TimeRemaining + 1)));
-	}
-	else {
-		if (GEngine)
-			GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Red,
-			                                 FString::Printf(
-				                                 TEXT("[AGameModeMain::OnUpdateHUDTimer()] PlayerPawn | HUD not valid.")));
-		TimeRemaining = -2.0f;
-	}
+void AGameModeMain::OnUpdateHUDTimer() {
+	UE_LOG(LogExperiment, Log, TEXT("[AGameModeMain::OnUpdateHUDTimer]"))
 }
 
 // todo: bug - either playerpawn or enum as string is not valid
-void AGameModeMain::OnExperimentStatusChanged(const EExperimentStatus ExperimentStatusIn)
-{
-	const TEnumAsByte<EExperimentStatus> ExperimentStatusInByted = ExperimentStatusIn;
-	const FString EnumAsString = UEnum::GetValueAsString(ExperimentStatusInByted.GetValue());
-
-	int32 Index;
-	if (PlayerPawn->IsValidLowLevelFast() && EnumAsString.FindChar(TEXT(':'), Index))
-	{
-		PlayerPawn->PlayerHUD->SetCurrentStatus(EnumAsString.Mid(Index + 2));
-	}
+void AGameModeMain::OnExperimentStatusChanged(const EExperimentStatus ExperimentStatusIn) {
+	UE_LOG(LogExperiment, Log, TEXT("[AGameModeMain::OnExperimentStatusChanged]"))
 }
 
-void AGameModeMain::OnTimerFinished()
-{
+void AGameModeMain::OnTimerFinished() {
 	if (GEngine) GEngine->AddOnScreenDebugMessage(-1, 3.0f, FColor::Red,
 	                                              FString::Printf(TEXT("[AGameModeMain::OnTimerFinished()]!")));
 }
 
-void AGameModeMain::StartPlay()
-{
+void AGameModeMain::StartPlay() {
 	Super::StartPlay();
 	UE_LOG(LogExperiment, Warning, TEXT("[AGameModeMain::StartPlay()] Starting game!"));
 
@@ -223,58 +187,74 @@ void AGameModeMain::StartPlay()
 
 	if (!bUseVR) { SpawnLocationVR.Z += 100; }
 
-	// this->SpawnAndPossessPlayer(SpawnLocationVR, FRotator::ZeroRotator);
+	UGameInstanceMain* GameInstance = Cast<UGameInstanceMain>(GetGameInstance());
+	if (!GameInstance) {
+		UE_LOG(LogExperiment, Error, TEXT("[UMainMenuWidget::OnSpawnExperimentServerCheckBoxStateChanged] GameInstance NULL!"));
+		return;
+	}
+	
+	/* spawn ExperimentServiceActor */
+	if (GameInstance->ExperimentParameters.IsValid()) {
+		bSpawnExperimentService = GameInstance->ExperimentParameters->bSpawnExperimentService;
+	} else {
+		UE_LOG(LogExperiment, Error, TEXT("[AGameModeMain::StartPlay] GameInstance->ExperimentParameters NULL"))
+	}
 
-	GetWorldTimerManager().SetTimer(TimerHUDUpdate, this, &AGameModeMain::OnUpdateHUDTimer, 0.5f, true, -1.0f);
+	// todo: make sure this doesn't break if we don't use main menu 
+	if (bSpawnExperimentService) {
+		this->SpawnExperimentServiceMonitor();
+		this->ExecuteConsoleCommand("netprofile enable");
+		this->ExecuteConsoleCommand("stat UNIT");
 
-	if (bSpawnExperimentService) { AGameModeMain::SpawnExperimentServiceMonitor(); }
-	else { UE_LOG(LogExperiment, Warning, TEXT("[AGameModeMain::StartPlay()] Not spawning Experiment Service!")); }
+		// if (bUpdateHUDTimer) {
+		// 	UE_LOG(LogExperiment, Log, TEXT("[AGameModeMain::StartPlay] Running HUD update timer!"))
+		// 	HUDTimer = NewObject<UEventTimer>(this, UEventTimer::StaticClass());
+		// 	if (HUDTimer) {
+		// 		HUDTimer->SetRateHz(10.0f);
+		// 		HUDTimer->bLoop = true;
+		// 		HUDTimer->OnTimerFinishedDelegate.AddDynamic(this, &AGameModeMain::OnUpdateHUDTimer);
+		// 		if (HUDTimer->Start()) { UE_LOG(LogExperiment, Log, TEXT("[AGameModeMain::StartPlay] Started v2 timer for OnUpdateHUDTimer")); } 
+		// 	}
+		// }
+	} else {
+		UE_LOG(LogExperiment, Warning, TEXT("[AGameModeMain::StartPlay] Not spawning Experiment Service!"));
+	}
 
-	AGameModeMain::StopLoadingScreen();
+	this->StopLoadingScreen();
 }
 
-void AGameModeMain::EndPlay(const EEndPlayReason::Type EndPlayReason)
-{
+void AGameModeMain::EndPlay(const EEndPlayReason::Type EndPlayReason) {
 	Super::EndPlay(EndPlayReason);
-	if (bSpawnExperimentService && this->ExperimentServiceMonitor->IsValidLowLevelFast())
-	{
+	if (bSpawnExperimentService && this->ExperimentServiceMonitor->IsValidLowLevelFast()) {
 		this->ExperimentStopEpisode();
-		this->ExperimentStopExperiment(ExperimentServiceMonitor->ExperimentNameActive);
+		// this->ExperimentStopExperiment(ExperimentServiceMonitor->ExperimentNameActive);
 	}
 
 	// remove all timers from this object
 	GetWorldTimerManager().ClearAllTimersForObject(this);
 }
 
-void AGameModeMain::Tick(float DeltaTime)
-{
+void AGameModeMain::Tick(float DeltaTime) {
 	Super::Tick(DeltaTime);
-	// if (!PlayerPawn->IsValidLowLevelFast())
-	// {
-	// 	GetWorld()->GetFirstPlayerController()
-	// }
 }
 
-bool AGameModeMain::ExperimentStartEpisode()
-{
-	if (!IsValid(ExperimentServiceMonitor)) { return false; }
-	return ExperimentServiceMonitor->StartEpisode(ExperimentServiceMonitor->Client,
-	                                              ExperimentServiceMonitor->ExperimentInfo.ExperimentNameActive);
+bool AGameModeMain::ExperimentStartEpisode() {
+	if (!ensure(IsValid(ExperimentServiceMonitor))) { return false; }
+	UE_LOG(LogExperiment, Log, TEXT("[AGameModeMain::ExperimentStartEpisode] Calling StartEpisode()"))
+	return ExperimentServiceMonitor->StartEpisode();
 }
 
-bool AGameModeMain::ExperimentStopEpisode()
-{
-	if (!IsValid(ExperimentServiceMonitor))
-	{
+bool AGameModeMain::ExperimentStopEpisode() {
+	if (!ensure(IsValid(ExperimentServiceMonitor))) {
 		UE_LOG(LogExperiment, Warning,
-		       TEXT("[AGameModeMain::ExperimentStopEpisode()] Failed to destroy, Already pending kill."));
+		       TEXT("[AGameModeMain::ExperimentStopEpisode] Failed to destroy, Already pending kill."));
 		return false;
 	}
-	return ExperimentServiceMonitor->StopEpisode();
+	UE_LOG(LogExperiment, Log, TEXT("[AGameModeMain::ExperimentStopEpisode] Calling StopEpisode(false)"))
+	return ExperimentServiceMonitor->StopEpisode(false);
 }
 
-bool AGameModeMain::ExperimentStopExperiment(const FString ExperimentNameIn)
-{
+bool AGameModeMain::ExperimentStopExperiment(const FString ExperimentNameIn) {
 	if (!IsValid(ExperimentServiceMonitor)) { return false; }
 	ExperimentServiceMonitor->StopExperiment(ExperimentNameIn);
 	return false;

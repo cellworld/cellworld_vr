@@ -7,37 +7,371 @@
 #include "MessageClient.h"
 #include "ExperimentUtils.h"
 #include "PawnMain.h"
+<<<<<<< HEAD
+=======
+#include "ExperimentComponents/ExperimentMonitorData.h"
+>>>>>>> main
 #include "ExperimentPlugin/Public/Structs.h"
 #include "ExperimentComponents/Occlusion.h"
 #include "DrawDebugHelpers.h"
 #include "PredatorBasic.h"
 #include "cellworld_vr/cellworld_vr.h"
+#include "MiscUtils/Timer/EventTimer.h"
 #include "ExperimentServiceMonitor.generated.h"
+
+
+DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnProcessStopEpisodeResponseDelegate);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnProcessStartEpisodeResponseDelegate);
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnExperimentStatusChanged, EExperimentStatus, ExperimentStatusIn);
 
-USTRUCT(Blueprintable)
-struct FExperimentTimer
-{
-	GENERATED_USTRUCT_BODY()
+DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnCapture);
+
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnTimedOut, FString, InMessage); // check if we can pass by reference
+
+DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnEpisodeStartedDelegate);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnEpisodeStartedFailedDelegate, FString, InMessage);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnEpisodeStartedSuccessDelegate);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE(FNotifyEpisodeStarted);
+
+DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnEpisodeFinishedDelegate);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnEpisodeFinishedSuccessDelegate);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnEpisodeFinishedFailedDelegate, FString, InMessage);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE(FNotifyEpisodeFinished);
+
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnSubscribeResultDelegate, bool, bSubscribeResult); 
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnResetResultDelegate, bool, bResetResult);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FSubscribeStatusChangedDelegate, bool, bResetResult);
+
+DECLARE_DYNAMIC_MULTICAST_DELEGATE(FNotifyOnEpisodeStarted); 
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FNotifyOnExperimentFinished, int, InPlayerIndex); 
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FNotifyOnEpisodeFinished, bool, bEpisodeFinishedResult);
+
+//todo: move this to its own file in ExperimentPlugin or BotEvadeModule
+UCLASS(Blueprintable)
+class  UExperimentManager : public UObject {
+	GENERATED_BODY()
+	UExperimentManager(): MaxEpisodeTotalTime(1800.0f) {
+		OnEpisodeFinishedSuccessDelegate.AddDynamic(this, &ThisClass::OnEpisodeFinished);
+		OnEpisodeStartedSuccessDelegate.AddDynamic(this , &ThisClass::OnEpisodeStarted);
+		OnSubscribeStatusChangedDelegate.AddDynamic(this, &ThisClass::OnSubscribeStatusChanged);
+		OnProcessStopEpisodeResponseDelegate.AddDynamic(this, &ThisClass::ProcessStopEpisodeResponse);
+		OnProcessStartEpisodeResponseDelegate.AddDynamic(this, &ThisClass::ProcessStartEpisodeResponse);
+		// OnEpisodeFinishedFailedDelegate.Add(this, &ThisClass::) // todo
+		// OnEpisodeStartedFailedDelegate.Add(this, &ThisClass::) // todo
+		OnCaptureDelegate.AddDynamic(this, &ThisClass::OnCapture);
+	}
 public:
-	FExperimentTimer()
-	{
+	UPROPERTY(EditAnywhere)
+	TArray<int> ActivePlayers = {};
+	
+	UPROPERTY(EditAnywhere)
+	TArray<APawnMain*> ActivePlayersPawns = {};
+
+	UPROPERTY(EditAnywhere)
+	TArray<TObjectPtr<UExperimentMonitorData>> Data = {};
+
+	UPROPERTY(EditAnywhere)
+	TObjectPtr<UStopwatch> Stopwatch;
+
+	float MaxEpisodeTotalTime = 30.0f;
+
+	UPROPERTY()
+	int8 PlayerIndex = 0;
+		
+	/* experiment */
+	FNotifyOnExperimentFinished NotifyOnExperimentFinishedDelegate;
+	FOnTimedOut OnTimedOutDelegate;
+
+	/* subscriptions */
+	FSubscribeStatusChangedDelegate OnSubscribeStatusChangedDelegate;
+	FOnSubscribeResultDelegate      OnSubscribeResultDelegate;
+
+	/* on reset (temp) */
+	FOnResetResultDelegate OnResetResultDelegate;
+	
+	/* episode started */
+	FOnEpisodeStartedDelegate        OnEpisodeStartedDelegate;
+	FOnEpisodeStartedFailedDelegate  OnEpisodeStartedFailedDelegate;
+	FOnEpisodeStartedSuccessDelegate OnEpisodeStartedSuccessDelegate; 
+	FNotifyOnEpisodeStarted          NotifyOnEpisodeStarted;
+	FOnProcessStartEpisodeResponseDelegate OnProcessStartEpisodeResponseDelegate;
+	
+	FOnCapture OnCaptureDelegate;
+	FNotifyEpisodeStarted  NotifyEpisodeStarted;
+	FNotifyEpisodeFinished NotifyEpisodeFinished; 
+	
+	/* episode finished */
+	FOnProcessStopEpisodeResponseDelegate OnProcessStopEpisodeResponseDelegate; 
+	FOnEpisodeFinishedSuccessDelegate OnEpisodeFinishedSuccessDelegate;
+	FOnEpisodeFinishedFailedDelegate OnEpisodeFinishedFailedDelegate;
+	FNotifyOnEpisodeFinished NotifyOnEpisodeFinished;
+
+	/* flag to see if we are subscribed to CellworldGame */
+	UPROPERTY(EditAnywhere)
+		bool bSubscribed = false; 
+	UPROPERTY(EditAnywhere)
+		bool bInEpisode  = false; 
+
+	UFUNCTION()
+	void OnStartEpisodeFailed() {
+		UE_LOG(LogExperiment, Error, TEXT("[UExperimentManager::OnStartEpisodeFailed] Called"))
+		if (!IsInEpisode()) {
+			UE_LOG(LogExperiment, Error, TEXT("[UExperimentManager::OnStartEpisodeFailed] already in episode"))
+			return;
+		}
+	}
+	
+	UFUNCTION()
+	void OnFinishEpisodeFailed() {
+		UE_LOG(LogExperiment, Error, TEXT("[UExperimentManager::OnFinishEpisodeFailed] Called"))
+		if(!ensure(Stopwatch->IsValidLowLevelFast()) && Stopwatch->IsRunning()) { Stopwatch->Reset(); }
 		
 	}
-
-	void Start(const float DurationIn)
-	{
-			
+	UFUNCTION()
+	void OnSubscribeStatusChanged(const bool bSubscribeStatus) {
+		bSubscribed = bSubscribeStatus;
+		UE_LOG(LogExperiment, Log, TEXT("[OnSubscribeStatusChanged] bSubscribed = %i"),
+			bSubscribed)
 	}
 	
-	FTimerHandle Handle;
+	UFUNCTION()
+	void SetActivePlayerIndex(const int InPlayerIndex) {
+		UE_LOG(LogExperiment, Log,
+			TEXT("[UExperimentManager::SetActivePlayerIndex] Setting new PlayerIndex. Old: %i; New: %i"),
+			PlayerIndex, InPlayerIndex)
+		PlayerIndex = InPlayerIndex; 
+	}
 	
+	/* adds new player to ActivePlayer array.
+	 * @return Index of new player. -1 if Index is already used or error. 
+	 */
+	UFUNCTION()
+	int RegisterNewPlayer(APawnMain* InPawn, UExperimentMonitorData* InExperimentData) {
+		if (!InPawn->IsValidLowLevelFast() || !InExperimentData->IsValidLowLevelFast()) {
+			UE_LOG(LogExperiment, Error, TEXT("Failed to register player. APawn is not valid."))
+			return -1;
+		}
+		
+		const int NewPlayerIndex = Data.Add(InExperimentData);
+		UE_LOG(LogExperiment, Warning, TEXT("RegisterNewPlayer(): Registered new player: Player %i"), NewPlayerIndex)
+		return NewPlayerIndex;
+	}
+
+	UFUNCTION()
+	bool IsPlayerRegistered(const int InPlayerIndex) const {
+		if (!Data.IsValidIndex(InPlayerIndex)) {
+			UE_LOG(LogExperiment, Error,
+				TEXT("[IsPlayerRegistered]  InPlayerIndex not registered/valid."))
+			return false; 
+		}
+		return true; 
+	}
+
+	UFUNCTION()
+	bool IsExperimentDone(const int InPlayerIndex) const {
+		if (!IsPlayerRegistered(InPlayerIndex)) {
+			UE_LOG(LogExperiment, Error,
+				TEXT("Player %i: Can't determine if experiment is done. Player is not registered!"),
+				InPlayerIndex)
+			return false;
+		}
+
+		const float ElapsedTimeTotal = (Data)[InPlayerIndex]->GetEpisodesCompletedTime();
+		if (ElapsedTimeTotal >= MaxEpisodeTotalTime) {
+			UE_LOG(LogExperiment, Warning,
+				TEXT("Player %i: Experiment completed! Target time reached! PlayerTime: %0.2f; Target: %0.2f"),
+				InPlayerIndex, ElapsedTimeTotal, MaxEpisodeTotalTime)
+			return true; 
+		}
+		
+		UE_LOG(LogExperiment, Log, TEXT("Player %i: Experiment still not complete!  PlayerTime: %0.2f; Target: %0.2f"),
+				InPlayerIndex, ElapsedTimeTotal, MaxEpisodeTotalTime)
+		return false;
+	}
+
+	UFUNCTION()
+	void OnCapture() {
+		UE_LOG(LogExperiment, Log, TEXT("[UExperimentManager::OnCapture] Called"))
+
+		
+		// if done:
+		if (!IsInEpisode()) {
+			UE_LOG(LogExperiment, Error,TEXT("[UExperimentManager::OnCapture] Failed. not in episode"))
+			OnEpisodeFinishedFailedDelegate.Broadcast("not in episode");
+		}
+
+		OnEpisodeFinishedSuccessDelegate.Broadcast();
+	}
+	
+	UFUNCTION()
+	bool CreateTimer() {
+		Stopwatch = NewObject<UStopwatch>(this, UStopwatch::StaticClass());
+		if (!Stopwatch) {
+			UE_LOG(LogExperiment, Error, TEXT("[UExperimentManager::CreateTimer] Failed!"))
+			return false; 
+		}
+		UE_LOG(LogExperiment, Log, TEXT("[UExperimentManager::CreateTimer] OK"))
+		return true; 
+	}
+
+	UFUNCTION()
+	bool StopTimerEpisode(double& InElapsedTime) {
+		UE_LOG(LogExperiment, Log,
+				TEXT("[UExperimentManager::StopTimerEpisode] Called"));
+		// if (!ensure(InElapsedTime)) {
+		// 	UE_LOG(LogExperiment, Error,
+		// 		TEXT("[UExperimentManager::StopTimerEpisode] Failed, InElapsedTime  is NULL."));
+		// }
+		
+		if (!Stopwatch->IsValidLowLevel()) {
+			UE_LOG(LogExperiment, Error,
+				TEXT("[UExperimentManager::StopTimerEpisode] Failed, Stopwatch  is NULL."));
+			return false;
+		}
+
+		if (!Stopwatch->IsRunning()) {
+			UE_LOG(LogExperiment, Error,
+				TEXT("[UExperimentManager::StopTimerEpisode] Failed, Stopwatch not running."));
+			return false; 
+		}
+
+		InElapsedTime = Stopwatch->Lap();
+		Stopwatch->Reset();
+		UE_LOG(LogExperiment,Log,TEXT("[UExperimentManager::StopTimerEpisode] OK"));
+		return true;
+	}
+
+	UFUNCTION()
+	bool StartTimerEpisode() {
+		if (Stopwatch->IsValidLowLevel() && Stopwatch->IsRunning()) {
+			UE_LOG(LogExperiment, Warning, TEXT("[UExperimentManager::StartTimerEpisode] Can't start timer. bTimerRunning is True."))
+			return false;
+		}
+
+		Stopwatch = NewObject<UStopwatch>(this, UStopwatch::StaticClass());
+
+		if (!Stopwatch->IsValidLowLevel()) {
+			UE_LOG(LogExperiment, Error, TEXT("[UExperimentManager::StartTimerEpisode()] UStopwatch is NULL!"))
+			return false;
+		}
+		Stopwatch->Start(); 
+		UE_LOG(LogExperiment, Log, TEXT("[UExperimentManager::StartTimerEpisode] Started timer OK!"))
+		return true;
+	}
+
+	UFUNCTION()
+	bool IsInEpisode() const { return bInEpisode; }
+
+	UFUNCTION()
+	void SetInEpisode(const bool bNewInEpisode) {
+		UE_LOG(LogExperiment, Log,
+			TEXT("[UExperimentStatus::SetInEpisode] Old: %i; New: %i"),
+			bInEpisode, bNewInEpisode)
+		bInEpisode = bNewInEpisode;
+	}
+	
+	UFUNCTION()
+	void OnEpisodeStarted() {
+		UE_LOG(LogExperiment, Log, TEXT("IsInEpisode? %i"), IsInEpisode())
+		check(!IsInEpisode())
+		if(!ensure(this->StartTimerEpisode())) { return; }
+		UE_LOG(LogExperiment, Log, TEXT("[UExperimentManager::OnEpisodeStarted] setting: bInEpisode = true"))
+		SetInEpisode(true);
+		NotifyEpisodeStarted.Broadcast();
+	}
+
+	UFUNCTION()
+	// ReSharper disable once CppMemberFunctionMayBeConst
+	void ProcessStartEpisodeResponse() {
+		UE_LOG(LogExperiment, Log, TEXT("[UExperimentManager::ProcessStartEpisodeResponse] Called"))
+		if (IsInEpisode()) {
+			UE_LOG(LogExperiment, Log,
+				TEXT("[UExperimentManager::ProcessStartEpisodeResponse] Broadcasting: OnEpisodeStartedFailedDelegate"))
+			OnEpisodeStartedFailedDelegate.Broadcast("[ProcessStartEpisodeResponse] bInEpisode = true;");
+		} else {
+			UE_LOG(LogExperiment, Log,
+				TEXT("[UExperimentManager::ProcessStartEpisodeResponse] Broadcasting: OnEpisodeStartedSuccessDelegate"))
+			OnEpisodeStartedSuccessDelegate.Broadcast();
+		}
+	}
+
+	UFUNCTION()
+	// ReSharper disable once CppMemberFunctionMayBeConst
+	void ProcessStopEpisodeResponse() {
+		UE_LOG(LogExperiment, Log, TEXT("[UExperimentManager::ProcessStopEpisodeResponse] ProcessStopEpisodeResponse"))
+		if(!IsInEpisode()) {
+			OnEpisodeFinishedFailedDelegate.Broadcast("[ProcessStopEpisodeResponse] ur not in an episode gangly");
+			return;
+		}
+		UE_LOG(LogExperiment, Log,
+			TEXT("[UExperimentManager::ProcessStopEpisodeResponse] broadcasting: OnEpisodeFinishedSuccessDelegate"))
+		OnEpisodeFinishedSuccessDelegate.Broadcast(); // yipee
+	}
+	
+	/* adds new player to ActivePlayer array.
+	 * @param const int InPlayerIndex - Player index to modify 
+	 * @param const int InEpisodeDuration - Duration of completed episode
+	 * @return void. 
+	 */
+	// ReSharper disable once CppMemberFunctionMayBeConst
+	UFUNCTION()
+	void OnEpisodeFinished() {
+		UE_LOG(LogExperiment, Log, TEXT("[UExperimentManager::OnEpisodeFinished] Called"))
+		check(bInEpisode == true);
+		UE_LOG(LogExperiment, Log, TEXT("[UExperimentManager::OnEpisodeFinished] setting: bInEpisode = false"))
+		SetInEpisode(false);
+		NotifyEpisodeFinished.Broadcast();
+
+		// check if player is in list
+		if (!ensure(Data.IsValidIndex(PlayerIndex))) {
+			UE_LOG(LogExperiment, Error,
+				TEXT("[UExperimentManager::OnEpisodeFinished] Failed to modify ExperimentData. InPlayerIndex not valid."))
+			return; 
+		}
+
+		UE_LOG(LogExperiment, Log, TEXT("[UExperimentManager::OnEpisodeFinished] Player finished episode: %i"),
+			PlayerIndex)
+		
+		double EpisodeDurationTemp = 0.0f; 
+		if (!ensure(this->StopTimerEpisode(EpisodeDurationTemp))) {
+			UE_LOG(LogExperiment, Error, TEXT("[UExperimentManager::OnEpisodeFinished] StopTimerEpisode FAILED"))
+		}else {
+			UE_LOG(LogExperiment, Log, TEXT("[UExperimentManager::OnEpisodeFinished] StopTimerEpisode OK"))
+		}
+		
+		Data[PlayerIndex]->AddEpisodeAndCompletedTime(EpisodeDurationTemp);
+		
+		UE_LOG(LogExperiment, Log, TEXT("[UExperimentManager::OnEpisodeFinished] Added new episode to data! Player: %i, Duration: %0.3f. Total time: %0.2f."),
+					PlayerIndex, EpisodeDurationTemp, Data[PlayerIndex]->GetEpisodesCompletedTime())
+		
+		// check if we finished everything and if so, notify delegates 
+		if (IsExperimentDone(PlayerIndex)) {
+			NotifyOnExperimentFinishedDelegate.Broadcast(PlayerIndex);
+			UE_LOG(LogExperiment, Log,
+				TEXT("[UExperimentManager::OnEpisodeFinished] Player (%i) finished experiment! Broadcasting to delegates (NotifyOnExperimentFinishedDelegate)."),
+				PlayerIndex)
+		}
+
+	}
+	
+	/* Get FExperimentMonitorData by player index.
+	 * @param (const int) InPlayerIndex - Player index to get 
+	 * @return pointer to player's FExperimentMonitorData. 
+	 */
+	UExperimentMonitorData* GetDataByIndex() const {
+		if (!Data.IsValidIndex(PlayerIndex)) {
+			UE_LOG(LogExperiment, Error,
+				TEXT("[GetDataByIndex] Failed to get data. Player index not valid."))
+			return nullptr; 
+		}
+		return (Data.IsValidIndex(PlayerIndex)) ? (Data)[PlayerIndex] : nullptr;
+	}
+
 };
 
 USTRUCT(Blueprintable)
-struct FOcclusions
-{
+struct FOcclusions {
 	GENERATED_USTRUCT_BODY()
 public:
 
@@ -49,7 +383,6 @@ public:
 		bool bCurrentLocationsLoaded = false;
 	UPROPERTY(EditAnywhere)
 		bool bSpawnedAll = false;
-
 	UPROPERTY(EditAnywhere)
 		TArray<AOcclusion*> OcclusionAllArr {};
 	UPROPERTY(EditAnywhere)
@@ -66,7 +399,12 @@ public:
 		bAllLocationsLoaded = true;
 	}
 
-	void SetCurrentLocationsByIndex(const TArray<int32>& OcclusionIndexIn) {
+	// ReSharper disable once CppPassValueParameterByConstReference
+	void SetCurrentLocationsByIndex(const TArray<int32> OcclusionIndexIn) {
+		
+		UE_LOG(LogExperiment,Log,
+			TEXT("[FOcclusions::SetCurrentLocationsByIndex] Number of occlusions in configuration: %i"),
+			OcclusionIndexIn.Num())
 		OcclusionIDsIntArr = OcclusionIndexIn; 
 		bCurrentLocationsLoaded = true;
 	}
@@ -98,7 +436,7 @@ public:
 	}
 
 	void SetAllHidden(){
-		UE_LOG(LogExperiment,Warning,TEXT("[FOcclusions.SetAllHidden()]"))
+		UE_LOG(LogExperiment, Log, TEXT("[FOcclusions.SetAllHidden()]"))
 		for (AOcclusion* Occlusion : OcclusionAllArr) {
 			Occlusion->SetActorHiddenInGame(true);
 			Occlusion->SetActorEnableCollision(false);
@@ -115,31 +453,36 @@ public:
 	/* set visibility and collisions given an array of occlusion index/IDs */
 	void SetVisibilityArr(const TArray<int32> IndexArray, const bool bActorHiddenInGame, const bool bEnableCollision) {
 		for (int i = 0; i < IndexArray.Num(); i++) {
-			OcclusionAllArr[IndexArray[i]]->SetActorHiddenInGame(false);
-			OcclusionAllArr[IndexArray[i]]->SetActorEnableCollision(true);
+			OcclusionAllArr[IndexArray[i]]->SetActorHiddenInGame(bActorHiddenInGame);
+			OcclusionAllArr[IndexArray[i]]->SetActorEnableCollision(bEnableCollision);
 		}
 	}
 
 	/* Set visibility of ALREADY SPAWNED OCCLUSIONS */
-	void SetCurrentVisibility(const bool bVisibilityIn, const bool bEnableCollisonIn) {
+	void SetCurrentVisibility(const bool bVisibilityIn) {
 		for (int i = 0; i < OcclusionIDsIntArr.Num(); i++) {
 			OcclusionAllArr[OcclusionIDsIntArr[i]]->SetActorHiddenInGame(bVisibilityIn);
-			OcclusionAllArr[OcclusionIDsIntArr[i]]->SetActorEnableCollision(bEnableCollisonIn);
-			UE_LOG(LogTemp, Log, TEXT("SetCirrentVisibility (%i)"), i);
+			OcclusionAllArr[OcclusionIDsIntArr[i]]->SetActorEnableCollision(false);
+			UE_LOG(LogTemp, Log, TEXT("[FOcclusions::SetCurrentVisibility] (%i)"), i);
 		}
 	}
+
 };
 
 USTRUCT(Blueprintable)
 struct FExperimentHeaders
 {
 	GENERATED_BODY()
+	
 	/* headers */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = ExperimentHeaders)
 	FString PreyStep     = "prey_step";
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = ExperimentHeaders)
 	FString PredatorStep = "predator_step";
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = ExperimentHeaders)
+	FString OnCapture = "on_capture";
 };
 
 USTRUCT(Blueprintable)
@@ -169,35 +512,38 @@ public:
 	FOnExperimentStatusChanged OnExperimentStatusChangedEvent;
 	
 	void SetStatus(EExperimentStatus ExperimentStatusIn){
-		const FString StatusString = FExperimentInfo::GetStatusString(&ExperimentStatusIn);
-		UE_LOG(LogExperiment, Warning, TEXT("[SetStatus] New Status set: %s"), *StatusString);
+		UE_LOG(LogExperiment, Log, TEXT("[FExperimentInfo::SetStatus] New Status set: %i"), ExperimentStatusIn);
 		Status = ExperimentStatusIn;
 		OnExperimentStatusChangedEvent.Broadcast(ExperimentStatusIn);
 	}
-
-	static FString GetStatusString(EExperimentStatus* ExperimentStatusIn) {
-		if (!ExperimentStatusIn){ return FString("[FExperimentInfo.GetStatusString()] Invalid Pointer"); }
-		const TEnumAsByte<EExperimentStatus> ExperimentStatusInByted = *ExperimentStatusIn;
-		const FString EnumAsString = UEnum::GetValueAsString(ExperimentStatusInByted.GetValue());
-		int32 Index;
-		if (!EnumAsString.FindChar(TEXT(':'), Index)) { return FString("ConversionError"); }
-
-		return EnumAsString.Mid(Index + 2);
-	}
 };
+
+USTRUCT(Blueprintable)
+struct FServerInfo {
+	GENERATED_BODY()
+public:
+	FServerInfo() :
+		Port(4791),
+		IP(TEXT("192.168.1.199")) // main machine 
+		{}
 	
+	int Port;
+	FString IP;  // static vr backpack win11 PACKAGED ONLY
+};
+
 UCLASS()
-class CELLWORLD_VR_API AExperimentServiceMonitor : public AActor
-{ 
+class CELLWORLD_VR_API AExperimentServiceMonitor : public AActor { 
 	GENERATED_BODY()
 	
 public:	
 	AExperimentServiceMonitor();
 
+	UPROPERTY(EditAnywhere, Blueprintable)
+	FServerInfo ServerInfo = FServerInfo();
+	
 	/* ==== server stuff ==== */
-	const FString ServerIPMessage = "192.168.1.200";  // static vr backpack win11 PACKAGED ONLY
-	const int ServerPort	      = 4970;
-	const int TrackingPort	      = 4790;
+	// const FString ServerIP         = "192.168.1.199";  // static vr backpack win11 PACKAGED ONLY
+	// const int TrackingPort	           = 4791;
 	
 	/* DEBUG */
 	bool bTimerRunning = false;
@@ -205,8 +551,20 @@ public:
 	const float TimerFrequency = 0.5; 
 	float TimeElapsedTick = 0.0f;
 	uint32 FrameCountPrey = 0;
-	uint32 FrameCountPredator = 0; 
+	uint32 FrameCountPredator = 0;
 
+	UPROPERTY(EditAnywhere)
+	TObjectPtr<UStopwatch> Stopwatch;
+
+	UPROPERTY()
+	TObjectPtr<UExperimentManager> ExperimentManager;
+
+	/* called when the whole experiment is completed */
+	// FNotifyOnExperimentFinished NotifyOnExperimentFinishedDelegate;
+	
+	UFUNCTION()
+	void OnExperimentFinished(const int InPlayerIndex);
+	
 	FTimerHandle TimerHandle;
 	FTimerHandle* TimerHandlePtr = &TimerHandle;
 	FTimerManager TimerManager;
@@ -217,27 +575,13 @@ public:
 	UPROPERTY()
 		TObjectPtr<UMessageClient> TrackingClient;
 
-	/* routes */
+	/* Message Routes */
+	UPROPERTY()
+		TObjectPtr<UMessageRoute> MessageRouteOnCapture;
 	UPROPERTY()
 		TObjectPtr<UMessageRoute> MessageRoutePredator;
-	UPROPERTY()
-		TObjectPtr<UMessageRoute> MessageRoutePrey;
-	UPROPERTY()
-		TObjectPtr<UMessageRoute> MessageRoute;
-	UPROPERTY()
-		TObjectPtr<UMessageRoute> TrackingServiceRoute;
-	UPROPERTY()
-		TObjectPtr<UMessageRoute> TrackingServiceRoutePrey; 
-	UPROPERTY()
-		TObjectPtr<UMessageRoute> TrackingServiceRoutePredator; 
-	UPROPERTY()
-		TObjectPtr<UMessageRoute> RouteOnEpisodeStarted;
-	UPROPERTY()
-		TObjectPtr<UMessageRoute> RoutePredatorStep;
-	UPROPERTY()
-		TObjectPtr<UMessageRoute> RouteAgent;
 
-	/* ==== requests ==== */
+	/* Requests */
 	UPROPERTY()
 		TObjectPtr<URequest> StartExperimentRequest;
 	UPROPERTY()
@@ -252,6 +596,8 @@ public:
 		TObjectPtr<URequest> TrackingSubscribeRequest;
 	UPROPERTY()
 		TObjectPtr<URequest> GetOcclusionsRequest;
+	UPROPERTY()
+		TObjectPtr<URequest> GetOcclusionLocationRequest;
 	UPROPERTY()
 		TObjectPtr<URequest> ResetRequest;
 
@@ -271,7 +617,10 @@ public:
 	const float MapLength = 235.185;
 	const float PredatorScaleFactor = 0.5f; 
 	float WorldScale      = 1.0f;
-
+	
+	/* experiment params */
+	const float PositionSamplingRate = 90.0f; 
+		
 	/* ==== setup ==== */
 	bool SpawnAndPossessPredator();
 	UPROPERTY()
@@ -283,36 +632,33 @@ public:
 	static bool ValidateExperimentName(const FString& ExperimentNameIn);
 	static bool Disconnect(UMessageClient* ClientIn);
 	
-	bool StartExperiment(const FString& ExperimentNameIn);
 	bool StopExperiment(const FString& ExperimentNameIn);
 	
 	UFUNCTION(BlueprintCallable, Category = Experiment)
-		bool StartEpisode(UMessageClient* ClientIn, const FString& ExperimentNameIn);
+		bool StartEpisode();
 	UFUNCTION(BlueprintCallable, Category = Experiment)
-		bool StopEpisode();
-
-	UFUNCTION(BlueprintCallable, Category = Experiment)
-		bool StartTimerEpisode(const float DurationIn, FTimerHandle& TimerHandleIn);
-	UFUNCTION(BlueprintCallable, Category = Experiment)
-		bool StopTimerEpisode(FTimerHandle& TimerHandleIn);
-
+		bool StopEpisode(const bool bForce = false);
 	UPROPERTY(EditAnywhere)
 		TObjectPtr<APawnMain> PlayerPawnActive = nullptr;
 	UPROPERTY(EditAnywhere)
 		TObjectPtr<APawnMain> PlayerPawn = nullptr;
+	UPROPERTY(EditAnywhere)
+		int PlayerIndex = -1; 
 
 	/* ==== helper functions  ==== */
 	bool ValidateLevel(UWorld* InWorld, const FString InLevelName);
-	bool GetPlayerPawn();
+	bool SetupPlayerUpdatePosition();
 	
 	void SelfDestruct(const FString InErrorMessage);
 	
 	/* ==== delegates ==== */
 	UPROPERTY()
 		FOnExperimentStatusChanged OnExperimentStatusChangedEvent;
+
+	/* Called when status is changed. */
 	UFUNCTION()
-	void OnStatusChanged(const EExperimentStatus ExperimentStatusIn);
-	
+		void OnStatusChanged(const EExperimentStatus ExperimentStatusIn);
+
 	UFUNCTION(BlueprintCallable, Category = Experiment)
 		bool SubscribeToTracking();
 	UFUNCTION(BlueprintCallable, Category = Experiment)
@@ -320,58 +666,68 @@ public:
 	UFUNCTION(BlueprintCallable, Category = Experiment)
 		void HandleSubscribeToTrackingTimedOut();
 	UFUNCTION(BlueprintCallable, Category = Experiment)
-		void RequestRemoveDelegates(URequest* RequestIn);
+		void RequestRemoveDelegates(URequest* InRequest, const FString& InRequestString = "");
 	
 	/* update predator stuff */
 	UFUNCTION()
 		void HandleUpdatePredator(const FMessage MessageIn);
 	UFUNCTION()
-		void OnTimerFinished();
+		void HandleOnCapture(const FMessage MessageIn);
 	UFUNCTION()
 		float GetTimeRemaining() const;
-	float GetTimeElapsed() const;
-
+ 
 	/* experiment service */
 	UFUNCTION()
 		void HandleStartEpisodeRequestResponse(const FString response);
 	UFUNCTION()
 		bool ResetTrackingAgent();
 	UFUNCTION()
+		void HandleStartEpisodeError(const FString InMessage = "");
+	UFUNCTION()
 		void HandleResetRequestResponse(const FString InResponse);
 	UFUNCTION()
 		void HandleResetRequestTimedOut();
+	// will force a full system restart 
+	UFUNCTION()
+		void OnTimedOut(const FString InMessage);
+	UFUNCTION()
+		void OnSubscribeResult(bool bSubscribeResult);
+	UFUNCTION()
+		void OnResetResult(bool bResetResult);
 	UFUNCTION()
 		void HandleStartEpisodeRequestTimedOut();
 	UFUNCTION()
 		void HandleStopEpisodeRequestResponse(const FString response);
 	UFUNCTION()
 		void HandleStopEpisodeRequestTimedOut();
-	
-	/* tracking service */
+	UFUNCTION()
+		void HandleStopEpisodeError(const FString InMessage = ""); 
+	UFUNCTION()
+		void SetPredatorIsVisible(bool bNewVisibility);
 
-	/* Experiment */
+	/* gets location of all possible occlusions in cellworld  */
 	UFUNCTION()
-		void HandleStartExperimentResponse(const FString ResponseIn);
+		bool SendGetOcclusionLocationsRequest();
 	UFUNCTION()
-		void HandleStartExperimentTimedOut();
+		void HandleGetOcclusionLocationsResponse(const FString ResponseIn);
 	UFUNCTION()
-		URequest* SendStartExperimentRequest(UMessageClient* ClientIn, FString ExperimentNameIn);
+		void HandleGetOcclusionLocationsTimedOut();
 	UFUNCTION()
-		URequest* SendFinishExperimentRequest(const FString& ExperimentNameIn);
+		bool SendGetOcclusionsRequest();
 	UFUNCTION()
-		void HandleStopExperimentResponse(const FString ResponseIn);
+		void HandleGetOcclusionsResponse(const FString ResponseIn);
 	UFUNCTION()
-		void HandleStopExperimentTimedOut();
+		void HandleGetOcclusionsTimedOut();
 	UFUNCTION()
 		void HandleUnroutedMessage(const FMessage InMessage);
-	UFUNCTION()
-		bool IsExperimentActive(const FString ExperimentNameIn);
-
+	
 	/* update agents */
+	UPROPERTY(EditAnywhere)
+		bool bCanUpdatePrey = false;
 	UFUNCTION()
 		void UpdatePredator(const FMessage& InMessage);
 	UFUNCTION()
-		void UpdatePreyPosition(const FVector Location);
+		void UpdatePreyPosition(const FVector InVector, const FRotator InRotation);
 
 	/* experiment control */
 	UPROPERTY(BlueprintReadWrite)
@@ -384,29 +740,23 @@ public:
 	bool bIsOcclusionLoaded = false;
 
 	UFUNCTION()
-		URequest* SendGetOcclusionLocationsRequest();
-	UFUNCTION()
-		void HandleGetOcclusionLocationsResponse(const FString ResponseIn);
-	UFUNCTION()
-		void HandleGetOcclusionLocationsTimedOut();
-	UFUNCTION()
-		bool SendGetOcclusionsRequest();
-	UFUNCTION()
-		void HandleGetOcclusionsResponse(const FString ResponseIn);
-	UFUNCTION()
-		void HandleGetOcclusionsTimedOut();
-	UFUNCTION()
-		void HandleOcclusionLocation(const FMessage MessageIn);
-	UFUNCTION()
 		static bool ConnectToServer(UMessageClient* ClientIn, const int MaxAttemptsIn, const FString& IPAddressIn, const int PortIn);
 	UFUNCTION()
 		bool RoutePredatorMessages();
 	UFUNCTION()
-		bool RemoveDelegatesPredatorRoute();
-
-	bool Test();
-
+		bool RouteOnCapture();
+	bool SetupConnections();
+	UFUNCTION()
+		void OnEpisodeStarted();
+	UFUNCTION()
+		void ResetWorldState();
+	UFUNCTION()
+		void OnEpisodeFinished();
+	UFUNCTION(BlueprintCallable)
+		void SetOcclusionVisibility(const bool bNewVisibility);
 protected:
+	bool Test();
+	
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
 	const FString SubjectName = "vr_dude";
@@ -417,4 +767,5 @@ public:
 	virtual void Tick(float DeltaTime) override;
 	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 
+	
 };

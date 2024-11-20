@@ -2,14 +2,13 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/GameModeBase.h"
-#include "ConfigManager.h"
+#include "MiscUtils/Timer/EventTimer.h"
 #include "PawnMain.h"
 #include "PredatorController/ExperimentServiceMonitor.h"
 #include "GameModeMain.generated.h"
 
 UCLASS()
-class CELLWORLD_VR_API AGameModeMain : public AGameModeBase
-{
+class CELLWORLD_VR_API AGameModeMain : public AGameModeBase {
 public:
 	AGameModeMain();
 	
@@ -17,13 +16,22 @@ public:
 	virtual void EndGame();
 	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Debug")
-	bool bUseVR = false;
+	bool bUseVR = true;
+	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Debug")
 	bool bSpawnExperimentService = true;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Debug")
+	bool bUpdateHUDTimer = false;
+
+	void ExecuteConsoleCommand(const FString& InCommand);
 	
 	/* world and coordinate system stuff */
 	AActor* GetLevelActorFromName(const FName& ActorNameIn) const;
-	
+
+	UPROPERTY(EditAnywhere)
+	TObjectPtr<UEventTimer> HUDTimer;  
+
 	/* debug */
 	TObjectPtr<UClass> PawnClassToSpawn;
 	UPROPERTY(EditAnywhere)
@@ -53,7 +61,8 @@ public:
 	void StopLoadingScreen();
 
 	/* player HUD bindings to ExperimentServiceMonitor */
-	void OnUpdateHUDTimer();
+	UFUNCTION()
+		void OnUpdateHUDTimer();
 	UFUNCTION()
 		void OnExperimentStatusChanged(EExperimentStatus ExperimentStatusIn);
 

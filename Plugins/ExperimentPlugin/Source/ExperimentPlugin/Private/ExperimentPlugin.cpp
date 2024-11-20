@@ -3,6 +3,7 @@
 #include "ExperimentPlugin.h"
 
 #define LOCTEXT_NAMESPACE "FExperimentPluginModule"
+DEFINE_LOG_CATEGORY(LogExperimentPlugin);
 
 void FExperimentPluginModule::StartupModule()
 {

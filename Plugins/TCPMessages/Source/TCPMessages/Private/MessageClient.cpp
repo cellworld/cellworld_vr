@@ -64,7 +64,10 @@ URequest* UMessageClient::SendRequest(const FString& Header, const FString& Body
 	FMessage request_message(Header);
 	request_message.body = Body;
 	PendingRequests.Add(request_message.id, request);
-	SendMessage(request_message);
+	if (!SendMessage(request_message)) {
+		UE_LOG(LogTemp, Error, TEXT("UMessageClient::SendRequest Failed Failed at SendMessage()"))	
+		return nullptr;
+	}
 	return request;
 }
 
@@ -94,8 +97,7 @@ bool UMessageClient::Send(const FString& MessageString) {
 	const TCHAR* seriallizedChar = MessageString.GetCharArray().GetData();
 	int32 size = FCString::Strlen(seriallizedChar) + 1;
 	int32 sent = 0;
-	if (!Host->Send((uint8*)TCHAR_TO_UTF8(seriallizedChar), size, sent))
-	{
+	if (!Host->Send((uint8*)TCHAR_TO_UTF8(seriallizedChar), size, sent)) {
 		Disconnect();
 		return false;
 	}

@@ -1,6 +1,6 @@
 #include "PawnDebug.h"
 #include "GameModeMain.h"
-#include "HeadMountedDisplayFunctionLibrary.h"
+//#include "HeadMountedDisplayFunctionLibrary.h"
 #include "HeadMountedDisplayTypes.h"
 #include "IXRTrackingSystem.h"
 
@@ -74,7 +74,7 @@ void APawnDebug::OnMovementDetected()
 
 void APawnDebug::ResetOrigin()
 {
-	UHeadMountedDisplayFunctionLibrary::SetTrackingOrigin(EHMDTrackingOrigin::Floor);
+	// UHeadMountedDisplayFunctionLibrary::SetTrackingOrigin(EHMDTrackingOrigin::Floor);
 
 	//FRotator orientation;
 	//GEngine->XRSystem->GetHMDDevice()->EnableHMD();

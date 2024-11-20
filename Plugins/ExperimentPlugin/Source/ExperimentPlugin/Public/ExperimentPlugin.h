@@ -5,6 +5,8 @@
 #include "CoreMinimal.h"
 #include "Modules/ModuleManager.h"
 
+DECLARE_LOG_CATEGORY_EXTERN(LogExperimentPlugin, Log, All);
+
 
 class FExperimentPluginModule : public IModuleInterface
 {
