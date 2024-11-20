@@ -2,12 +2,9 @@
 
 
 #include "GameStates/BotEvadeGameState.h"
-ABotEvadeGameState::ABotEvadeGameState() {
-	bReplicates = true;
-}
+ABotEvadeGameState::ABotEvadeGameState() { bReplicates = true; }
 
-void ABotEvadeGameState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
-{
+void ABotEvadeGameState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
 	// todo: add variables for replication
