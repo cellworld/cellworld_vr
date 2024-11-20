@@ -3,7 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "GameFramework/GameModeBase.h"
+#include "GameFramework/GameMode.h"
 #include "BotEvadeModule/Public/CharacterComponents/PlayerCharacterDesktop.h"
 #include "BotEvadeModule/Public/CharacterComponents/PlayerCharacterVR.h"
 #include "BotEvadeGameMode.generated.h"
@@ -14,8 +14,7 @@ DECLARE_LOG_CATEGORY_EXTERN(LogBotEvadeGameMode, Log, All);
  * 
  */
 UCLASS()
-class BOTEVADEMODULE_API ABotEvadeGameMode : public AGameModeBase
-{
+class BOTEVADEMODULE_API ABotEvadeGameMode : public AGameMode {
 	GENERATED_BODY()
 
 public:
@@ -27,13 +26,9 @@ public:
 	virtual void StartPlay() override;
 	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 	virtual void Tick(float DeltaTime) override;
+	virtual void PostLogin(APlayerController* NewPlayer) override;
 
-	/* player components */
-	UPROPERTY(EditAnywhere)
-	TObjectPtr<APlayerCharacterDesktop> PlayerCharacterDesktop;
+	void HandleStartingNewPlayer_Implementation(APlayerController* NewPlayer) override;
 
-	UPROPERTY(EditAnywhere)
-	TObjectPtr<APlayerCharacterVR> PlayerCharacterVR;
-	
-	/* experiment components */
+	/* testing */
 };

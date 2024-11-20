@@ -19,23 +19,16 @@ ADoorExperiment::ADoorExperiment()
     CubeMesh->SetupAttachment(RootComponent);
 
     //RootComponent = CollisionBox;
-
-
-
 }
 
 // Called when the game starts or when spawned
-void ADoorExperiment::BeginPlay()
-{
+void ADoorExperiment::BeginPlay() {
 	Super::BeginPlay();
-	
 }
 
 // Called every frame
-void ADoorExperiment::Tick(float DeltaTime)
-{
+void ADoorExperiment::Tick(float DeltaTime) {
 	Super::Tick(DeltaTime);
-
 }
 
 void ADoorExperiment::OnOverlapBegin(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
