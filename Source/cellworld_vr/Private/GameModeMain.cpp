@@ -132,26 +132,6 @@ void AGameModeMain::InitGameState()
 	Super::InitGameState();
 }
 
-void AGameModeMain::SpawnGetCLMonitorComponentActor()
-{
-	/*FTransform tSpawnTransform;
-	FVector TempLoc = { 0.0f, 0.0f, 0.0f };
-	FRotator TempRot = tSpawnTransform.GetRotation().Rotator();
-
-	FActorSpawnParameters SpawnInfo;
-	SpawnInfo.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
-	GetCLMonitorComponentActor = Cast<AGeCLMonitorComponentActor>(GetWorld()->SpawnActor(AGetCLMonitorComponentActor::StaticClass(), &TempLoc, &TempRot, SpawnInfo));*/
-}
-
-/* spawn all logging actors, some may contain threads but they handle themselves. 
-* right now, there's only one, but im gonna call this function to maintain consitency.
-*/
-
-void AGameModeMain::SpawnAllLoggingActor() {
-	/* eye-tracker */
-	//AGameModeMain::SpawnGetCLMonitorComponentActor();
-}
-
 void AGameModeMain::StartLoadingScreen() {
 	UAsyncLoadingScreenLibrary::SetEnableLoadingScreen(true);
 }
@@ -160,18 +140,9 @@ void AGameModeMain::StopLoadingScreen() {
 	UAsyncLoadingScreenLibrary::StopLoadingScreen();
 }
 
-void AGameModeMain::OnUpdateHUDTimer() {
-	UE_LOG(LogExperiment, Log, TEXT("[AGameModeMain::OnUpdateHUDTimer]"))
-}
-
 // todo: bug - either playerpawn or enum as string is not valid
 void AGameModeMain::OnExperimentStatusChanged(const EExperimentStatus ExperimentStatusIn) {
 	UE_LOG(LogExperiment, Log, TEXT("[AGameModeMain::OnExperimentStatusChanged]"))
-}
-
-void AGameModeMain::OnTimerFinished() {
-	if (GEngine) GEngine->AddOnScreenDebugMessage(-1, 3.0f, FColor::Red,
-	                                              FString::Printf(TEXT("[AGameModeMain::OnTimerFinished()]!")));
 }
 
 void AGameModeMain::StartPlay() {
@@ -205,17 +176,6 @@ void AGameModeMain::StartPlay() {
 		this->SpawnExperimentServiceMonitor();
 		this->ExecuteConsoleCommand("netprofile enable");
 		this->ExecuteConsoleCommand("stat UNIT");
-
-		// if (bUpdateHUDTimer) {
-		// 	UE_LOG(LogExperiment, Log, TEXT("[AGameModeMain::StartPlay] Running HUD update timer!"))
-		// 	HUDTimer = NewObject<UEventTimer>(this, UEventTimer::StaticClass());
-		// 	if (HUDTimer) {
-		// 		HUDTimer->SetRateHz(10.0f);
-		// 		HUDTimer->bLoop = true;
-		// 		HUDTimer->OnTimerFinishedDelegate.AddDynamic(this, &AGameModeMain::OnUpdateHUDTimer);
-		// 		if (HUDTimer->Start()) { UE_LOG(LogExperiment, Log, TEXT("[AGameModeMain::StartPlay] Started v2 timer for OnUpdateHUDTimer")); } 
-		// 	}
-		// }
 	} else {
 		UE_LOG(LogExperiment, Warning, TEXT("[AGameModeMain::StartPlay] Not spawning Experiment Service!"));
 	}

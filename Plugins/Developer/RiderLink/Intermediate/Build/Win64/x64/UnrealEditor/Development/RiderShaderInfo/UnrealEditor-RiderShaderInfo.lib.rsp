@@ -7,5 +7,5 @@
 /IGNORE:4221
 /NODEFAULTLIB
 "C:\Users\MacIverLab\Research\BotEvade\cellworld_vr\Plugins\Developer\RiderLink\Intermediate\Build\Win64\x64\UnrealEditor\Development\RiderShaderInfo\Module.RiderShaderInfo.cpp.obj"
-"C:\Users\MacIverLab\Research\BotEvade\cellworld_vr\Plugins\Developer\RiderLink\Intermediate\Build\Win64\x64\UnrealEditor\Development\RiderShaderInfo\Default.rc2.res"
+"..\Intermediate\Build\Win64\x64\UnrealEditor\Development\Default.rc2.res"
 /OUT:"C:\Users\MacIverLab\Research\BotEvade\cellworld_vr\Plugins\Developer\RiderLink\Intermediate\Build\Win64\x64\UnrealEditor\Development\RiderShaderInfo\UnrealEditor-RiderShaderInfo.lib"

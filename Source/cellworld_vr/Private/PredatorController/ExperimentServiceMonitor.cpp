@@ -409,6 +409,8 @@ void AExperimentServiceMonitor::HandleUnroutedMessage(const FMessage InMessage) 
 /* gets player pawn from world */
 bool AExperimentServiceMonitor::SetupPlayerUpdatePosition() {
 	if (!GetWorld()) { return false; }
+	UE_LOG(LogExperiment, Warning, TEXT("[AExperimentServiceMonitor::SetupPlayerUpdatePosition] FORCING RETURN TRUE"))
+	return true;
 
 	APawn* Pawn = UGameplayStatics::GetPlayerPawn(GetWorld(), 0);
 	if (!Pawn) {
@@ -479,10 +481,6 @@ void AExperimentServiceMonitor::HandleSubscribeToTrackingTimedOut() {
 	}
 
 	this->RequestRemoveDelegates(TrackingSubscribeRequest, "RequestRemoveDelegates");
-	if (PlayerPawn && PlayerPawn->PlayerHUD) {
-		PlayerPawn->PlayerHUD->SetNotificationText("SubscribeToTracking() timed out!");
-		PlayerPawn->PlayerHUD->SetNotificationVisibility(ESlateVisibility::Visible);
-	}
 
 	RequestRemoveDelegates(TrackingSubscribeRequest, "TrackingSubscribeRequest");
 	TrackingSubscribeRequest->RemoveFromRoot();
@@ -814,6 +812,8 @@ bool AExperimentServiceMonitor::SetupConnections() {
 	return true;
 }
 
+
+
 bool AExperimentServiceMonitor::Test() {
 	TrackingClient = this->CreateNewClient();
 
@@ -837,6 +837,8 @@ bool AExperimentServiceMonitor::Test() {
 	if (!ensure(this->SubscribeToTracking())) { return false; }
 
 	/* Bind to Pawn's OnMovementDetected() */
+
+	// todo: make unique function that will be called from ABotEvadeGameMode::
 	if (!this->SetupPlayerUpdatePosition()) {
 		UE_LOG(LogExperiment, Error, TEXT("[AExperimentServiceMonitor::Test] Player Pawn NOT found!"));
 		return false;
@@ -844,8 +846,9 @@ bool AExperimentServiceMonitor::Test() {
 
 	UExperimentMonitorData* NewExperimentMonitorData = NewObject<UExperimentMonitorData>(this);
 	if (ExperimentManager) {
-		PlayerIndex = ExperimentManager->RegisterNewPlayer(PlayerPawn, NewExperimentMonitorData);
-		ExperimentManager->SetActivePlayerIndex(PlayerIndex);
+		// todo: make unique function
+		// PlayerIndex = ExperimentManager->RegisterNewPlayer(PlayerPawn, NewExperimentMonitorData);
+		// ExperimentManager->SetActivePlayerIndex(PlayerIndex);
 	}
 	else {
 		UE_LOG(LogExperiment, Error,

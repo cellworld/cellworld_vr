@@ -35,7 +35,7 @@
 /NODEFAULTLIB:"LIBCPD"
 /FUNCTIONPADMIN:6
 "C:\Users\MacIverLab\Research\BotEvade\cellworld_vr\Plugins\Developer\RiderLink\Intermediate\Build\Win64\x64\UnrealEditor\Development\RiderGameControl\Module.RiderGameControl.cpp.obj"
-"C:\Users\MacIverLab\Research\BotEvade\cellworld_vr\Plugins\Developer\RiderLink\Intermediate\Build\Win64\x64\UnrealEditor\Development\RiderGameControl\Default.rc2.res"
+"..\Intermediate\Build\Win64\x64\UnrealEditor\Development\Default.rc2.res"
 "C:\Users\MacIverLab\Research\BotEvade\cellworld_vr\Plugins\Developer\RiderLink\Intermediate\Build\Win64\x64\UnrealEditor\Development\RD\UnrealEditor-RD.lib"
 "C:\Users\MacIverLab\Research\BotEvade\cellworld_vr\Plugins\Developer\RiderLink\Intermediate\Build\Win64\x64\UnrealEditor\Development\RiderLink\UnrealEditor-RiderLink.lib"
 "..\Intermediate\Build\Win64\x64\UnrealEditor\Development\HeadMountedDisplay\UnrealEditor-HeadMountedDisplay.lib"

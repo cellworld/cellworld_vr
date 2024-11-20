@@ -3,7 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "MainMenuWidget.h"
+#include "MainMenuWidgetBasic.h"
 #include "cellworld_vr/cellworld_vr.h"
 #include "Components/WidgetComponent.h"
 #include "GameFramework/Actor.h"
@@ -38,7 +38,7 @@ public:
 	}
 
 	UPROPERTY(EditAnywhere)
-	TObjectPtr<UMainMenuWidget> MainMenuWidget; 
+	TObjectPtr<UMainMenuWidgetBasic> MainMenuWidget; 
 
 	UPROPERTY(EditAnywhere)
 	TObjectPtr<UWidgetComponent> MenuWidgetComponent; 

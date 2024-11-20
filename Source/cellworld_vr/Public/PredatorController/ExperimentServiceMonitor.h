@@ -7,10 +7,7 @@
 #include "MessageClient.h"
 #include "ExperimentUtils.h"
 #include "PawnMain.h"
-<<<<<<< HEAD
-=======
 #include "ExperimentComponents/ExperimentMonitorData.h"
->>>>>>> main
 #include "ExperimentPlugin/Public/Structs.h"
 #include "ExperimentComponents/Occlusion.h"
 #include "DrawDebugHelpers.h"

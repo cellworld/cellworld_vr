@@ -203,125 +203,35 @@ void AMenuCharacterVR::OnCreateSessionComplete(FName SessionName, bool bWasSucce
 }
 
 void AMenuCharacterVR::OnFindSessionsComplete(bool bWasSuccessful) {
-
 	UE_LOG(LogTemp, Error, TEXT("[AMenuCharacterVR::OnFindSessionsComplete] OnFindSessionComplete->bWasSuccessful = %i"), bWasSuccessful)
-	// if (GEngine) {
-	// 	GEngine->AddOnScreenDebugMessage(
-	// 		-1,
-	// 		5.0f,
-	// 		FColor::Cyan,
-	// 		FString::Printf(TEXT("OnFindSessionComplete->bWasSuccessful: %i"), bWasSuccessful)
-	// 	);
-	// }
-	//
-	// if (!OnlineSessionInterface.IsValid())
-	// {
-	// 	UE_LOG(LogTemp, Error, TEXT("[AMenuCharacterVR::OnFindSessionsComplete] OnlineSessionInterface not valid!"))
-	// 	return;
-	// }
-	//
-	// const int NumSessionsFound = SessionSearch->SearchResults.Num(); 
-	// if (GEngine) {
-	// 	GEngine->AddOnScreenDebugMessage(
-	// 		-1,
-	// 		5.0f,
-	// 		FColor::Cyan,
-	// 		FString::Printf(TEXT("Found Sessions: %i"), NumSessionsFound)
-	// 	);
-	// }
-	//
-	// for (auto Result : SessionSearch->SearchResults) {
-	// 	FString Id = Result.GetSessionIdStr();
-	// 	FString User = Result.Session.OwningUserName;
-	// 	FString MatchType;
-	// 	Result.Session.SessionSettings.Get(FName("MatchType"), MatchType);
-	//
-	// 	if (GEngine) {
-	// 		GEngine->AddOnScreenDebugMessage(
-	// 			-1,
-	// 			5.0f,
-	// 			FColor::Cyan,
-	// 			FString::Printf(TEXT("Id: %s, User: %s"), *Id, *User)
-	// 		);
-	// 	}
-	//
-	// 	if (MatchType == FString("FreeForAll")) {
-	// 		if (GEngine) {
-	// 			GEngine->AddOnScreenDebugMessage(
-	// 				-1,
-	// 				5.f,
-	// 				FColor::Cyan,
-	// 				FString::Printf(TEXT("Joining Match Type: %s"), *MatchType)
-	// 			);
-	// 		}
-	//
-	// 		OnlineSessionInterface->AddOnJoinSessionCompleteDelegate_Handle(JoinSessionCompleteDelegate);
-	//
-	// 		const ULocalPlayer* LocalPlayer = GetWorld()->GetFirstLocalPlayerFromController();
-	// 		OnlineSessionInterface->JoinSession(*LocalPlayer->GetPreferredUniqueNetId(), NAME_GameSession, Result);
-	// 	}
-	// }
 }
 
-void AMenuCharacterVR::OnJoinSessionComplete(FName SessionName, EOnJoinSessionCompleteResult::Type Result)
-{
-	// if (!OnlineSessionInterface.IsValid()) {
-	// 	return;
-	// }
-	// FString Address;
-	// if (OnlineSessionInterface->GetResolvedConnectString(NAME_GameSession, Address)) {
-	// 	if (GEngine)
-	// 	{
-	// 		GEngine->AddOnScreenDebugMessage(
-	// 			-1,
-	// 			5.f,
-	// 			FColor::Yellow,
-	// 			FString::Printf(TEXT("Connect string: %s"), *Address)
-	// 		);
-	// 	}
-	//
-	// 	APlayerController* PlayerController = GetGameInstance()->GetFirstLocalPlayerController();
-	// 	if (PlayerController) {
-	// 		PlayerController->ClientTravel(Address, ETravelType::TRAVEL_Absolute);
-	// 	}
-	// }
+void AMenuCharacterVR::OnJoinSessionComplete(FName SessionName, EOnJoinSessionCompleteResult::Type Result) {
 }
 
-void AMenuCharacterVR::OnResetVR()
-{
-	// If MenuSystem is added to a project via 'Add Feature' in the Unreal Editor the dependency on HeadMountedDisplay in MenuSystem.Build.cs is not automatically propagated
-	// and a linker error will result.
-	// You will need to either:
-	//		Add "HeadMountedDisplay" to [YourProject].Build.cs PublicDependencyModuleNames in order to build successfully (appropriate if supporting VR).
-	// or:
-	//		Comment or delete the call to ResetOrientationAndPosition below (appropriate if not supporting VR)
+void AMenuCharacterVR::OnResetVR() {
 	UHeadMountedDisplayFunctionLibrary::ResetOrientationAndPosition();
 }
 
-void AMenuCharacterVR::TouchStarted(ETouchIndex::Type FingerIndex, FVector Location)
-{
-		Jump();
+void AMenuCharacterVR::TouchStarted(ETouchIndex::Type FingerIndex, FVector Location) {
+	Jump();
 }
 
-void AMenuCharacterVR::TouchStopped(ETouchIndex::Type FingerIndex, FVector Location)
-{
-		StopJumping();
+void AMenuCharacterVR::TouchStopped(ETouchIndex::Type FingerIndex, FVector Location) {
+	StopJumping();
 }
 
-void AMenuCharacterVR::TurnAtRate(float Rate)
-{
+void AMenuCharacterVR::TurnAtRate(float Rate) {
 	// calculate delta for this frame from the rate information
 	AddControllerYawInput(Rate * BaseTurnRate * GetWorld()->GetDeltaSeconds());
 }
 
-void AMenuCharacterVR::LookUpAtRate(float Rate)
-{
+void AMenuCharacterVR::LookUpAtRate(float Rate) {
 	// calculate delta for this frame from the rate information
 	AddControllerPitchInput(Rate * BaseLookUpRate * GetWorld()->GetDeltaSeconds());
 }
 
-void AMenuCharacterVR::MoveForward(float Value)
-{
+void AMenuCharacterVR::MoveForward(float Value) {
 	if ((Controller != nullptr) && (Value != 0.0f))
 	{
 		// find out which way is forward
@@ -334,8 +244,7 @@ void AMenuCharacterVR::MoveForward(float Value)
 	}
 }
 
-void AMenuCharacterVR::MoveRight(float Value)
-{
+void AMenuCharacterVR::MoveRight(float Value) {
 	if ( (Controller != nullptr) && (Value != 0.0f) )
 	{
 		// find out which way is right

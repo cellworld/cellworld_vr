@@ -89,7 +89,7 @@
 "C:\Users\MacIverLab\Research\BotEvade\cellworld_vr\Plugins\Developer\RiderLink\Intermediate\Build\Win64\x64\UnrealEditor\Development\RD\fmt.cpp.obj"
 "C:\Users\MacIverLab\Research\BotEvade\cellworld_vr\Plugins\Developer\RiderLink\Intermediate\Build\Win64\x64\UnrealEditor\Development\RD\spdlog.cpp.obj"
 "C:\Users\MacIverLab\Research\BotEvade\cellworld_vr\Plugins\Developer\RiderLink\Intermediate\Build\Win64\x64\UnrealEditor\Development\RD\stdout_sinks.cpp.obj"
-"C:\Users\MacIverLab\Research\BotEvade\cellworld_vr\Plugins\Developer\RiderLink\Intermediate\Build\Win64\x64\UnrealEditor\Development\RD\Default.rc2.res"
+"..\Intermediate\Build\Win64\x64\UnrealEditor\Development\Default.rc2.res"
 "..\Intermediate\Build\Win64\x64\UnrealEditor\Development\Core\UnrealEditor-Core.lib"
 "delayimp.lib"
 "wininet.lib"

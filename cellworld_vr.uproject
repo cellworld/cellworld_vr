@@ -30,10 +30,6 @@
 			"Enabled": true
 		},
 		{
-			"Name": "MultiplayerSessions",
-			"Enabled": false
-		},
-		{
 			"Name": "OculusXR",
 			"Enabled": true,
 			"MarketplaceURL": "com.epicgames.launcher://ue/marketplace/product/8313d8d7e7cf4e03a33e79eb757bccba",
@@ -41,6 +37,10 @@
 				"Win64",
 				"Android"
 			]
+		},
+		{
+			"Name": "MultiplayerSessions",
+			"Enabled": false
 		},
 		{
 			"Name": "AsyncLoadingScreen",
@@ -105,7 +105,7 @@
 		},
 		{
 			"Name": "OpenXR",
-			"Enabled": false,
+			"Enabled": true,
 			"SupportedTargetPlatforms": [
 				"Win64",
 				"Linux",
@@ -113,7 +113,6 @@
 			]
 		},
 		{
-<<<<<<< HEAD
 			"Name": "OnlineSubsystemGooglePlay",
 			"Enabled": false,
 			"SupportedTargetPlatforms": [
@@ -127,11 +126,6 @@
 				"IOS",
 				"TVOS"
 			]
-=======
-			"Name": "VaFogOfWar",
-			"Enabled": true,
-			"MarketplaceURL": "com.epicgames.launcher://ue/marketplace/content/cf7668a20dde4ef6937eaab417bf55cf"
->>>>>>> main
 		}
 	]
 }

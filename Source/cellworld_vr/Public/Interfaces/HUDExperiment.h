@@ -24,16 +24,12 @@ class CELLWORLD_VR_API UHUDExperiment : public UUserWidget {
 public:
 	
 	/* set remaining time */
-<<<<<<< HEAD
-	void SetCurrentStatus(const FString& CurrentStatusIn); 
-=======
 	void SetCurrentStatus(const FString& CurrentStatusIn); // todo; change to take in Enum
 	void SetNotificationVisibility(ESlateVisibility InVisibility);
 	void SetNotificationText(const FString& InNotification);
->>>>>>> main
 	void SetTimeRemaining(const FString& TimeRemainingIn);
 	void Init();
-	
+
 	virtual void NativeConstruct() override;
 
 	UPROPERTY(EditAnywhere)

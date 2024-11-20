@@ -2,6 +2,7 @@
 
 #include "Core/BotEvadeGameMode.h"
 #include "BotEvadeModule/BotEvadeModule.h"
+#include "CharacterComponents/MenuCharacterVR.h"
 #include "PlayerStates/BotEvadePlayerState.h"
 #include "GameStates/BotEvadeGameState.h"
 #include "Subsystems/MultiplayerSubsystem.h"
@@ -11,8 +12,10 @@ DEFINE_LOG_CATEGORY(LogBotEvadeGameMode);
 ABotEvadeGameMode::ABotEvadeGameMode(){
 
 	UE_LOG(LogBotEvadeGameMode, Log, TEXT("Initializing ABotEvadeGameMode()"))
-	PlayerStateClass =  ABotEvadePlayerState::StaticClass(); 
-	GameStateClass = ABotEvadeGameState::StaticClass();
+
+	PlayerStateClass = ABotEvadePlayerState::StaticClass(); 
+	GameStateClass   = ABotEvadeGameState::StaticClass();
+	DefaultPawnClass = AMenuCharacterVR::StaticClass(); 
 	
 	PrimaryActorTick.bStartWithTickEnabled = false;
 	PrimaryActorTick.bCanEverTick = false;
@@ -28,6 +31,23 @@ void ABotEvadeGameMode::InitGameState()
 	Super::InitGameState();
 }
 
+void ABotEvadeGameMode::SpawnExperimentServiceMonitor() {
+	if (GetWorld()) {
+		// ReSharper disable once CppLocalVariableMayBeConst
+		ESpawnActorCollisionHandlingMethod CollisionHandlingMethod =
+			ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButAlwaysSpawn;
+		
+		FTransform SpawnTransformExperimentServiceMonitor = {};
+		SpawnTransformExperimentServiceMonitor.SetLocation(FVector::ZeroVector);
+		SpawnTransformExperimentServiceMonitor.SetRotation(FRotator::ZeroRotator.Quaternion());
+		
+		ExperimentServiceMonitor = GetWorld()->SpawnActorDeferred<AExperimentServiceMonitor>(
+			AExperimentServiceMonitor::StaticClass(), SpawnTransformExperimentServiceMonitor, this, nullptr, CollisionHandlingMethod);
+		ExperimentServiceMonitor->WorldScale = this->WorldScale;
+		ExperimentServiceMonitor->FinishSpawning(SpawnTransformExperimentServiceMonitor);
+	}
+}
+
 void ABotEvadeGameMode::StartPlay() {
 	Super::StartPlay();
 	UE_LOG(LogBotEvadeGameMode, Log, TEXT("StartPlay()"))
@@ -35,6 +55,9 @@ void ABotEvadeGameMode::StartPlay() {
 		LOG("[ABotEvadeGameMode::StartPlay] Running on a dedicated server.");
 	}
 
+	
+	
+	// todo: connect to server
 	
 }
 
@@ -68,6 +91,9 @@ void ABotEvadeGameMode::PostLogin(APlayerController* NewPlayer) {
 			UE_LOG(LogBotEvadeGameMode, Warning, TEXT("PostLogin: Skipped `if(NumberOfPlayers == Subsystem->DesiredNumPublicConnections)` "));
 		}
 	}
+	
+	// todo: ExperimentServiceMonitor->SetupPlayerPawn()
+	// todo: ExperimentServiceMonitor->RegisterPlayer()
 }
 
 void ABotEvadeGameMode::HandleStartingNewPlayer_Implementation(APlayerController* NewPlayer) {
@@ -77,8 +103,8 @@ void ABotEvadeGameMode::HandleStartingNewPlayer_Implementation(APlayerController
 	if (!NewPlayer->IsValidLowLevel()) {
 		LOG_WARNING("[ABotEvadeGameMode::HandleStartingNewPlayer_Implementation] NewPlayer PlayerController NULL");
 		return;
-	}else {
-		LOG("[ABotEvadeGameMode::HandleStartingNewPlayer_Implementation] NewPlayer PlayerController valid!");
-	}
+	} 
+	LOG("[ABotEvadeGameMode::HandleStartingNewPlayer_Implementation] NewPlayer PlayerController valid!");
+
 }
 
