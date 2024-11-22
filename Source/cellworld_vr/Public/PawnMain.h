@@ -9,7 +9,6 @@
 #include <Components/SplineComponent.h>
 #include <Components/SplineMeshComponent.h>
 #include "Components/SkeletalMeshComponent.h"
-#include "OculusXRFunctionLibrary.h"
 #include "OculusXRPassthroughLayerComponent.h"
 #include "XRDeviceVisualizationComponent.h"
 #include "Camera/CameraComponent.h"
@@ -19,11 +18,10 @@
 #include "Containers/Array.h" 
 #include "GameFramework/CharacterMovementComponent.h" // test
 #include "MotionControllerComponent.h"
-#include "MiscUtils/Timer/EventTimer.h"
+#include "MiscUtils/Timers/EventTimer.h"
 #include "PawnMain.generated.h"
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnMovementDetected, FVector, Location, FRotator, Rotation);
-
 
 class UOculusXRPassthroughLayerComponent;
 class UOculusXRStereoLayerShapeReconstructed;

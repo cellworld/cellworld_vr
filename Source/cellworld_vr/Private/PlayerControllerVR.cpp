@@ -3,8 +3,7 @@
 
 class AGameModeMain; 
 
-APlayerControllerVR::APlayerControllerVR()
-{
+APlayerControllerVR::APlayerControllerVR() {
 	PrimaryActorTick.bStartWithTickEnabled = true;
 	PrimaryActorTick.bCanEverTick = true;
 }

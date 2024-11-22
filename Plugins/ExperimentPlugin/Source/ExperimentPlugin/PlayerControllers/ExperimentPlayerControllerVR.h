@@ -1,20 +1,20 @@
-#pragma once
+﻿#pragma once
 
 #include "CoreMinimal.h"
+#include "ExperimentPlugin/Characters/ExperimentPawn.h"
 #include "GameFramework/PlayerController.h"
-#include "PawnMain.h"
-#include "PlayerControllerVR.generated.h"
+#include "ExperimentPlayerControllerVR.generated.h"
 
 /**
  *
  */
 UCLASS()
-class CELLWORLD_VR_API APlayerControllerVR : public APlayerController
+class EXPERIMENTPLUGIN_API AExperimentPlayerControllerVR : public APlayerController
 {
 	GENERATED_BODY()
 
 public:
-	APlayerControllerVR();
+	AExperimentPlayerControllerVR();
 
 	/* overrides */
 	virtual void BeginPlay() override;
@@ -31,6 +31,5 @@ public:
 
 	/* pawn to control */
 	UPROPERTY(VisibleAnywhere)
-	APawnMain* PossessedPawn;
-
+	AExperimentPawn* PossessedPawn;
 };

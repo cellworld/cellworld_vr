@@ -1,9 +1,10 @@
 // ReSharper disable CppTooWideScopeInitStatement
 #include "PredatorController/ExperimentServiceMonitor.h"
+#include "ExperimentPlugin/DataManagers/ExperimentManager.h"
+#include "BotEvadeModule/Public/Client/ExperimentClient.h"
 #include "GameInstanceMain.h"
 #include "cellworld_vr/cellworld_vr.h"
 #include "Kismet/GameplayStatics.h"
-#include "Navigation/PathFollowingComponent.h"
 
 // Sets default values
 AExperimentServiceMonitor::AExperimentServiceMonitor() {
@@ -16,21 +17,13 @@ void AExperimentServiceMonitor::OnExperimentFinished(const int InPlayerIndex) {
 	UE_LOG(LogExperiment, Log, TEXT("AExperimentServiceMonitor::OnExperimentFinished"))
 }
 
-//TODO - add argument to include MessageType (Log, Warning, Error, Fatal)
-void printScreen(const FString InMessage) {
-	if (GEngine) GEngine->AddOnScreenDebugMessage(-1, 1.0f, FColor::Green, FString::Printf(TEXT("%s"), *InMessage));
-	UE_LOG(LogExperiment, Warning, TEXT("%s"), *InMessage);
-}
-
 bool AExperimentServiceMonitor::ValidateLevel(UWorld* InWorld, const FString InLevelName) {
 	if (!InWorld->IsValidLowLevelFast()) {
-		printScreen("[AExperimentServiceMonitor::ValidateLevel] World is not valid.");
 		return false;
 	}
 
 	if (!InLevelName.IsEmpty()) { UE_LOG(LogExperiment, Warning, TEXT("LevelName: %s"), *InLevelName); }
 	else {
-		printScreen("[AExperimentServiceMonitor::ValidateLevel] LevelName is empty!");
 		return false;
 	}
 
@@ -82,10 +75,8 @@ bool AExperimentServiceMonitor::SpawnAndPossessPredator() {
 /* stop connection for ClientIn */
 bool AExperimentServiceMonitor::Disconnect(UMessageClient* ClientIn) {
 	if (ClientIn->IsValidLowLevelFast() && ClientIn->IsConnected()) {
-		printScreen("[AExperimentServiceMonitor::Disconnect] Client Disconnected: Processing.");
 		return ClientIn->Disconnect();
 	}
-	printScreen("[AExperimentServiceMonitor::Disconnect] Client Disconnected: Failed.");
 	return false;
 }
 
@@ -402,8 +393,7 @@ void AExperimentServiceMonitor::UpdatePreyPosition(const FVector InVector, const
 }
 
 void AExperimentServiceMonitor::HandleUnroutedMessage(const FMessage InMessage) {
-	printScreen("[AExperimentServiceMonitor::HandleUnroutedMessage] "
-		+ InMessage.header + " | " + InMessage.body);
+
 }
 
 /* gets player pawn from world */
@@ -732,7 +722,6 @@ bool AExperimentServiceMonitor::ConnectToServer(UMessageClient* ClientIn, const 
 
 bool AExperimentServiceMonitor::RoutePredatorMessages() {
 	if (!this->ValidateClient(TrackingClient)) {
-		printScreen("[AExperimentServiceMonitor::RoutePredatorMessages()] TrackingClient not valid.");
 		return false;
 	}
 	if (MessageRoutePredator->IsValidLowLevelFast()) { MessageRoutePredator = nullptr; }
@@ -844,7 +833,7 @@ bool AExperimentServiceMonitor::Test() {
 		return false;
 	}
 
-	UExperimentMonitorData* NewExperimentMonitorData = NewObject<UExperimentMonitorData>(this);
+	UExperimentData* NewExperimentMonitorData = NewObject<UExperimentData>(this);
 	if (ExperimentManager) {
 		// todo: make unique function
 		// PlayerIndex = ExperimentManager->RegisterNewPlayer(PlayerPawn, NewExperimentMonitorData);

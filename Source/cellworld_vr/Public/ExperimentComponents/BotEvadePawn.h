@@ -6,7 +6,7 @@
 #include "Components/SceneComponent.h"
 #include "Components/SkeletalMeshComponent.h"
 #include "Components/SceneComponent.h"
-#include "MiscUtils/Timer/EventTimer.h"
+#include "MiscUtils/Timers/EventTimer.h"
 #include "GameFramework/Pawn.h"
 #include "Containers/Array.h" 
 #include "BotEvadePawn.generated.h"

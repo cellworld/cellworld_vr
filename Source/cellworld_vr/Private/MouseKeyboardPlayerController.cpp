@@ -73,7 +73,7 @@ void AMouseKeyboardPlayerController::Tick(float DeltaTime)
 	Super::Tick(DeltaTime);
 
 	if (!PossessedPawn->IsValidLowLevelFast()) {
-		UE_LOG(LogExperiment, Warning, TEXT("[AMouseKeyboardPlayerController::Tick] PossessedPawn invalid."));
+		UE_LOG(LogTemp, Warning, TEXT("[AMouseKeyboardPlayerController::Tick] PossessedPawn invalid."));
 		PossessedPawn = Cast<APawnMain>(GetPawn());
 	}
 }

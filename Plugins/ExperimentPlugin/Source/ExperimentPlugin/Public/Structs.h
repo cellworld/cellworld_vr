@@ -1,5 +1,5 @@
 #pragma once
-#include "ExperimentPlugin.h"
+#include "ExperimentPlugin/ExperimentPlugin.h"
 #include "JsonObjectConverter.h"
 #include "Misc/Guid.h"
 #include "Structs.generated.h"

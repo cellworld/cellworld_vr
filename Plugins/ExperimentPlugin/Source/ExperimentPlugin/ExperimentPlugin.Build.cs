@@ -26,7 +26,10 @@ public class ExperimentPlugin : ModuleRules
 			new string[]
 			{
 				"Core",
-				"TCPMessages"
+				"TCPMessages",
+				"XRBase",
+				"MiscUtils", 
+				"OculusXRAnchors","OculusXRHMD", "OculusXRPassthrough",
 				// ... add other public dependencies that you statically link with here ...
 			}
 			);
@@ -44,7 +47,9 @@ public class ExperimentPlugin : ModuleRules
 				"InputCore",
 				"Json",
 				"JsonUtilities",
-				"TCPMessages"
+				"TCPMessages",
+				"UMG",
+				"HeadMountedDisplay" 
 				// ... add private dependencies that you statically link with here ...	
 			}
 			);

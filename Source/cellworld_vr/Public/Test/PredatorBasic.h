@@ -13,7 +13,7 @@ public:
 	// Sets default values for this actor's properties
 	APredatorBasic();
 
+	UPROPERTY()
 	TObjectPtr<UStaticMeshComponent> SphereMeshComponent;
-	class USkeletalMeshComponent* SkeletalMeshComponent;
 	// USkeletalMesh* SkeletalMesh; 
 };
