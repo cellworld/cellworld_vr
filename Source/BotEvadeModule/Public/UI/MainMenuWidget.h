@@ -33,7 +33,7 @@ public:
 	UFUNCTION()
 	void JoinButtonClicked();
 
-	UFUNCTION()
+	UFUNCTION(BlueprintCallable)
 	void JoinByIPAddressButtonClicked();
 
 	UFUNCTION()

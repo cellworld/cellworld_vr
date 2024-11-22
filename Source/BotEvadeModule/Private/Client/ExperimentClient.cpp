@@ -376,7 +376,16 @@ void AExperimentClient::UpdatePreyPosition(const FVector InVector, const FRotato
 	UE_LOG(LogTemp, Log, TEXT("CALLED AND CAN UPDATE IS: %i"),bCanUpdatePrey)
 	// if (!ensure(ExperimentManager->IsValidLowLevelFast())) { return; }
 	// if (!ExperimentManager->IsInEpisode()) { return; }
+	if (!bConnectedToServer) {
+		UE_LOG(LogTemp, Warning, TEXT("[AExperimentClient::UpdatePreyPosition] bConnectedToServer false"))
+		return;
+	}
+	if (!bResetSuccessDbg) {
+		UE_LOG(LogTemp, Warning, TEXT("[AExperimentClient::UpdatePreyPosition] bResetSuccessDbg false"))
+		return;
+	}
 	if (!bCanUpdatePrey) { return; }
+		
 	if (!ensure(this->ValidateClient(TrackingClient))) {
 		UE_LOG(LogTemp, Warning, TEXT("[AExperimentClient::UpdatePreyPosition] TrackingClient NULL"))
 		return;
@@ -975,9 +984,9 @@ void AExperimentClient::BeginPlay() {
 /* run a (light!) command every frame */
 void AExperimentClient::Tick(float DeltaTime) {
 	Super::Tick(DeltaTime);
-	if (bConnectedToServer && bResetSuccessDbg) {
-		UpdatePreyPosition(FVector{0.5f,0.5f,0.5f}, FRotator::ZeroRotator);
-	}
+	// if (bConnectedToServer && bResetSuccessDbg) {
+	// 	UpdatePreyPosition(FVector{0.5f,0.5f,0.5f}, FRotator::ZeroRotator);
+	// }
 }
 
 void AExperimentClient::EndPlay(const EEndPlayReason::Type EndPlayReason) {

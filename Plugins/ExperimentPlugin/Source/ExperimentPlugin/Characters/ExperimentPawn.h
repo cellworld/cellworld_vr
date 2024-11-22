@@ -89,7 +89,7 @@ public:
 	void LookUp(float AxisValue);
 	/* === properties === */
 	//UPROPERTY(VisibleDefaultsOnly, meta = (Category = "Default"))
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "SpatialComponents")
+	UPROPERTY(Replicated, EditAnywhere, BlueprintReadWrite, Category = "SpatialComponents")
 	TObjectPtr<UCameraComponent> Camera;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "SpatialComponents")
 	UWidgetComponent* HUDWidgetComponent; 

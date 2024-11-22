@@ -387,6 +387,7 @@ void AExperimentPawn::BeginPlay() {
 void AExperimentPawn::GetLifetimeReplicatedProps( TArray< FLifetimeProperty > & OutLifetimeProps ) const {
 	Super::GetLifetimeReplicatedProps( OutLifetimeProps );
 	DOREPLIFETIME(AExperimentPawn, SphereMeshComponent);
+	DOREPLIFETIME(AExperimentPawn, Camera);
 }
 
 
@@ -417,7 +418,9 @@ void AExperimentPawn::UpdateMovementComponent(FVector InputVector, bool bForce) 
 
 void AExperimentPawn::MoveForward(float AxisValue) {
 	if (AxisValue != 0.0f) {
+		UE_LOG(LogTemp,Log,TEXT("MoveForward! AxisValue: %0.2f"), AxisValue)
 		if (OurMovementComponentChar && (OurMovementComponentChar->UpdatedComponent == RootComponent)) {
+			UE_LOG(LogTemp,Log,TEXT("MoveForward! Attempting to move! "))
 			FVector CameraForwardVector = this->Camera->GetForwardVector();
 			CameraForwardVector.Z = 0.0;
 			this->UpdateMovementComponent(CameraForwardVector * AxisValue * 10, /*force*/ true);
@@ -427,7 +430,11 @@ void AExperimentPawn::MoveForward(float AxisValue) {
 
 void AExperimentPawn::MoveRight(float AxisValue) {
 	if (AxisValue != 0.0f) {
+		UE_LOG(LogTemp,Log,TEXT("MoveRight! AxisValue: %0.2f"), AxisValue)
+
 		if (OurMovementComponentChar && (OurMovementComponentChar->UpdatedComponent == RootComponent)) {
+			UE_LOG(LogTemp,Log,TEXT("MoveRight! Attempting to move! "))
+
 			FVector CameraRightVector = this->Camera->GetRightVector();
 			CameraRightVector.Z = 0.0;
 			this->UpdateMovementComponent(CameraRightVector * AxisValue * 10, /* force */true);

@@ -36,7 +36,7 @@ void ABotEvadeGameMode::InitGameState() {
 	Super::InitGameState();
 	for (TActorIterator<APlayerStart> It(GetWorld()); It; ++It) {
 		FreePlayerStarts.Add(*It);
-		LOG("Found player start: %s", *(*It)->GetName());
+		UE_LOG(LogTemp, Log, TEXT("Found player start: %s"), *(*It)->GetName())
 	}
 }
 
@@ -61,7 +61,7 @@ void ABotEvadeGameMode::StartPlay() {
 	Super::StartPlay();
 	UE_LOG(LogBotEvadeGameMode, Log, TEXT("StartPlay()"))
 	if (GetNetMode() == NM_DedicatedServer) {
-		LOG("[ABotEvadeGameMode::StartPlay] Running on a dedicated server.");
+		UE_LOG(LogTemp, Log, TEXT("[ABotEvadeGameMode::StartPlay] Running on a dedicated server."))
 	}
 	
 	// todo: connect to server
@@ -79,9 +79,8 @@ void ABotEvadeGameMode::EndPlay(const EEndPlayReason::Type EndPlayReason) {
 
 void ABotEvadeGameMode::Tick(float DeltaTime) {
 	Super::Tick(DeltaTime);
-	LOG("Player Count: %i", NumPlayers)
+	UE_LOG(LogTemp, Log, TEXT("Player Count: %i"), NumPlayers)
 	if (NumPlayers == 1) {
-		
 	}
 	// UWorld* World = GetWorld(); // can be true
 }
@@ -104,23 +103,21 @@ void ABotEvadeGameMode::PostLogin(APlayerController* NewPlayer) {
 	APlayerState* PlayerState = NewPlayer->GetPlayerState<APlayerState>();
 	if (PlayerState) {
 		const FString PlayerName = PlayerState->GetPlayerName();
-		LOG("[ABotEvadeGameMode::PostLogin] Player Name: %s", *PlayerName)
+		UE_LOG(LogTemp, Log, TEXT("[ABotEvadeGameMode::PostLogin] Player Name: %s"), *PlayerName)
 	}
-	
-	
 }
 
 void ABotEvadeGameMode::HandleStartingNewPlayer_Implementation(APlayerController* NewPlayer) {
 	Super::HandleStartingNewPlayer_Implementation(NewPlayer);
-	LOG("[ABotEvadeGameMode::HandleStartingNewPlayer_Implementation] Called");
+	UE_LOG(LogTemp, Log, TEXT("[ABotEvadeGameMode::HandleStartingNewPlayer_Implementation] Called"))
 
 	if (!NewPlayer->IsValidLowLevel()) {
-		LOG_WARNING("[ABotEvadeGameMode::HandleStartingNewPlayer_Implementation] NewPlayer PlayerController NULL");
+		UE_LOG(LogTemp, Warning, TEXT("[ABotEvadeGameMode::HandleStartingNewPlayer_Implementation] NewPlayer PlayerController NULL"));
 		return;
 	}
 	
 	if (NewPlayer->PlayerState) {
-		LOG("bOnlySpectator: %s", NewPlayer->PlayerState->IsOnlyASpectator() ? "true" : "false");
+		UE_LOG(LogTemp, Log, TEXT("bOnlySpectator: %i"), NewPlayer->PlayerState->IsOnlyASpectator());
 	}
 }
 
@@ -128,20 +125,18 @@ void ABotEvadeGameMode::RestartPlayer(AController* NewPlayer)
 {
 	Super::RestartPlayer(NewPlayer);
 
-	if (!NewPlayer->GetPawn())
-	{
-		LOG_ERROR("[RestartPlayer] Pawn not spawned for PlayerController: %s", *NewPlayer->GetName());
+	if (!NewPlayer->GetPawn()) {
+		UE_LOG(LogTemp, Error, TEXT("[RestartPlayer] Pawn not spawned for PlayerController: %s"), *NewPlayer->GetName());
 	}
-	else
-	{
-		LOG("[RestartPlayer] Player pawn spawned: %s", *NewPlayer->GetPawn()->GetName());
+	else {
+		UE_LOG(LogTemp, Log, TEXT("[RestartPlayer] Player pawn spawned: %s"), *NewPlayer->GetPawn()->GetName());
 	}
 }
 
 AActor* ABotEvadeGameMode::ChoosePlayerStart_Implementation(AController* Player) {
 	AActor* StartSpot = Super::ChoosePlayerStart_Implementation(Player);
 	if (!StartSpot) {
-		LOG_WARNING("[ChoosePlayerStart] No valid PlayerStart found! Using fallback.");
+		UE_LOG(LogTemp, Warning, TEXT("[ChoosePlayerStart] No valid PlayerStart found! Using fallback."))
 		return GetWorld()->SpawnActor<APlayerStart>(APlayerStart::StaticClass(), FVector(0, 0, 300), FRotator::ZeroRotator);
 	}
 	return StartSpot;
@@ -187,19 +182,62 @@ void ABotEvadeGameMode::Logout(AController* Exiting) {
 }
 
 void ABotEvadeGameMode::OnUpdatePreyPosition() {
-	TArray<int32> LocalClientIndexes; // Store indexes of locally controlled clients
-	int32 Index = 0;
+	UE_LOG(LogTemp,Log, TEXT("[ABotEvadeGameMode::OnUpdatePreyPosition] Called!"))
 
-	// Iterate through all PlayerControllers
-	for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; ++It, ++Index) {
-		APlayerController* PlayerController = It->Get();
-		if (PlayerController && PlayerController->IsLocalController()) // Check if locally controlled
-		{
-			LocalClientIndexes.Add(Index); // Add index to the list
-			UE_LOG(LogTemp, Log, TEXT("Local client found at index: %d"), Index);
-		}
+	if (NumPlayers == 0) {
+		UE_LOG(LogTemp, Error,TEXT("[ABotEvadeGameMode::OnUpdatePreyPosition] No Players found to update position!"))
+		return;
 	}
-	LOG("[ABotEvadeGameMode::OnUpdatePreyPosition] Locally controlled client indexes: %s", LocalClientIndexes.Num());
+	if (!GameState) {
+		UE_LOG(LogTemp, Error,TEXT("[ABotEvadeGameMode::OnUpdatePreyPosition] GameState NULL"))
+		return;
+	}
+
+	TArray<TObjectPtr<APlayerState>> PlayerStatesArr = GameState.Get()->PlayerArray;
+	TObjectPtr<APlayerState> PlayerStateTemp = nullptr;
+	UE_LOG(LogTemp, Log, TEXT("[ABotEvadeGameMode::OnUpdatePreyPosition] Number of Players: %i"), GameState.Get()->PlayerArray.Num());
+	if (PlayerStatesArr.Num() <= 0) {
+		UE_LOG(LogTemp, Error,TEXT("PlayerStatesArr is empty!"))
+
+		return;
+	}
+
+	// get first player state
+	PlayerStateTemp = GameState.Get()->PlayerArray[0];
+	if (!PlayerStateTemp) {
+		UE_LOG(LogTemp, Error,TEXT("PlayerStateTemp NULL"))
+		return;
+	}
+
+	// get first player pawn
+	APawn* PawnTemp = PlayerStateTemp->GetPawn();
+	if (!PawnTemp) {
+		UE_LOG(LogTemp, Error,TEXT("PawnTemp NULL"))
+		return;
+	}
+
+	// cast to aexperimentpawn
+	AExperimentPawn* ExperimentPawn = Cast<AExperimentPawn>(PawnTemp);
+	if (!ExperimentPawn) {
+		UE_LOG(LogTemp, Error,TEXT("ExperimentPawn NULL"))
+		return;
+	}
+
+	// if all checks valid: 
+	if (!ExperimentPawn->Camera->IsValidLowLevelFast()) {
+		UE_LOG(LogTemp, Error,TEXT("ExperimentPawn->Camera NULL"))
+		return;
+	}
+
+	const FVector  PawnLocation = ExperimentPawn->GetActorLocation();
+	const FRotator PawnRotation = ExperimentPawn->GetActorRotation();
+	UE_LOG(LogTemp, Log, TEXT("PawnLocation: %s"), *PawnLocation.ToString())
+	UE_LOG(LogTemp, Log, TEXT("PawnRotation: %s"), *PawnRotation.ToString())
+	if (ExperimentClient->IsValidLowLevelFast()) {
+		ExperimentClient->UpdatePreyPosition(PawnLocation, PawnRotation);
+		UE_LOG(LogTemp, Log, TEXT("SENT FRAME!"))
+		
+	}
 }
 
 bool ABotEvadeGameMode::StartPositionSamplingTimer(const float InRateHz) {
@@ -225,7 +263,7 @@ bool ABotEvadeGameMode::StartPositionSamplingTimer(const float InRateHz) {
 
 FString ABotEvadeGameMode::InitNewPlayer(APlayerController* NewPlayerController, const FUniqueNetIdRepl& UniqueId,
 	const FString& Options, const FString& Portal) {
-	LOG("[ABotEvadeGameMode::InitNewPlayer] Called");
+	UE_LOG(LogTemp, Log, TEXT("[ABotEvadeGameMode::InitNewPlayer] Called"));
 
 	// Super::InitNewPlayer(NewPlayerController, UniqueId, Options, Portal);
 	// if (FreePlayerStarts.Num() == 0) {
