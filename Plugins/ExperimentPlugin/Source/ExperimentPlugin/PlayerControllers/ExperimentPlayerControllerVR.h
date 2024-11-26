@@ -2,6 +2,7 @@
 
 #include "CoreMinimal.h"
 #include "ExperimentPlugin/Characters/ExperimentPawn.h"
+#include "ExperimentPlugin/Characters/ExperimentCharacter.h"
 #include "GameFramework/PlayerController.h"
 #include "ExperimentPlayerControllerVR.generated.h"
 
@@ -31,5 +32,5 @@ public:
 
 	/* pawn to control */
 	UPROPERTY(VisibleAnywhere)
-	AExperimentPawn* PossessedPawn;
+	AExperimentCharacter* PossessedCharacter;
 };

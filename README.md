@@ -1,17 +1,14 @@
 
 # Cellworld VR
 
-<<<<<<< HEAD
 I still need to fill this out. ****
 
 ## Introduction 
-=======
 Current version works well for `single-player` in VR at 90Hz. 
 
 ## Current Features: 
 - Single player (limitation, will be fixed in `major/multiplayer'
 - 90 Hz sampling rate of player position
->>>>>>> main
 
 ### System 
 

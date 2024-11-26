@@ -6,6 +6,7 @@ AExperimentPredator::AExperimentPredator() : Super() {
 	PrimaryActorTick.bCanEverTick = false;
 	bReplicates = true;
 	SetActorEnableCollision(false);
+	SetReplicateMovement(true);
 	SetActorRotation(FRotator::ZeroRotator);
 	
 	// Create a sphere component

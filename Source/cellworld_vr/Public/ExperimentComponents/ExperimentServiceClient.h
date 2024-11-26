@@ -4,11 +4,9 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
-#include "ExperimentPlugin/ExperimentPlugin.h"
 #include "MessageClient.h"
 #include "PredatorController/CharacterPredator.h"
-#include "PawnDebug.h"
-#include "BotEvadeModule/Public/Components/Occlusion.h"
+#include "ExperimentPlugin/Occlusions/Occlusion.h"
 #include "DrawDebugHelpers.h"
 #include "ExperimentPlugin/Public/Structs.h"
 #include "ExperimentServiceClient.generated.h"

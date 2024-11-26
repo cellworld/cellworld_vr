@@ -1,14 +1,13 @@
 #include "ExperimentPlayerControllerVR.h"
-
-#include "ExperimentPlugin/Characters/ExperimentPawn.h"
+#include "ExperimentPlugin/Characters/ExperimentCharacter.h"
 #include "Kismet/KismetSystemLibrary.h"
 
 class AGameModeMain; 
 
-AExperimentPlayerControllerVR::AExperimentPlayerControllerVR()
-{
+AExperimentPlayerControllerVR::AExperimentPlayerControllerVR() {
 	PrimaryActorTick.bStartWithTickEnabled = true;
 	PrimaryActorTick.bCanEverTick = true;
+	SetReplicates(true);
 }
 
 void AExperimentPlayerControllerVR::BeginPlay() {
@@ -16,7 +15,7 @@ void AExperimentPlayerControllerVR::BeginPlay() {
 	UE_LOG(LogTemp, Warning, TEXT("AExperimentPlayerControllerVR::BeginPlay()"));
 
 	if (GetWorld()) {
-		PossessedPawn = Cast<AExperimentPawn>(GetPawn());
+		PossessedCharacter = Cast<AExperimentCharacter>(GetCharacter());
 	}
 	return;
 }
@@ -36,22 +35,23 @@ void AExperimentPlayerControllerVR::SetupInputComponent() {
 }
 
 void AExperimentPlayerControllerVR::RestartGame() {
-	/*if (PossessedPawn) {
-		PossessedPawn->RestartGame();
+	/*if (PossessedCharacter) {
+		PossessedCharacter->RestartGame();
 	}*/
 }
 
 void AExperimentPlayerControllerVR::Tick(float DeltaTime) {
 	Super::Tick(DeltaTime);
 
-	if (!PossessedPawn) {
-		PossessedPawn = Cast<AExperimentPawn>(GetPawn());
+	if (!PossessedCharacter) {
+		PossessedCharacter = Cast<AExperimentCharacter>(GetCharacter());
 		UE_LOG(LogTemp, Error, TEXT("[AExperimentPlayerControllerVR::Tick] PossessedPawn NULL. Recasting."))
+		return;
 	}
 }
 
 void AExperimentPlayerControllerVR::ResetOrigin() {
-	if (PossessedPawn) {
+	if (PossessedCharacter) {
 		//FVector TargetLocation = ...; // Set this to your desired world location
 		//FVector Direction = (TargetLocation - GetActorLocation()).GetSafeNormal();
 		//FRotator NewRotation = Direction.Rotation();
@@ -67,13 +67,13 @@ void AExperimentPlayerControllerVR::QuitGame()
 }
 
 void AExperimentPlayerControllerVR::MoveForward(float AxisValue) {
-	if (PossessedPawn) {
-		PossessedPawn->MoveForward(AxisValue);
+	if (PossessedCharacter) {
+		PossessedCharacter->MoveForward(AxisValue);
 	}
 }
 
 void AExperimentPlayerControllerVR::MoveRight(float AxisValue) {
-	if (PossessedPawn) {
-		PossessedPawn->MoveRight(AxisValue);
+	if (PossessedCharacter) {
+		PossessedCharacter->MoveRight(AxisValue);
 	}
 }

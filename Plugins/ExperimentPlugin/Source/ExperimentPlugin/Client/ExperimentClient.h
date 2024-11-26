@@ -5,13 +5,14 @@
 #include "UObject/ObjectPtr.h"
 #include "MessageClient.h"
 #include "ExperimentUtils.h"
-#include "CharacterComponents/MenuCharacterVR.h"
-#include "BotEvadeModule/Public/Components/Occlusion.h"
 #include "DrawDebugHelpers.h"
+
 #include "ExperimentPlugin/DataManagers/ExperimentManager.h"
 #include "ExperimentPlugin/Public/Structs.h"
 #include "ExperimentPlugin/Characters/ExperimentPredator.h"
 #include "ExperimentPlugin/Characters/ExperimentPawn.h"
+#include "ExperimentPlugin/Occlusions/Occlusion.h"
+
 #include "MiscUtils/Timers/Stopwatch.h"
 #include "MiscUtils/Timers/EventTimer.h"
 #include "ExperimentClient.generated.h"
@@ -182,7 +183,7 @@ public:
 };
 
 UCLASS()
-class BOTEVADEMODULE_API AExperimentClient : public AActor { 
+class EXPERIMENTPLUGIN_API AExperimentClient : public AActor { 
 	GENERATED_BODY()
 	
 public:	

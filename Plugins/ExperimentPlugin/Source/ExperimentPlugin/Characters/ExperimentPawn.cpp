@@ -1,18 +1,17 @@
 ﻿#include "ExperimentPawn.h"
+
+// #include "../../../../../Source/BotEvadeModule/Public/Client/ExperimentClient.h"
 #include "Camera/PlayerCameraManager.h"
-#include "HeadMountedDisplayFunctionLibrary.h"
 #include "Engine/Engine.h"
 #include "GameFramework/PlayerController.h"
 #include "GameFramework/CharacterMovementComponent.h" // test 
-#include "Kismet/GameplayStatics.h"
 #include "Net/UnrealNetwork.h"
-
 
 AExperimentPawn::AExperimentPawn() : Super() {
 	PrimaryActorTick.bStartWithTickEnabled = true;
 	PrimaryActorTick.bCanEverTick		   = true;
-	bReplicates                            = true;
 	bAlwaysRelevant                        = true;
+	SetReplicates(true);
 	
 	// set our turn rates for input
 	BaseTurnRate   = 45.f;
@@ -30,13 +29,15 @@ AExperimentPawn::AExperimentPawn() : Super() {
 	CapsuleComponent->OnComponentBeginOverlap.AddDynamic(this, &ThisClass::OnOverlapBegin); // overlap events
 	CapsuleComponent->OnComponentEndOverlap.AddDynamic(this, &ThisClass::OnOverlapEnd); // overlap events 
 	CapsuleComponent->SetupAttachment(RootComponent);
-
+	CapsuleComponent->SetIsReplicated(true);
+	
 	/* create camera component as root so pawn moves with camera */
 	Camera = CreateDefaultSubobject<UCameraComponent>(TEXT("ActualCamera"));
 	Camera->SetMobility(EComponentMobility::Movable);
 	Camera->SetRelativeLocation(FVector(0.0f, 0.0f, -CapsuleHalfHeight)); // todo: make sure this is OK
 	Camera->bUsePawnControlRotation = false; // todo: add flag, true for VR
 	Camera->SetupAttachment(RootComponent);
+	Camera->SetIsReplicated(true);
 
 	/* create HUD widget and attach to camera */
 	HUDWidgetComponent = CreateDefaultSubobject<UWidgetComponent>(TEXT("HUDWidget"));
@@ -49,7 +50,7 @@ AExperimentPawn::AExperimentPawn() : Super() {
 	HUDWidgetComponent->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	HUDWidgetComponent->SetWidgetSpace(EWidgetSpace::World); 
 	HUDWidgetComponent->SetDrawSize(FVector2d(1920, 1080));
-	
+
 	/*Create Motion Controllers*/
 	MotionControllerLeft = CreateDefaultSubobject<UMotionControllerComponent>(TEXT("MotionControllerLeft"));
 	MotionControllerLeft->CreationMethod = EComponentCreationMethod::Native;
@@ -58,7 +59,7 @@ AExperimentPawn::AExperimentPawn() : Super() {
 	MotionControllerLeft->MotionSource = FName("Left");
 	MotionControllerLeft->SetVisibility(false, false);
 	MotionControllerLeft->SetupAttachment(RootComponent);
-	
+
 	MotionControllerRight = CreateDefaultSubobject<UMotionControllerComponent>(TEXT("MotionControllerRight"));
 	MotionControllerRight->CreationMethod = EComponentCreationMethod::Native;
 	MotionControllerRight->SetCanEverAffectNavigation(false);
@@ -143,7 +144,7 @@ AExperimentPawn::AExperimentPawn() : Super() {
 	SphereMeshComponent->SetCollisionEnabled(ECollisionEnabled::Type::NoCollision);
 	SphereMeshComponent->SetRelativeLocation(FVector(0.0f,0.0f, 182.0f)); // 182cm-> ~6ft
 	SphereMeshComponent->SetRelativeScale3D(FVector(3.0f, 3.0f,3.0f));
-	RootComponent = SphereMeshComponent;
+	SphereMeshComponent->SetupAttachment(RootComponent);
 
 	UStaticMesh* StaticMesh = CreateDefaultSubobject<UStaticMesh>(TEXT("StaticMesh"));
 	static ConstructorHelpers::FObjectFinder<UStaticMesh> SphereMeshAsset(TEXT("StaticMesh'/Engine/BasicShapes/Sphere.Sphere'"));
@@ -163,6 +164,16 @@ AExperimentPawn::AExperimentPawn() : Super() {
 	}
 }
 
+void AExperimentPawn::OnRep_CurrentLocation() {
+	UE_LOG(LogTemp, Log, TEXT("[AExperimentPawn::OnRep_CurrentLocation] %s (Server? %i)"),
+		*CurrentRotation.ToString(),HasAuthority())
+}
+
+void AExperimentPawn::OnRep_CurrentRotation() {
+	UE_LOG(LogTemp, Log, TEXT("[AExperimentPawn::OnRep_CurrentRotation] %s (Server? %i)"),
+		*CurrentRotation.ToString(), HasAuthority())
+}
+
 // Called to bind functionality to input
 void AExperimentPawn::SetupPlayerInputComponent(class UInputComponent* InInputComponent) {
 	Super::SetupPlayerInputComponent(InInputComponent);
@@ -175,6 +186,7 @@ void AExperimentPawn::SetupPlayerInputComponent(class UInputComponent* InInputCo
 	InInputComponent->BindAxis("LookUpRate", this, &ThisClass::LookUpAtRate);
 
 }
+
 void AExperimentPawn::TurnAtRate(float Rate) {
 	// calculate delta for this frame from the rate information
 	AddControllerYawInput(Rate * BaseTurnRate * GetWorld()->GetDeltaSeconds());
@@ -185,8 +197,7 @@ void AExperimentPawn::LookUpAtRate(float Rate) {
 	AddControllerPitchInput(Rate * BaseLookUpRate * GetWorld()->GetDeltaSeconds());
 }
 
-UCameraComponent* AExperimentPawn::GetCameraComponent()
-{
+UCameraComponent* AExperimentPawn::GetCameraComponent() {
 	return this->Camera;
 }
 
@@ -225,80 +236,98 @@ bool AExperimentPawn::DetectMovement() {
 	return true;
 }
 
-void AExperimentPawn::UpdateRoomScaleLocation() {
-	const FVector CapsuleLocation = this->CapsuleComponent->GetComponentLocation();
-	FVector CameraLocation = Camera->GetComponentLocation();
-	CameraLocation.Z = 0.0f;
-	FVector DeltaLocation = CameraLocation - CapsuleLocation;
-	DeltaLocation.Z = 0.0f;
-	AddActorWorldOffset(DeltaLocation, false, nullptr, ETeleportType::TeleportPhysics);
-	VROrigin->AddWorldOffset(-DeltaLocation, false, nullptr, ETeleportType::TeleportPhysics);
-	this->CapsuleComponent->SetWorldLocation(CameraLocation);
+void AExperimentPawn::Server_UpdateMovement_Implementation(const FVector& InLocation,const FRotator& InRotation) {
+	UE_LOG(LogTemp, Log, TEXT("[AExperimentPawn::Server_UpdateMovement_Implementation] InLocation: %s | InRotation: %s"),
+		*InLocation.ToString(), *InRotation.ToString())
+
+	APlayerController* OwnerController = Cast<APlayerController>(GetOwner());
+	if (OwnerController) {
+		UE_LOG(LogTemp, Log, TEXT("[AExperimentPawn::Server_UpdateMovement_Implementation] Has Owner"))
+	}
+
+	Move();
+	
+	// should always be true 
+	if (!HasAuthority()) {
+		UE_LOG(LogTemp, Log, TEXT("[AExperimentPawn::Server_UpdateMovement_Implementation] No Authority"))
+		return;
+	}
+
+	// if (this->BotEvadeGameMode && this->BotEvadeGameMode->ExperimentClient) {
+	// 	this->BotEvadeGameMode->ExperimentClient->UpdatePreyPosition(InLocation,InRotation);
+	// 	UE_LOG(LogTemp, Log, TEXT("[AExperimentPawn::Server_UpdateMovement_Implementation] Sent frame!"))
+	// }
 }
 
-void AExperimentPawn::Server_UpdateMovement_Implementation() {
-	UE_LOG(LogTemp, Log, TEXT("[AExperimentPawn::Server_UpdateMovement_Implementation]"))
+void AExperimentPawn::Multi_UpdateMovement_Implementation(const FVector& InLocation, const FRotator& InRotation) {
+	UE_LOG(LogTemp, Log, TEXT("[AExperimentPawn::Multi_UpdateMovement_Implementation] InLocation: %s | InRotation: %s"),
+	*InLocation.ToString(), *InRotation.ToString())
+}
 
-	FVector FinalLocation = {};
-	FRotator FinalRotation = {};
-#if PLATFORM_ANDROID
-	UE_LOG(LogTemp, Log, TEXT("[OnMovementDetected] PLATFORM_ANDROID"))
-
-	if ((UHeadMountedDisplayFunctionLibrary::GetHMDWornState() == EHMDWornState::Worn)) {
-		FVector HMDLocation = {};
-		FRotator HMDRotation = {};
-		UHeadMountedDisplayFunctionLibrary::GetOrientationAndPosition(HMDRotation, HMDLocation);
-		FinalLocation = HMDLocation + this->VROrigin->GetComponentLocation();
-		FinalRotation = HMDRotation;
-		UpdateRoomScaleLocation();
-	}else {
-		// UE_LOG(LogTemp, Error, TEXT("[OnMovementDetected] HMD is not being worn! Returning."))
-		FinalLocation = RootComponent->GetComponentLocation();
-		FinalRotation = GetActorRotation();
+bool AExperimentPawn::Server_UpdateMovement_Validate(const FVector& InLocation,const FRotator& InRotation) {
+	UE_LOG(LogTemp, Log, TEXT("[AExperimentPawn::Server_UpdateMovement_Validate] InLocation: %s | InRotation: %s"),
+		*InLocation.ToString(), *InRotation.ToString())
+	
+	APlayerController* OwnerController = Cast<APlayerController>(GetOwner());
+	if (!OwnerController) {
+		UE_LOG(LogTemp, Warning, TEXT("[AExperimentPawn::Server_UpdateMovement_Validate] No valid owner!"));
+		return false;
 	}
-#elif PLATFORM_DESKTOP
-	UE_LOG(LogTemp, Log, TEXT("[OnMovementDetected] PLATFORM_DESKTOP"))
-	FinalLocation = RootComponent->GetComponentLocation();
-	FinalRotation = GetActorRotation();
-#endif	
-	UE_LOG(LogTemp, Log, TEXT("[OnMovementDetected] Broadcasting"))
-	Multi_UpdateMovement.Broadcast(FinalLocation, FinalRotation);
+	
+	UE_LOG(LogTemp, Log,
+		TEXT("[AExperimentPawn::Server_UpdateMovement_Validate] OwnerController: %s. Returning true"),
+		*OwnerController->GetName());
+
+	return true;
 }
 
 void AExperimentPawn::OnMovementDetected() {
-	UE_LOG(LogTemp, Log, TEXT("[AExperimentPawn::Server_UpdateMovement_Implementation]"))
-	Server_UpdateMovement();
-	
-	return;
+	UE_LOG(LogTemp, Warning, TEXT("[AExperimentPawn::OnMovementDetected] DEPRECATED"))
 	FVector FinalLocation = {};
 	FRotator FinalRotation = {};
 #if PLATFORM_ANDROID
 	UE_LOG(LogTemp, Log, TEXT("[OnMovementDetected] PLATFORM_ANDROID"))
-
 	if ((UHeadMountedDisplayFunctionLibrary::GetHMDWornState() == EHMDWornState::Worn)) {
+		UE_LOG(LogTemp, Log, TEXT("[OnMovementDetected] HMD worn"))
 		FVector HMDLocation = {};
 		FRotator HMDRotation = {};
 		UHeadMountedDisplayFunctionLibrary::GetOrientationAndPosition(HMDRotation, HMDLocation);
-		FinalLocation = HMDLocation + this->VROrigin->GetComponentLocation();
-		FinalRotation = HMDRotation;
+		CurrentLocation = HMDLocation + this->VROrigin->GetComponentLocation();
+		CurrentRotation = HMDRotation;
 		UpdateRoomScaleLocation();
+
 	}else {
-		// UE_LOG(LogTemp, Error, TEXT("[OnMovementDetected] HMD is not being worn! Returning."))
-		FinalLocation = RootComponent->GetComponentLocation();
-		FinalRotation = GetActorRotation();
+		UE_LOG(LogTemp, Error, TEXT("[OnMovementDetected] HMD is not being worn! Using base."))
+		CurrentLocation = RootComponent->GetComponentLocation();
+		CurrentRotation = GetActorRotation();
 	}
 #elif PLATFORM_DESKTOP
-	UE_LOG(LogTemp, Log, TEXT("[OnMovementDetected] PLATFORM_DESKTOP"))
-	FinalLocation = RootComponent->GetComponentLocation();
-	FinalRotation = GetActorRotation();
+	UE_LOG(LogTemp, Log, TEXT("[AExperimentPawn::OnMovementDetected] PLATFORM_DESKTOP"))
+	CurrentLocation = RootComponent->GetComponentLocation();
+	CurrentRotation = GetActorRotation();
 #endif	
-	
-	UE_LOG(LogTemp, Log, TEXT("[OnMovementDetected] Broadcasting"))
-	Multi_UpdateMovement.Broadcast(FinalLocation, FinalRotation);
+	UE_LOG(LogTemp, Log, TEXT("[AExperimentPawn::OnMovementDetected] location: (%s); Rotation: (%s)"),
+		*CurrentLocation.ToString(), *CurrentRotation.ToString())
+	// Multi_UpdateMovement.Broadcast(FinalLocation, FinalRotation);
 }
 
-APlayerController* AExperimentPawn::GetGenericController()
-{
+void AExperimentPawn::UpdateMovement() {
+	if (HasAuthority()) {
+		UE_LOG(LogTemp, Warning,TEXT("[AExperimentPawn::UpdateMovement] Ran from server!"))
+	} else {
+		FRotator HMDRotation {};
+		FVector HMDLocation {};
+		UHeadMountedDisplayFunctionLibrary::GetOrientationAndPosition(HMDRotation, HMDLocation);
+		CurrentLocation = HMDLocation + this->VROrigin->GetComponentLocation();
+		CurrentRotation = HMDRotation;
+		UpdateRoomScaleLocation();
+		Server_UpdateMovement(CurrentLocation, CurrentRotation);
+	}
+	UE_LOG(LogTemp, Warning,TEXT("[AExperimentPawn::UpdateMovement] MultiDelegate_ called!"))
+	MultiDelegate_UpdateMovement.Broadcast(CurrentLocation, CurrentRotation);
+}
+
+APlayerController* AExperimentPawn::GetGenericController() {
 	TObjectPtr<APlayerController> PlayerControllerOut = nullptr;
 	if (this->IsValidLowLevelFast())
 	{
@@ -309,40 +338,37 @@ APlayerController* AExperimentPawn::GetGenericController()
 }
 
 bool AExperimentPawn::StartPositionSamplingTimer(const float InRateHz) {
-	UE_LOG(LogTemp, Log, TEXT("StartPositionSamplingTimer"))
+	UE_LOG(LogTemp, Log, TEXT("[AExperimentPawn::StartPositionSamplingTimer]"))
 	EventTimer = NewObject<UEventTimer>(this, UEventTimer::StaticClass());
 	if (EventTimer->IsValidLowLevel()) {
-		UE_LOG(LogTemp, Log, TEXT("StartPositionSamplingTimer: Starting at %0.2f Hz."), InRateHz)
+		UE_LOG(LogTemp, Log, TEXT("[AExperimentPawn::StartPositionSamplingTimer] Starting at %0.2f Hz."), InRateHz)
 		EventTimer->SetRateHz(InRateHz); //todo: make sampling rate GI variable (or somewhere relevant) 
 		EventTimer->bLoop = true;
-		
 		EventTimer->OnTimerFinishedDelegate.AddDynamic(this,
-			&AExperimentPawn::OnMovementDetected);
+			&AExperimentPawn::UpdateMovement);
 		
 		if (!EventTimer->Start()) { return false; }
 	} else {
-		UE_LOG(LogTemp, Error, TEXT("StartPositionSamplingTimer Failed! EventTimer is NULL!"))
+		UE_LOG(LogTemp, Error, TEXT("[AExperimentPawn::StartPositionSamplingTimer] StartPositionSamplingTimer Failed! EventTimer is NULL!"))
 		return false;
 	}
 	
-	UE_LOG(LogTemp, Log, TEXT("StartPositionSamplingTimer OK!"))
+	UE_LOG(LogTemp, Log, TEXT("[AExperimentPawn::StartPositionSamplingTimer] OK!"))
 	return true;
 }
 
 bool AExperimentPawn::StopPositionSamplingTimer() {
-	UE_LOG(LogTemp, Log, TEXT("StopPositionSamplingTimer"))
+	UE_LOG(LogTemp, Log, TEXT("[AExperimentPawn::StopPositionSamplingTimer]"))
 
 	if (EventTimer->IsValidLowLevel()) {
-		
 		EventTimer->OnTimerFinishedDelegate.RemoveDynamic(this,
-			&AExperimentPawn::OnMovementDetected);
-		
+			&AExperimentPawn::UpdateMovement);
 		if (!EventTimer->Stop()) {
-			UE_LOG(LogTemp, Error, TEXT("StopPositionSamplingTimer Failed to stop EventTimer!"))
+			UE_LOG(LogTemp, Error, TEXT("[AExperimentPawn::StopPositionSamplingTimer] Failed to stop EventTimer!"))
 			return false;
 		}
 	} else {
-		UE_LOG(LogTemp, Error, TEXT("StopPositionSamplingTimer failed to stop EventTimer! EventTimer is NULL!"))
+		UE_LOG(LogTemp, Error, TEXT("[AExperimentPawn::StopPositionSamplingTimer] failed to stop EventTimer! EventTimer is NULL!"))
 		return false;
 	}
 	
@@ -351,23 +377,16 @@ bool AExperimentPawn::StopPositionSamplingTimer() {
 }
 
 void AExperimentPawn::SetupSampling() {
-
-#if PLATFORM_ANDROID
 	UE_LOG(LogTemp, Log, TEXT("[AExperimentPawn::BeginPlay] Running on Android"))
 	UHeadMountedDisplayFunctionLibrary::SetTrackingOrigin(EHMDTrackingOrigin::Stage);
 	Camera->bUsePawnControlRotation = false;
-#elif PLATFORM_DESKTOP
-	UE_LOG(LogTemp, Log, TEXT("[AExperimentPawn::SetupSampling] Running on Windows"))
-	Camera->bUsePawnControlRotation = true;
-#endif
-	
 	// ReSharper disable once CppTooWideScopeInitStatement
-	// constexpr float FS = 60.0f;
-	// if (!ensure(this->StartPositionSamplingTimer(FS))) {
-	// 	UE_LOG(LogTemp, Error, TEXT("[AExperimentPawn::SetupSampling] StartPositionSamplingTimer(%0.2f) Failed!"), FS)
-	// } else {
-	// 	UE_LOG(LogTemp, Log, TEXT("[AExperimentPawn::SetupSampling] StartPositionSamplingTimer(%0.2f) OK!"), FS)
-	// }
+	constexpr float FS = 60.0f;
+	if (!ensure(this->StartPositionSamplingTimer(FS))) {
+		UE_LOG(LogTemp, Error, TEXT("[AExperimentPawn::SetupSampling] StartPositionSamplingTimer(%0.2f) Failed!"), FS)
+	} else {
+		UE_LOG(LogTemp, Log, TEXT("[AExperimentPawn::SetupSampling] StartPositionSamplingTimer(%0.2f) OK!"), FS)
+	}
 
 	bUseVR = true; // todo: temporary!!!!!
 	UE_LOG(LogTemp, Log, TEXT("[AExperimentPawn::BeginPlay] bUseVR = %i"), bUseVR)
@@ -380,7 +399,7 @@ void AExperimentPawn::BeginPlay() {
 	UE_LOG(LogTemp, Log, TEXT("[AExperimentPawn::BeginPlay] Running on client."))
 	SetupSampling();
 	SetReplicates(true);
-	// SetReplicateMovement(true);
+	SetReplicateMovement(true);
 #endif
 }
 
@@ -388,11 +407,18 @@ void AExperimentPawn::GetLifetimeReplicatedProps( TArray< FLifetimeProperty > & 
 	Super::GetLifetimeReplicatedProps( OutLifetimeProps );
 	DOREPLIFETIME(AExperimentPawn, SphereMeshComponent);
 	DOREPLIFETIME(AExperimentPawn, Camera);
+	DOREPLIFETIME(AExperimentPawn, CurrentLocation);
+	DOREPLIFETIME(AExperimentPawn, CurrentRotation);
 }
-
 
 void AExperimentPawn::Tick(float DeltaTime) {
 	Super::Tick(DeltaTime);
+	if (this->GetController()) {
+		UE_LOG(LogTemp, Log, TEXT("Pawn %s is possessed by %s"), *this->GetName(), *this->GetController()->GetName());
+	} else {
+		UE_LOG(LogTemp, Warning, TEXT("Pawn %s is not possessed"), *this->GetName());
+	}
+	// Move();
 }
 
 void AExperimentPawn::EndPlay(const EEndPlayReason::Type EndPlayReason) {
@@ -405,6 +431,18 @@ void AExperimentPawn::EndPlay(const EEndPlayReason::Type EndPlayReason) {
 void AExperimentPawn::Reset()
 {
 	Super::Reset();
+}
+
+void AExperimentPawn::PossessedBy(AController* NewController) {
+	Super::PossessedBy(NewController);
+	if (NewController){
+		UE_LOG(LogTemp, Log, TEXT("[AExperimentPawn::PossessedBy] %s"), *NewController->GetName())
+	}
+}
+
+void AExperimentPawn::UnPossessed() {
+	Super::UnPossessed();
+	UE_LOG(LogTemp, Log, TEXT("[AExperimentPawn::UnPossessed] Called"))
 }
 
 void AExperimentPawn::UpdateMovementComponent(FVector InputVector, bool bForce) {

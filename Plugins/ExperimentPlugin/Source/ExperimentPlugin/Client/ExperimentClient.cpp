@@ -1,4 +1,4 @@
-﻿#include "Client/ExperimentClient.h"
+﻿#include "ExperimentClient.h"
 // ReSharper disable CppTooWideScopeInitStatement
 // #include "GameInstanceMain.h"
 #include "Net/UnrealNetwork.h"
@@ -373,7 +373,7 @@ void AExperimentClient::UpdatePredator(const FMessage& InMessage) {
 
 /* get updated player position and send to prey route via tracking service client */
 void AExperimentClient::UpdatePreyPosition(const FVector InVector, const FRotator InRotation) {
-	UE_LOG(LogTemp, Log, TEXT("CALLED AND CAN UPDATE IS: %i"),bCanUpdatePrey)
+	UE_LOG(LogTemp, Log, TEXT("[AExperimentClient::UpdatePreyPosition] Called | bCanUpdatePrey = %i"),bCanUpdatePrey)
 	// if (!ensure(ExperimentManager->IsValidLowLevelFast())) { return; }
 	// if (!ExperimentManager->IsInEpisode()) { return; }
 	if (!bConnectedToServer) {
@@ -423,27 +423,27 @@ void AExperimentClient::HandleUnroutedMessage(const FMessage InMessage) {
 
 /* gets player pawn from world */
 bool AExperimentClient::SetupPlayerUpdatePosition(APawn* InPawn) {
-	UE_LOG(LogTemp, Log, TEXT("[AExperimentClient::SetupPlayerUpdatePosition()] Called"))
-	if (!GetWorld()) { return false; }
+	UE_LOG(LogTemp, Log, TEXT("[AExperimentClient::SetupPlayerUpdatePosition()] DEPRECATED RETURNING FALSE"))
+	// if (!GetWorld()) { return false; }
+	//
+	// if (!InPawn) {
+	// 	UE_LOG(LogTemp, Fatal, TEXT("[AExperimentClient::SetupPlayerUpdatePosition()] No pawn found."))
+	// 	return false;
+	// }
+	//
+	// if (Cast<AExperimentPawn>(InPawn)) {
+	// 	PlayerPawn = Cast<AExperimentPawn>(InPawn); // Assuming PlayerPawn is a member of type APawn* or APawnMain*
+	// 	UE_LOG(LogTemp, Log,
+	// 	       TEXT("[AExperimentClient::SetupPlayerUpdatePosition()] APawnMain found and assigned."));
+	// 	PlayerPawn->MultiDelegate_UpdateMovement.AddDynamic(this, &ThisClass::UpdatePreyPosition);
+	// }
+	// else {
+	// 	UE_LOG(LogTemp, Error,
+	// 	       TEXT("[AExperimentClient::SetupPlayerUpdatePosition()] No valid pawn found nor assigned."));
+	// 	return false;
+	// }
 
-	if (!InPawn) {
-		UE_LOG(LogTemp, Fatal, TEXT("[AExperimentClient::SetupPlayerUpdatePosition()] No pawn found."))
-		return false;
-	}
-
-	if (Cast<AExperimentPawn>(InPawn)) {
-		PlayerPawn = Cast<AExperimentPawn>(InPawn); // Assuming PlayerPawn is a member of type APawn* or APawnMain*
-		UE_LOG(LogTemp, Log,
-		       TEXT("[AExperimentClient::SetupPlayerUpdatePosition()] APawnMain found and assigned."));
-		PlayerPawn->Multi_UpdateMovement.AddDynamic(this, &ThisClass::UpdatePreyPosition);
-	}
-	else {
-		UE_LOG(LogTemp, Error,
-		       TEXT("[AExperimentClient::SetupPlayerUpdatePosition()] No valid pawn found nor assigned."));
-		return false;
-	}
-
-	return true;
+	return false;
 }
 
 /* destroy this actor. This is primarily used as an abort */
@@ -978,7 +978,7 @@ void AExperimentClient::BeginPlay() {
 	
 	Test();
 
-	StartEpisode();	
+	// StartEpisode();	
 }
 
 /* run a (light!) command every frame */

@@ -280,7 +280,7 @@ void APawnMain::OnMovementDetected() {
 		FinalLocation = RootComponent->GetComponentLocation();
 		FinalRotation = GetActorRotation();
 	}
-		
+	
 	MovementDetectedEvent.Broadcast(FinalLocation, FinalRotation);
 }
 

@@ -6,7 +6,7 @@
 #include "Occlusion.generated.h"
 
 UCLASS()
-class BOTEVADEMODULE_API AOcclusion : public AActor
+class EXPERIMENTPLUGIN_API AOcclusion : public AActor
 {
 	GENERATED_BODY()
 	

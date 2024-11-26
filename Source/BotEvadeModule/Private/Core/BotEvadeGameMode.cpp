@@ -8,8 +8,8 @@
 #include "EngineUtils.h"
 #include "ExperimentPlugin/Characters/ExperimentPawn.h"
 #include "ExperimentPlugin/PlayerControllers/ExperimentPlayerControllerVR.h"
-#include "Subsystems/MultiplayerSubsystem.h"
-#include "Client/ExperimentClient.h"
+#include "ExperimentPlugin/Client/ExperimentClient.h"
+#include "ExperimentPlugin/Characters/ExperimentCharacter.h"
 
 DEFINE_LOG_CATEGORY(LogBotEvadeGameMode);
 
@@ -18,7 +18,7 @@ ABotEvadeGameMode::ABotEvadeGameMode(){
 
 	PlayerStateClass      = ABotEvadePlayerState::StaticClass(); 
 	GameStateClass        = ABotEvadeGameState::StaticClass();
-	DefaultPawnClass      = AExperimentPawn::StaticClass();
+	DefaultPawnClass      = AExperimentCharacter::StaticClass();
 	PlayerControllerClass = AExperimentPlayerControllerVR::StaticClass();
 	
 	PrimaryActorTick.bStartWithTickEnabled = true;
@@ -49,11 +49,11 @@ void ABotEvadeGameMode::SpawnExperimentServiceMonitor() {
 		SpawnTransformExperimentClient.SetLocation(FVector::ZeroVector);
 		SpawnTransformExperimentClient.SetRotation(FRotator::ZeroRotator.Quaternion());
 		
-		ExperimentClient = GetWorld()->SpawnActorDeferred<AExperimentClient>(
-			AExperimentClient::StaticClass(), SpawnTransformExperimentClient, this, nullptr, CollisionHandlingMethod);
-		ExperimentClient->WorldScale = this->WorldScale;
-		ExperimentClient->FinishSpawning(SpawnTransformExperimentClient);
-		ExperimentClient->AddToRoot();
+		// ExperimentClient = GetWorld()->SpawnActorDeferred<AExperimentClient>(
+		// 	AExperimentClient::StaticClass(), SpawnTransformExperimentClient, this, nullptr, CollisionHandlingMethod);
+		// ExperimentClient->WorldScale = this->WorldScale;
+		// ExperimentClient->FinishSpawning(SpawnTransformExperimentClient);
+		// ExperimentClient->AddToRoot();
 	}
 }
 
@@ -64,13 +64,15 @@ void ABotEvadeGameMode::StartPlay() {
 		UE_LOG(LogTemp, Log, TEXT("[ABotEvadeGameMode::StartPlay] Running on a dedicated server."))
 	}
 	
-	// todo: connect to server
-	SpawnExperimentServiceMonitor();
-	if (!ensure(ExperimentClient->IsValidLowLevelFast())) {
-		UE_LOG(LogBotEvade, Error, TEXT("Failed to spawn ExperimentClient!"))
-		return;
-	}
-	StartPositionSamplingTimer(30.0f);
+// #if !WITH_EDITOR
+// 	// todo: connect to server
+// 	SpawnExperimentServiceMonitor();
+// 	if (!ensure(ExperimentClient->IsValidLowLevelFast())) {
+// 		UE_LOG(LogBotEvade, Error, TEXT("Failed to spawn ExperimentClient!"))
+// 		return;
+// 	}
+// 	StartPositionSamplingTimer(30.0f);
+// #endif
 }
 
 void ABotEvadeGameMode::EndPlay(const EEndPlayReason::Type EndPlayReason) {
@@ -115,9 +117,22 @@ void ABotEvadeGameMode::HandleStartingNewPlayer_Implementation(APlayerController
 		UE_LOG(LogTemp, Warning, TEXT("[ABotEvadeGameMode::HandleStartingNewPlayer_Implementation] NewPlayer PlayerController NULL"));
 		return;
 	}
-	
+
+	UE_LOG(LogTemp, Warning, TEXT("[ABotEvadeGameMode::HandleStartingNewPlayer_Implementation] NewPlayer PlayerController Valid"));
+
 	if (NewPlayer->PlayerState) {
-		UE_LOG(LogTemp, Log, TEXT("bOnlySpectator: %i"), NewPlayer->PlayerState->IsOnlyASpectator());
+		UE_LOG(LogTemp, Log, TEXT("[ABotEvadeGameMode::HandleStartingNewPlayer_Implementation] bOnlySpectator: %i"), NewPlayer->PlayerState->IsOnlyASpectator());
+	}
+	
+	APawn* PawnTemp = NewPlayer->GetPawn();
+	if (!PawnTemp) {
+		UE_LOG(LogTemp, Log, TEXT("[ABotEvadeGameMode::HandleStartingNewPlayer_Implementation] Pawn not valid"))
+	}
+
+	AExperimentPawn* ExpPawn = Cast<AExperimentPawn>(PawnTemp);
+	if (ExpPawn) {
+		UE_LOG(LogTemp, Log, TEXT("[ABotEvadeGameMode::HandleStartingNewPlayer_Implementation] Found valid AExperimentPawn"))
+		// ExperimentPawn->MultiDelegate_UpdateMovement.AddDynamic(this,&ABotEvadeGameMode::HandleUpdatePosition);
 	}
 }
 
@@ -145,7 +160,7 @@ AActor* ABotEvadeGameMode::ChoosePlayerStart_Implementation(AController* Player)
 void ABotEvadeGameMode::OnPostLogin(AController* NewPlayer) {
 	Super::OnPostLogin(NewPlayer);
 	UE_LOG(LogBotEvadeGameMode, Warning, TEXT("[ABotEvadeGameMode::OnPostLogin] Called"));
-
+	
 // 	// int32 NumberOfPlayers = GameState.Get()->PlayerArray.Num();
 // 	int32 NumberOfPlayers = 0; 
 // 	
@@ -181,10 +196,10 @@ void ABotEvadeGameMode::Logout(AController* Exiting) {
 	UE_LOG(LogTemp, Log, TEXT("Player logged out: %s"), *Exiting->GetName());
 }
 
-void ABotEvadeGameMode::OnUpdatePreyPosition() {
+void ABotEvadeGameMode::OnUpdatePreyPosition(const FVector& InLocation, const FRotator& InRotation) {
 	UE_LOG(LogTemp,Log, TEXT("[ABotEvadeGameMode::OnUpdatePreyPosition] Called!"))
 
-	if (NumPlayers == 0) {
+	/*if (NumPlayers == 0) {
 		UE_LOG(LogTemp, Error,TEXT("[ABotEvadeGameMode::OnUpdatePreyPosition] No Players found to update position!"))
 		return;
 	}
@@ -197,67 +212,78 @@ void ABotEvadeGameMode::OnUpdatePreyPosition() {
 	TObjectPtr<APlayerState> PlayerStateTemp = nullptr;
 	UE_LOG(LogTemp, Log, TEXT("[ABotEvadeGameMode::OnUpdatePreyPosition] Number of Players: %i"), GameState.Get()->PlayerArray.Num());
 	if (PlayerStatesArr.Num() <= 0) {
-		UE_LOG(LogTemp, Error,TEXT("PlayerStatesArr is empty!"))
-
+		UE_LOG(LogTemp, Error,TEXT("[ABotEvadeGameMode::OnUpdatePreyPosition] PlayerStatesArr is empty!"))
 		return;
 	}
 
 	// get first player state
 	PlayerStateTemp = GameState.Get()->PlayerArray[0];
 	if (!PlayerStateTemp) {
-		UE_LOG(LogTemp, Error,TEXT("PlayerStateTemp NULL"))
+		UE_LOG(LogTemp, Error,TEXT("[ABotEvadeGameMode::OnUpdatePreyPosition] PlayerStateTemp NULL"))
 		return;
 	}
 
 	// get first player pawn
 	APawn* PawnTemp = PlayerStateTemp->GetPawn();
 	if (!PawnTemp) {
-		UE_LOG(LogTemp, Error,TEXT("PawnTemp NULL"))
+		UE_LOG(LogTemp, Error,TEXT("[ABotEvadeGameMode::OnUpdatePreyPosition] PawnTemp NULL"))
 		return;
 	}
 
 	// cast to aexperimentpawn
 	AExperimentPawn* ExperimentPawn = Cast<AExperimentPawn>(PawnTemp);
 	if (!ExperimentPawn) {
-		UE_LOG(LogTemp, Error,TEXT("ExperimentPawn NULL"))
+		UE_LOG(LogTemp, Error,TEXT("[ABotEvadeGameMode::OnUpdatePreyPosition] ExperimentPawn NULL"))
 		return;
 	}
 
+	if(!ExperimentPawn->BotEvadeGameMode) {
+		UE_LOG(LogTemp,Log,TEXT("[ABotEvadeGameMode::OnUpdatePreyPosition] Giving ExperimentPawn a reference to ABotEvadeGameMode"))
+		ExperimentPawn->BotEvadeGameMode = this;
+	}
+	
+	if (!ExperimentPawn->IsLocallyControlled()) {
+		UE_LOG(LogTemp, Error,TEXT("[ABotEvadeGameMode::OnUpdatePreyPosition] ExperimentPawn is not locally controlled!"))
+	}
 	// if all checks valid: 
 	if (!ExperimentPawn->Camera->IsValidLowLevelFast()) {
-		UE_LOG(LogTemp, Error,TEXT("ExperimentPawn->Camera NULL"))
+		UE_LOG(LogTemp, Error,TEXT("[ABotEvadeGameMode::OnUpdatePreyPosition] ExperimentPawn->Camera NULL"))
 		return;
 	}
 
 	const FVector  PawnLocation = ExperimentPawn->GetActorLocation();
 	const FRotator PawnRotation = ExperimentPawn->GetActorRotation();
-	UE_LOG(LogTemp, Log, TEXT("PawnLocation: %s"), *PawnLocation.ToString())
-	UE_LOG(LogTemp, Log, TEXT("PawnRotation: %s"), *PawnRotation.ToString())
+	UE_LOG(LogTemp, Log, TEXT("[ABotEvadeGameMode::OnUpdatePreyPosition] PawnLocation: %s"), *PawnLocation.ToString())
+	UE_LOG(LogTemp, Log, TEXT("[ABotEvadeGameMode::OnUpdatePreyPosition] PawnRotation: %s"), *PawnRotation.ToString())
 	if (ExperimentClient->IsValidLowLevelFast()) {
 		ExperimentClient->UpdatePreyPosition(PawnLocation, PawnRotation);
-		UE_LOG(LogTemp, Log, TEXT("SENT FRAME!"))
-		
-	}
+		UE_LOG(LogTemp, Log, TEXT("[ABotEvadeGameMode::OnUpdatePreyPosition] SENT FRAME!"))
+	}*/
+}
+
+void ABotEvadeGameMode::HandleUpdatePosition(const FVector InLocation, const FRotator InRotation) {
+	UE_LOG(LogTemp,Log, TEXT("[ABotEvadeGameMode::HandleUpdatePosition] Received -> Location: %s | Location: %s"),
+		*InLocation.ToString(), *InRotation.ToString())
 }
 
 bool ABotEvadeGameMode::StartPositionSamplingTimer(const float InRateHz) {
-	UE_LOG(LogTemp, Log, TEXT("StartPositionSamplingTimer"))
+	UE_LOG(LogTemp, Log, TEXT("[ABotEvadeGameMode::StartPositionSamplingTimer] Called"))
 	EventTimer = NewObject<UEventTimer>(this, UEventTimer::StaticClass());
 	if (EventTimer->IsValidLowLevel()) {
-		UE_LOG(LogTemp, Log, TEXT("StartPositionSamplingTimer: Starting at %0.2f Hz."), InRateHz)
+		UE_LOG(LogTemp, Log, TEXT("[ABotEvadeGameMode::StartPositionSamplingTimer] Starting at %0.2f Hz."), InRateHz)
 		EventTimer->SetRateHz(InRateHz); //todo: make sampling rate GI variable (or somewhere relevant) 
 		EventTimer->bLoop = true;
 		
-		EventTimer->OnTimerFinishedDelegate.AddDynamic(this,
-			&ABotEvadeGameMode::OnUpdatePreyPosition);
+		// EventTimer->OnTimerFinishedDelegate.AddDynamic(this,
+		// 	&ABotEvadeGameMode::OnUpdatePreyPosition);
 		
 		if (!EventTimer->Start()) { return false; }
 	} else {
-		UE_LOG(LogTemp, Error, TEXT("StartPositionSamplingTimer Failed! EventTimer is NULL!"))
+		UE_LOG(LogTemp, Error, TEXT("[ABotEvadeGameMode::StartPositionSamplingTimer] Failed! EventTimer is NULL!"))
 		return false;
 	}
 	
-	UE_LOG(LogTemp, Log, TEXT("StartPositionSamplingTimer OK!"))
+	UE_LOG(LogTemp, Log, TEXT("[ABotEvadeGameMode::StartPositionSamplingTimer] OK!"))
 	return true;
 }
 

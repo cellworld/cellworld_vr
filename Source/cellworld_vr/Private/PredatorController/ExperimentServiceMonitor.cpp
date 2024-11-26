@@ -1,7 +1,7 @@
 // ReSharper disable CppTooWideScopeInitStatement
 #include "PredatorController/ExperimentServiceMonitor.h"
 #include "ExperimentPlugin/DataManagers/ExperimentManager.h"
-#include "BotEvadeModule/Public/Client/ExperimentClient.h"
+#include "ExperimentPlugin/Client/ExperimentClient.h"
 #include "GameInstanceMain.h"
 #include "cellworld_vr/cellworld_vr.h"
 #include "Kismet/GameplayStatics.h"

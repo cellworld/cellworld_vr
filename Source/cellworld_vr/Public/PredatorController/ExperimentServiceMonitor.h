@@ -10,7 +10,7 @@
 #include "ExperimentPlugin/DataManagers/ExperimentManager.h"
 #include "DrawDebugHelpers.h"
 #include "PredatorBasic.h"
-#include "BotEvadeModule/Public/Client/ExperimentClient.h"
+#include "ExperimentPlugin/Client/ExperimentClient.h"
 #include "MiscUtils/Timers/EventTimer.h"
 #include "ExperimentServiceMonitor.generated.h"
 

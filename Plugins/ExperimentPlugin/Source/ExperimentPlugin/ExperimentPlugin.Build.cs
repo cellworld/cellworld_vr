@@ -49,7 +49,7 @@ public class ExperimentPlugin : ModuleRules
 				"JsonUtilities",
 				"TCPMessages",
 				"UMG",
-				"HeadMountedDisplay" 
+				"HeadMountedDisplay"
 				// ... add private dependencies that you statically link with here ...	
 			}
 			);

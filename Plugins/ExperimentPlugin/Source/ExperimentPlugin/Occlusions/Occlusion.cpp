@@ -1,4 +1,4 @@
-#include "Components/Occlusion.h"
+#include "Occlusion.h"
 
 // Sets default values
 AOcclusion::AOcclusion() {
