@@ -37,18 +37,16 @@ void AExperimentPlayerControllerVR::SetupInputComponent() {
 }
 
 void AExperimentPlayerControllerVR::RestartGame() {
-	/*if (PossessedCharacter) {
-		PossessedCharacter->RestartGame();
-	}*/
+
 }
 
 void AExperimentPlayerControllerVR::Tick(float DeltaTime) {
 	Super::Tick(DeltaTime);
-
 	if (!PossessedCharacter) {
-		PossessedCharacter = Cast<AExperimentCharacter>(GetPawn());
+		PossessedCharacter = Cast<AExperimentCharacter>(GetCharacter());
 		UE_LOG(LogTemp, Error, TEXT("[AExperimentPlayerControllerVR::Tick] PossessedPawn NULL. Recasting."))
-		return;
+	}else {
+		UE_LOG(LogTemp, Log, TEXT("[AExperimentPlayerControllerVR::Tick] PossessedPawn valid"))
 	}
 }
 

@@ -20,7 +20,7 @@ class EXPERIMENTPLUGIN_API AExperimentCharacter : public ACharacter
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"))
 	class UCameraComponent* Camera;
 
-	const bool bUseVR = false;
+	const bool bUseVR = true;
 	UFUNCTION()
 	void SetupSampling();
 	UFUNCTION()
@@ -111,6 +111,7 @@ public:
 protected:
 	// APawn interface
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
+	virtual void Tick(float DeltaSeconds) override;
 	// End of APawn interface
 
 public:

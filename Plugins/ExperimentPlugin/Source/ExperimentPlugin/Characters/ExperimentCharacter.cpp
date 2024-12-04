@@ -6,31 +6,8 @@
 #include "ExperimentPlugin/GameModes/ExperimentGameMode.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "GameFramework/Controller.h"
-#include "GameFramework/PhysicsVolume.h"
-
-bool AExperimentCharacter::Server_UpdateMovement_Validate(const FVector& InLocation, const FRotator& InRotation) {
-	return true;
-}
-
-void AExperimentCharacter::
-Server_UpdateMovement_Implementation(const FVector& InLocation, const FRotator& InRotation) {
-	// UE_LOG(LogTemp, Warning, TEXT("[AExperimentCharacter::Server_UpdateMovement_Implementation] InLocation: %s | InRotation: %s"),
-	// 	*InLocation.ToString(), *InRotation.ToString())
-	if (!HasAuthority()) {
-		UE_LOG(LogTemp, Error,
-			TEXT("[AExperimentCharacter::Server_UpdateMovement_Implementation] Can't send to Client, doesn't have authority!"))
-		return;
-	}
-	AExperimentGameMode* ExperimentGameMode = Cast<AExperimentGameMode>(GetWorld()->GetAuthGameMode());
-	if (ExperimentGameMode) {
-		UE_LOG(LogTemp, Error,
-			TEXT("[AExperimentCharacter::Server_UpdateMovement_Implementation] Calling: ExperimentGameMode->OnUpdatePreyPosition"))
-		ExperimentGameMode->OnUpdatePreyPosition(InLocation,InRotation);
-	}
-}
 
 AExperimentCharacter::AExperimentCharacter() {
-	// Set size for collision capsule
 	
 	// set our turn rates for input
 	BaseTurnRate = 45.f;
@@ -38,25 +15,27 @@ AExperimentCharacter::AExperimentCharacter() {
 
 	// Don't rotate when the controller rotates. Let that just affect the camera.
 	bUseControllerRotationPitch = false;
-	bUseControllerRotationYaw = false;
-	bUseControllerRotationRoll = false;
-	bSimGravityDisabled = true;
+	bUseControllerRotationYaw   = false;
+	bUseControllerRotationRoll  = false;
+	bSimGravityDisabled			= true;
 	
 	VROrigin = CreateDefaultSubobject<USceneComponent>(TEXT("VROrigin"));
+	// VROrigin->SetupAttachment(GetCapsuleComponent());
 	RootComponent = VROrigin;
 
 	GetCapsuleComponent()->InitCapsuleSize(42.f, 96.0f);
-	GetCapsuleComponent()->SetupAttachment(RootComponent);
 	GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::Type::QueryOnly);
 	GetCapsuleComponent()->SetMobility(EComponentMobility::Movable);
 	GetCapsuleComponent()->OnComponentBeginOverlap.AddDynamic(this, &ThisClass::OnOverlapBegin);
 	GetCapsuleComponent()->OnComponentEndOverlap.AddDynamic(this, &ThisClass::OnOverlapEnd);
+	GetCapsuleComponent()->SetupAttachment(RootComponent);
 	
 	// Configure character movement
 	GetCharacterMovement()->bOrientRotationToMovement = true; // Character moves in the direction of input...	
 	GetCharacterMovement()->RotationRate = FRotator(0.0f, 540.0f, 0.0f); // ...at this rotation rate
 	GetCharacterMovement()->JumpZVelocity = 600.f;
 	GetCharacterMovement()->AirControl = 0.2f;
+	GetCharacterMovement()->SetUpdatedComponent(GetCapsuleComponent());
 
 	// Create a follow camera
 	Camera = CreateDefaultSubobject<UCameraComponent>(TEXT("Camera"));
@@ -81,10 +60,32 @@ AExperimentCharacter::AExperimentCharacter() {
 	MotionControllerRight->SetVisibility(false, false);
 	MotionControllerRight->SetupAttachment(RootComponent);
 
-	GetMovementComponent()->UpdatedComponent = RootComponent;
+	// GetMovementComponent()->UpdatedComponent = RootComponent;
 	
 	ACharacter::SetReplicateMovement(true);
 }
+
+bool AExperimentCharacter::Server_UpdateMovement_Validate(const FVector& InLocation, const FRotator& InRotation) {
+	return true;
+}
+
+void AExperimentCharacter::
+Server_UpdateMovement_Implementation(const FVector& InLocation, const FRotator& InRotation) {
+	// UE_LOG(LogTemp, Warning, TEXT("[AExperimentCharacter::Server_UpdateMovement_Implementation] InLocation: %s | InRotation: %s"),
+	// 	*InLocation.ToString(), *InRotation.ToString())
+	if (!HasAuthority()) {
+		UE_LOG(LogTemp, Error,
+			TEXT("[AExperimentCharacter::Server_UpdateMovement_Implementation] Can't send to Client, doesn't have authority!"))
+		return;
+	}
+	AExperimentGameMode* ExperimentGameMode = Cast<AExperimentGameMode>(GetWorld()->GetAuthGameMode());
+	if (ExperimentGameMode) {
+		UE_LOG(LogTemp, Error,
+			TEXT("[AExperimentCharacter::Server_UpdateMovement_Implementation] Calling: ExperimentGameMode->OnUpdatePreyPosition"))
+		ExperimentGameMode->OnUpdatePreyPosition(InLocation,InRotation);
+	}
+}
+
 
 void AExperimentCharacter::OnOverlapBegin(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp,
 							   int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
@@ -206,6 +207,22 @@ void AExperimentCharacter::SetupPlayerInputComponent(class UInputComponent* Play
 
 	// VR headset functionality
 	PlayerInputComponent->BindAction("ResetVR", IE_Pressed, this, &AExperimentCharacter::OnResetVR);
+}
+
+void AExperimentCharacter::Tick(float DeltaSeconds) {
+	Super::Tick(DeltaSeconds);
+	if (bUseVR) { // todo: bUseVR - Make variable 
+		FRotator HMDRotation {};
+		FVector HMDLocation {};
+		UHeadMountedDisplayFunctionLibrary::GetOrientationAndPosition(HMDRotation, HMDLocation);
+		CurrentLocation = HMDLocation + this->VROrigin->GetComponentLocation();
+		CurrentRotation = HMDRotation;
+		UpdateRoomScaleLocation();
+		// Server_UpdateMovement(CurrentLocation, CurrentRotation);
+	} else {
+		CurrentLocation = RootComponent->GetComponentLocation();
+		CurrentRotation = GetActorRotation();
+	}
 }
 
 bool AExperimentCharacter::Multi_OnUpdateMovement_Validate(const FVector& InLocation, const FRotator& InRotation) {
