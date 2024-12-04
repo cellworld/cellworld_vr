@@ -23,5 +23,8 @@ void AExperimentDoorEntry::Server_OnEventTrigger_Implementation() {
 		UE_LOG(LogTemp, Warning,
 			TEXT("[AExperimentDoorEntry::Server_OnEventTrigger_Implementation] Calling: %s"), *Msg)
 		ExperimentGameMode->ExperimentClient->StartEpisode();
+	}else {
+		UE_LOG(LogTemp, Error,
+			TEXT("[AExperimentDoorEntry::Server_OnEventTrigger_Implementation] UWorld is NULL"))
 	}
 }

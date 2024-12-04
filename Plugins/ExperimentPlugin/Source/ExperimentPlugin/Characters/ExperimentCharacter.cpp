@@ -211,18 +211,18 @@ void AExperimentCharacter::SetupPlayerInputComponent(class UInputComponent* Play
 
 void AExperimentCharacter::Tick(float DeltaSeconds) {
 	Super::Tick(DeltaSeconds);
-	if (bUseVR) { // todo: bUseVR - Make variable 
-		FRotator HMDRotation {};
-		FVector HMDLocation {};
-		UHeadMountedDisplayFunctionLibrary::GetOrientationAndPosition(HMDRotation, HMDLocation);
-		CurrentLocation = HMDLocation + this->VROrigin->GetComponentLocation();
-		CurrentRotation = HMDRotation;
-		UpdateRoomScaleLocation();
-		// Server_UpdateMovement(CurrentLocation, CurrentRotation);
-	} else {
-		CurrentLocation = RootComponent->GetComponentLocation();
-		CurrentRotation = GetActorRotation();
-	}
+	// if (bUseVR) { // todo: bUseVR - Make variable 
+	// 	FRotator HMDRotation {};
+	// 	FVector HMDLocation {};
+	// 	UHeadMountedDisplayFunctionLibrary::GetOrientationAndPosition(HMDRotation, HMDLocation);
+	// 	CurrentLocation = HMDLocation + this->VROrigin->GetComponentLocation();
+	// 	CurrentRotation = HMDRotation;
+	// 	UpdateRoomScaleLocation();
+	// 	// Server_UpdateMovement(CurrentLocation, CurrentRotation);
+	// } else {
+	// 	CurrentLocation = RootComponent->GetComponentLocation();
+	// 	CurrentRotation = GetActorRotation();
+	// }
 }
 
 bool AExperimentCharacter::Multi_OnUpdateMovement_Validate(const FVector& InLocation, const FRotator& InRotation) {

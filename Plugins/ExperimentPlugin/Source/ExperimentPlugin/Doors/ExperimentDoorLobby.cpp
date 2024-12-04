@@ -20,8 +20,11 @@ void AExperimentDoorLobby::Server_OnEventTrigger_Implementation() {
 		if (!ensure(ExperimentGameMode)) return;
 		if (!ensure(ExperimentGameMode->ExperimentClient)) return;
 		const FString Msg = FString("ExperimentGameMode->ExperimentClient->SetOcclusionVisibility(true)");
-		UE_LOG(LogTemp, Warning,
+		UE_LOG(LogTemp, Log,
 			TEXT("[AExperimentDoorLobby::Server_OnEventTrigger_Implementation] Calling: %s"), *Msg)
 		ExperimentGameMode->ExperimentClient->SetOcclusionVisibility(true);
+	}else {
+		UE_LOG(LogTemp, Error,
+			TEXT("[AExperimentDoorLobby::Server_OnEventTrigger_Implementation] UWorld is NULL"))
 	}
 }

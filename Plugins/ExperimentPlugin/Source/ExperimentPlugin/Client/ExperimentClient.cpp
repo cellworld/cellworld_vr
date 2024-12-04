@@ -587,8 +587,7 @@ void AExperimentClient::HandleGetOcclusionsResponse(const FString ResponseIn) {
 	if (OcclusionsStruct.bAllLocationsLoaded) {
 		OcclusionsStruct.SetCurrentLocationsByIndex(OcclusionsStruct.OcclusionIDsIntArr);
 		OcclusionsStruct.SetVisibilityArr(OcclusionsStruct.OcclusionIDsIntArr, true, false);
-	}
-	else {
+	} else {
 		UE_LOG(LogTemp, Fatal,
 		       TEXT("[AExperimentClient::HandleGetOcclusionsResponse] Occlusions are NOT loaded!"));
 	}
@@ -599,8 +598,7 @@ void AExperimentClient::HandleGetOcclusionsResponse(const FString ResponseIn) {
 			       "[AExperimentClient::HandleGetOcclusionsResponse] RequestRemoveDelegates(GetOcclusionsRequest)"
 		       ));
 		this->RequestRemoveDelegates(GetOcclusionsRequest, "GetOcclusionsRequest");
-	}
-	else {
+	} else {
 		UE_LOG(LogTemp, Error,
 		       TEXT(
 			       "[AExperimentClient::HandleGetOcclusionsResponse] Failed to remove delegates, GetOcclusionsRequest not valid."

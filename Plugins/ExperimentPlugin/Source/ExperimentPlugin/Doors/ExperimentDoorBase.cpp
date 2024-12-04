@@ -51,7 +51,6 @@ AExperimentDoorBase::AExperimentDoorBase() {
 		DoorMeshAsset(TEXT("StaticMesh'/Engine/BasicShapes/Cube.Cube'"));
 
 	if (DoorMeshAsset.Succeeded()) {
-		UE_LOG(LogTemp, Log,TEXT("[AExperimentDoorBase::AExperimentDoorBase] Set mesh: OK"))
 		DoorMesh->SetStaticMesh(DoorMeshAsset.Object);
 	} else {
 		UE_LOG(LogTemp,Error,TEXT("[AExperimentDoorBase::AExperimentDoorBase] Set mesh: Failed"));
@@ -60,7 +59,6 @@ AExperimentDoorBase::AExperimentDoorBase() {
 	static ConstructorHelpers::FObjectFinder<UMaterial>
 	DoorMaterialAsset(TEXT("Material'/Game/NecrosUtilityMatPack/materials/floor/masters/m_diamondplate_01.m_diamondplate_01'"));
 	if (DoorMaterialAsset.Succeeded()) {
-		UE_LOG(LogTemp,Log,TEXT("[AExperimentDoorBase::AExperimentDoorBase] Set Material: OK"))
 		DoorMesh->SetMaterial(0, DoorMaterialAsset.Object);
 	}else {
 		UE_LOG(LogTemp, Error,TEXT("[AExperimentDoorBase::AExperimentDoorBase] Set Material: Failed"));
@@ -252,32 +250,14 @@ void AExperimentDoorBase::Tick(float DeltaTime) {
 	Super::Tick(DeltaTime);
 	if (!ensure(AnimationDoorTimeline)) return; 
 	AnimationDoorTimeline->TickComponent(DeltaTime, ELevelTick::LEVELTICK_TimeOnly, NULL);
-	if (HasNetOwner()) {
-		if (!dbg_bFuncCalled) {
-			UE_LOG(LogTemp, Log, TEXT("[AExperimentDoorBase::Tick] Has net owner!"))
-			OnValidEventTrigger();
-			dbg_bFuncCalled = true;
-		}
-	}else {
-		UE_LOG(LogTemp, Log, TEXT("[AExperimentDoorBase::Tick] No net owner!"))
-	}
 }
 
 void AExperimentDoorBase::OnAnimationOverlapBegin(UPrimitiveComponent* OverlappedComp, AActor* OtherActor,
 	UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult) {
-
-	if(GEngine)
-		GEngine->AddOnScreenDebugMessage(-1, 3.0f, FColor::Green, FString::Printf(TEXT("ANIMATION: BEGIN! Name: %s"),
-			*OtherActor->GetName()));
-	
 	if (!AnimationDoorTimeline->IsPlaying()) {
 		UE_LOG(LogTemp, Warning, TEXT("[AExperimentDoorBase::OnAnimationOverlapBegin] ANIMATION: Starting timeline!"))
 		AnimationDoorTimeline->Play();
-	}else {
-		if(GEngine)
-			GEngine->AddOnScreenDebugMessage(-1, 3.0f, FColor::Yellow, TEXT("ANIMATION: ALREADY RUNNING!"));
 	}
-	
 }
 
 void AExperimentDoorBase::OnAnimationOverlapEnd(UPrimitiveComponent* OverlappedComp, AActor* OtherActor,
@@ -286,9 +266,6 @@ void AExperimentDoorBase::OnAnimationOverlapEnd(UPrimitiveComponent* OverlappedC
 	if (!AnimationDoorTimeline->IsReversing()) {
 		UE_LOG(LogTemp, Warning, TEXT("[AExperimentDoorBase::OnAnimationOverlapBegin] ANIMATION: Starting timeline!"))
 		AnimationDoorTimeline->Reverse();
-	}else {
-		if(GEngine)
-			GEngine->AddOnScreenDebugMessage(-1, 3.0f, FColor::Yellow, TEXT("ANIMATION: ALREADY!"));
 	}
 }
 
@@ -313,10 +290,7 @@ void AExperimentDoorBase::OnEventOverlapBegin(UPrimitiveComponent* OverlappedCom
 	
 	UE_LOG(LogTemp, Warning, TEXT("[AExperimentDoorBase::OnEventOverlapBegin] Overlap Component: %s (ID: %d)"), *OtherComp->GetName(), OtherComp->GetUniqueID());
 	if (OtherCapsuleCast && OtherCapsuleCast == CharacterCast->GetCapsuleComponent()) {
-		if(GEngine)
-			GEngine->AddOnScreenDebugMessage(-1, 3.0f, FColor::Green, FString::Printf(TEXT("EVENT: valid capsule component")));
-		UE_LOG(LogTemp, Warning, TEXT("[AExperimentDoorBase::OnEventOverlapBegin] valid capsule component"))
-
+		
 		if (!IsValidEventTriggerReady()) {
 			UE_LOG(LogTemp, Warning, TEXT("[AExperimentDoorBase::OnEventOverlapBegin] EVENT  Timer not ready!"))
 			return;
@@ -331,6 +305,11 @@ void AExperimentDoorBase::OnEventOverlapBegin(UPrimitiveComponent* OverlappedCom
 			UE_LOG(LogTemp, Warning, TEXT("[AExperimentDoorBase::OnEventOverlapBegin] Has authority false! Cannot set owner"))
 		}
 		OnValidEventTrigger();
+	}else {
+		UE_LOG(LogTemp, Warning, TEXT("[AExperimentDoorBase::OnEventOverlapBegin] INVALID capsule component"))
+
+		if(GEngine)
+			GEngine->AddOnScreenDebugMessage(-1, 3.0f, FColor::Green, FString::Printf(TEXT("EVENT: INVALID capsule component")));
 	}
 }
 

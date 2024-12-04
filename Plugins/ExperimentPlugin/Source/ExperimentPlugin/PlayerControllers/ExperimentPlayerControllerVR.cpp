@@ -45,8 +45,6 @@ void AExperimentPlayerControllerVR::Tick(float DeltaTime) {
 	if (!PossessedCharacter) {
 		PossessedCharacter = Cast<AExperimentCharacter>(GetCharacter());
 		UE_LOG(LogTemp, Error, TEXT("[AExperimentPlayerControllerVR::Tick] PossessedPawn NULL. Recasting."))
-	}else {
-		UE_LOG(LogTemp, Log, TEXT("[AExperimentPlayerControllerVR::Tick] PossessedPawn valid"))
 	}
 }
 
@@ -59,8 +57,7 @@ void AExperimentPlayerControllerVR::ResetOrigin() {
 	}
 }
 
-void AExperimentPlayerControllerVR::QuitGame()
-{
+void AExperimentPlayerControllerVR::QuitGame() {
 	/*FGenericPlatformMisc::RequestExit(false);*/
 	UKismetSystemLibrary::QuitGame(this, this, EQuitPreference::Quit,false);
 	UE_LOG(LogTemp, Warning, TEXT("[AExperimentPlayerControllerVR::QuitGame] Requesting Exit."));
