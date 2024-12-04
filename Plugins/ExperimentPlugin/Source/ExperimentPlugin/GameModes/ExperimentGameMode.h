@@ -1,5 +1,6 @@
 ﻿#pragma once
 #include "CoreMinimal.h"
+#include "Engine/Engine.h"
 #include "ExperimentPlugin/Characters/ExperimentCharacter.h"
 #include "GameFramework/GameMode.h"
 #include "ExperimentPlugin/Characters/ExperimentPawn.h"

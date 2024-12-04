@@ -254,19 +254,33 @@ void AExperimentDoorBase::Tick(float DeltaTime) {
 
 void AExperimentDoorBase::OnAnimationOverlapBegin(UPrimitiveComponent* OverlappedComp, AActor* OtherActor,
 	UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult) {
-	if (!AnimationDoorTimeline->IsPlaying()) {
-		UE_LOG(LogTemp, Warning, TEXT("[AExperimentDoorBase::OnAnimationOverlapBegin] ANIMATION: Starting timeline!"))
-		AnimationDoorTimeline->Play();
-	}
+
+	ACharacter* CharacterCast = Cast<ACharacter>(OtherActor);
+	if (!CharacterCast) { return; }
+
+	UCapsuleComponent* OtherCapsuleCast = Cast<UCapsuleComponent>(OtherComp);
+	if (!OtherCapsuleCast || OtherCapsuleCast != CharacterCast->GetCapsuleComponent()) { return; } 
+
+	if (AnimationDoorTimeline->IsPlaying()) { return; }
+
+	UE_LOG(LogTemp, Warning, TEXT("[AExperimentDoorBase::OnAnimationOverlapBegin] ANIMATION: Starting timeline!"))
+	AnimationDoorTimeline->Play();
 }
 
 void AExperimentDoorBase::OnAnimationOverlapEnd(UPrimitiveComponent* OverlappedComp, AActor* OtherActor,
                                        UPrimitiveComponent* OtherComp, int32 OtherBodyIndex) {
 
-	if (!AnimationDoorTimeline->IsReversing()) {
-		UE_LOG(LogTemp, Warning, TEXT("[AExperimentDoorBase::OnAnimationOverlapBegin] ANIMATION: Starting timeline!"))
-		AnimationDoorTimeline->Reverse();
-	}
+	ACharacter* CharacterCast = Cast<ACharacter>(OtherActor);
+	if (!CharacterCast) { return; }
+		
+	UCapsuleComponent* OtherCapsuleCast = Cast<UCapsuleComponent>(OtherComp);
+	UE_LOG(LogTemp, Warning, TEXT("[AExperimentDoorBase::OnAnimationOverlapEnd] Overlap Component: %s (ID: %d)"), *OtherComp->GetName(), OtherComp->GetUniqueID());
+	
+	if (!OtherCapsuleCast || OtherCapsuleCast != CharacterCast->GetCapsuleComponent()) { return; } 
+	if (AnimationDoorTimeline->IsReversing()) { return; }
+
+	UE_LOG(LogTemp, Warning, TEXT("[AExperimentDoorBase::OnAnimationOverlapEnd] ANIMATION: Starting timeline!"))
+	AnimationDoorTimeline->Reverse();
 }
 
 void AExperimentDoorBase::OnEventOverlapBegin(UPrimitiveComponent* OverlappedComp, AActor* OtherActor,
@@ -274,11 +288,6 @@ void AExperimentDoorBase::OnEventOverlapBegin(UPrimitiveComponent* OverlappedCom
 
 	// EventBoxCollision->SetCollisionEnabled(ECollisionEnabled::Type::NoCollision);
 	if (!ensure(EventBoxCollision)) return;
-	if(GEngine)
-		GEngine->AddOnScreenDebugMessage(-1, 3.0f, FColor::Green, FString::Printf(TEXT("EVENT: BEGIN! Name: %s | Comp: %i"),
-			*OtherActor->GetName(), OtherComp->GetUniqueID()));
-	UE_LOG(LogTemp, Warning, TEXT("[AExperimentDoorBase::OnEventOverlapBegin] Called"))
-
 	if (!ensure(OtherActor->IsValidLowLevelFast())) { return; }
 	ACharacter* CharacterCast = Cast<ACharacter>(OtherActor);
 	if (!CharacterCast) {
@@ -297,19 +306,22 @@ void AExperimentDoorBase::OnEventOverlapBegin(UPrimitiveComponent* OverlappedCom
 		}
 		
 		if (!ensure(EventBoxCollision)) { return; }
-		// EventBoxCollision->SetCollisionEnabled(ECollisionEnabled::Type::NoCollision);
 		if (HasAuthority()) {
 			UE_LOG(LogTemp, Warning, TEXT("[AExperimentDoorBase::OnEventOverlapBegin] Has authority true! Setting new owner!"))
 			SetOwner(CharacterCast->GetController());
 		}else {
 			UE_LOG(LogTemp, Warning, TEXT("[AExperimentDoorBase::OnEventOverlapBegin] Has authority false! Cannot set owner"))
 		}
+		if(GEngine)
+        		GEngine->AddOnScreenDebugMessage(-1, 3.0f, FColor::Green,
+        			FString::Printf(TEXT("EVENT: VALID -  OnValidEventTrigger()")));
+		// EventBoxCollision->SetCollisionEnabled(ECollisionEnabled::Type::NoCollision);
 		OnValidEventTrigger();
 	}else {
 		UE_LOG(LogTemp, Warning, TEXT("[AExperimentDoorBase::OnEventOverlapBegin] INVALID capsule component"))
 
 		if(GEngine)
-			GEngine->AddOnScreenDebugMessage(-1, 3.0f, FColor::Green, FString::Printf(TEXT("EVENT: INVALID capsule component")));
+			GEngine->AddOnScreenDebugMessage(-1, 3.0f, FColor::Green, TEXT("EVENT: INVALID"));
 	}
 }
 

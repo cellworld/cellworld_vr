@@ -11,7 +11,7 @@
 #include "Components/SkeletalMeshComponent.h"
 #include "HeadMountedDisplayFunctionLibrary.h"
 #include "MiscUtils/Timers/EventTimer.h"
-#include "OculusXRPassthroughLayerComponent.h"
+#include "OculusXRPassthrough/Public/OculusXRPassthroughLayerComponent.h"
 #include "XRDeviceVisualizationComponent.h" 
 #include "Camera/CameraComponent.h"
 #include "GameFramework/Pawn.h"
@@ -19,8 +19,6 @@
 #include "Containers/Array.h" 
 #include "GameFramework/CharacterMovementComponent.h" // test
 #include "MotionControllerComponent.h"
-// #include "Core/BotEvadeGameMode.h"
-// #include "ExperimentPlugin/GameModes/ExperimentGameMode.h"
 #include "ExperimentPawn.generated.h"
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FUpdateMovement, FVector, Location, FRotator, Rotation);

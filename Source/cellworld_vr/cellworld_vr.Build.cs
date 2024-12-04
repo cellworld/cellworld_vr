@@ -21,7 +21,7 @@ public class cellworld_vr : ModuleRules
 		
 		PrivateDependencyModuleNames.AddRange(new string[] {
 			"HeadMountedDisplay", "AugmentedReality", "XRBase", "Slate", "SlateCore",
-			"OculusXRAnchors","OculusXRHMD", "OculusXRPassthrough",
+			"OculusXRAnchors","OculusXRHMD", "OculusXRPassthrough","OculusXRInput"
 		});
 
 		PublicIncludePaths.AddRange(new string[] {

@@ -98,14 +98,12 @@
 		{
 			"Name": "Niagara",
 			"Enabled": false
-		},
-		{
+		},{
 			"Name": "LevelSequenceEditor",
 			"Enabled": false
-		},
-		{
+		}, {
 			"Name": "OpenXR",
-			"Enabled": true,
+			"Enabled": false,
 			"SupportedTargetPlatforms": [
 				"Win64",
 				"Linux",

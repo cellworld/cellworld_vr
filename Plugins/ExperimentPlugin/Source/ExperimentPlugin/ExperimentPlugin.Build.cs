@@ -16,7 +16,7 @@ public class ExperimentPlugin : ModuleRules
 				
 		
 		PrivateIncludePaths.AddRange(
-			new string[] {
+			new string[] { 
 				// ... add other private include paths required here ...
 			}
 			);
@@ -28,8 +28,10 @@ public class ExperimentPlugin : ModuleRules
 				"Core",
 				"TCPMessages",
 				"XRBase",
-				"MiscUtils", 
-				"OculusXRAnchors","OculusXRHMD", "OculusXRPassthrough",
+				"MiscUtils",
+				"OculusXRHMD",
+				"OculusXRAnchors",
+				"OculusXRPassthrough"
 				// ... add other public dependencies that you statically link with here ...
 			}
 			);
@@ -49,7 +51,11 @@ public class ExperimentPlugin : ModuleRules
 				"JsonUtilities",
 				"TCPMessages",
 				"UMG",
-				"HeadMountedDisplay"
+				"HeadMountedDisplay",
+				// "OculusXRAnchors",
+				// "OculusXRHMD",
+				// "OculusXRPassthrough",
+				// "OpenXRAR"
 				// ... add private dependencies that you statically link with here ...	
 			}
 			);
