@@ -5,6 +5,7 @@
 #include "ExperimentPlugin/Characters/ExperimentPawn.h"
 #include "ExperimentPlugin/PlayerControllers/ExperimentPlayerControllerVR.h"
 #include "ExperimentPlugin/Characters/ExperimentCharacter.h"
+#include "ExperimentPlugin/Doors/ExperimentDoorBase.h"
 #include "ExperimentPlugin/GameStates/ExperimentGameState.h"
 #include "ExperimentPlugin/PlayerStates/ExperimentPlayerState.h"
 
@@ -65,9 +66,11 @@ void AExperimentGameMode::StartPlay() {
 		UE_LOG(LogTemp, Log, TEXT("[AExperimentGameMode::StartPlay] Running on a dedicated server."))
 	}
 	UE_LOG(LogTemp, Log, TEXT("[AExperimentGameMode::StartPlay] Calling SpawnHabitat!"))
-	SpawnHabitat(FVector::ZeroVector,15.0f);
+	// SpawnHabitat(FVector::ZeroVector,15.0f);
 	// todo: get Worldscale from GameInstance
-
+	Habitat = FindHabitatInLevel();
+	if (!ensure(Habitat)) return;
+	
 #if !WITH_EDITOR
 	UE_LOG(LogTemp, Log, TEXT("[AExperimentGameMode::StartPlay] Spawning SpawningClient!"))
 	SpawnExperimentServiceMonitor();
@@ -94,12 +97,17 @@ void AExperimentGameMode::PostLogin(APlayerController* NewPlayer) {
 	Super::PostLogin(NewPlayer);
 	UE_LOG(LogTemp, Error, TEXT("[AExperimentGameMode::PostLogin] called "));
 	if (NewPlayer) {
-		UE_LOG(LogTemp, Log, TEXT("[AExperimentGameMode::PostLogin] PlayerController created: %s"), *NewPlayer->GetName());
+		UE_LOG(LogTemp, Log, TEXT("[AExperimentGameMode::PostLogin] New PlayerController: %s"), *NewPlayer->GetName());
 	}
 	else {
 		UE_LOG(LogTemp, Error, TEXT("[AExperimentGameMode::PostLogin] PlayerController is NULL during PostLogin!"));
 	}
+	
+	if (!ensure(Habitat)) return;
 
+
+	// if (!ensure(Habitat->HasNetOwner())) return;
+	
 	// if (GameState) {
 	// 	int32 NumberOfPlayers = GameState.Get()->PlayerArray.Num();
 	// 	UE_LOG(LogTemp, Log, TEXT("[AExperimentGameMode::PostLogin] Number of Players: %i"),NumberOfPlayers);
@@ -172,6 +180,26 @@ void AExperimentGameMode::OnPostLogin(AController* NewPlayer) {
 	if (!ensure(NewPlayer->IsValidLowLevelFast())) { return; }
 	
 	UE_LOG(LogTemp, Log, TEXT("[AExperimentGameMode::OnPostLogin] NewPlayer PlayerController valid!"));
+
+	Habitat->SetOwner(NewPlayer);
+	Habitat->SetReplicateMovement(true);
+	TArray<AActor*> ChildActors;
+	Habitat->GetAllChildActors(ChildActors,true);
+	for (AActor* ChildActor : ChildActors) {
+		if (ChildActor) {
+			ChildActor->SetOwner(NewPlayer);
+			ChildActor->SetReplicates(true);
+			UE_LOG(LogTemp, Log,
+				TEXT("Updated owner for child actor: %s to %s (HasNetOwner?: %i)"),
+				*ChildActor->GetName(),
+				*NewPlayer->GetName(),
+				ChildActor->HasNetOwner());
+
+			// if (AExperimentDoorBase* ExperimentDoorBase = Cast<AExperimentDoorBase>(ChildActor)) {
+			// 	ExperimentDoorBase->OnValidEventTrigger();
+			// }
+		}
+	}
 	
 	// ExperimentClient->SetupPlayerUpdatePosition(NewPlayer->GetPawn());
 	if (ensure(ExperimentClient->ExperimentManager->IsValidLowLevelFast())) {
@@ -180,11 +208,28 @@ void AExperimentGameMode::OnPostLogin(AController* NewPlayer) {
 		UE_LOG(LogTemp, Log, TEXT("[AExperimentGameMode::OnPostLogin] Registered new player pawn. Client->Idx: %i"),
 			ExperimentClient->PlayerIndex)
 	}
+	
 }
 
 void AExperimentGameMode::Logout(AController* Exiting) {
 	Super::Logout(Exiting);
 	UE_LOG(LogTemp, Log, TEXT("[AExperimentGameMode::Logout] Player logged out: %s"), *Exiting->GetName());
+}
+
+TObjectPtr<AHabitat> AExperimentGameMode::FindHabitatInLevel() {
+	UE_LOG(LogTemp, Log, TEXT("[AExperimentGameMode::FindHabitatInLevel] Called"));
+	TObjectPtr<AHabitat> HabitatTemp = nullptr;
+	for (TActorIterator<AHabitat> ActorItr(GetWorld()); ActorItr; ++ActorItr) {
+		// Found the first instance of AMaze or a subclass (like BP_Maze)
+		HabitatTemp = *ActorItr;
+		if (HabitatTemp) {
+			UE_LOG(LogTemp, Log, TEXT("[AExperimentGameMode::FindHabitatInLevel] Found Maze Actor: %s"), *HabitatTemp->GetName());
+			return HabitatTemp;
+		}
+	}
+
+	UE_LOG(LogTemp, Warning, TEXT("[AExperimentGameMode::FindHabitatInLevel] No Maze Actor found!"));
+	return HabitatTemp;  // No maze found
 }
 
 void AExperimentGameMode::OnUpdatePreyPosition(const FVector& InLocation, const FRotator& InRotation) {

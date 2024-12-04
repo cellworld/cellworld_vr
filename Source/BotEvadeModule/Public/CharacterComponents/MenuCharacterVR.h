@@ -74,6 +74,8 @@ public:
 
 public:
 
+
+
 	// Pointer to the online session interface
 	// IOnlineSessionPtr OnlineSessionInterface;
 

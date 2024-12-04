@@ -6,10 +6,6 @@
 #include "GameFramework/CharacterMovementComponent.h"
 #include "GameFramework/Controller.h"
 #include "GameFramework/SpringArmComponent.h"
-#include "OnlineSubsystem.h"
-#include "OnlineSessionSettings.h"
-#include "OnlineSubsystemUtils.h"
-#include "GeometryCollection/GeometryCollectionEngineSizeSpecificUtility.h"
 
 //////////////////////////////////////////////////////////////////////////
 // AMenuCharacterVR

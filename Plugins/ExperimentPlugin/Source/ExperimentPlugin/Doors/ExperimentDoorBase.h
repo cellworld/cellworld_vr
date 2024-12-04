@@ -44,11 +44,21 @@ public:
 	UEventTimer* TriggerCooldownTimer = nullptr;
 	
 	bool IsValidEventTriggerReady();
+	void RPCTest();
 	// FOnValidEventTriggered OnValidEventTriggered;
 	virtual void OnValidEventTrigger();
-	
+	virtual void OnRep_Owner() override;	
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
+	UFUNCTION(Server, Reliable, WithValidation, Category = "Events")
+	virtual void Server_OnEventTrigger();
+	// virtual bool Server_OnEventTrigger_Validate();
+	// virtual void Server_OnEventTrigger_Implementation();
+
+	bool dbg_bFuncCalled = false;
+	virtual void NotifyActorBeginOverlap(AActor* OtherActor) override;
+	virtual void NotifyActorEndOverlap(AActor* OtherActor) override;
+	
 	/* === door animation timeline params === */
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Door Animation")
 	TObjectPtr<UTimelineComponent> AnimationDoorTimeline = nullptr; 

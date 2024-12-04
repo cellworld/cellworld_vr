@@ -6,5 +6,9 @@ AExperimentDoorLobby::AExperimentDoorLobby() {
 void AExperimentDoorLobby::OnValidEventTrigger() {
 	Super::OnValidEventTrigger();
 	UE_LOG(LogTemp, Warning, TEXT("[AExperimentDoorLobby::OnValidEventTrigger]"))
+}
 
+void AExperimentDoorLobby::Server_OnEventTrigger_Implementation() {
+	Super::Server_OnEventTrigger_Implementation();
+	UE_LOG(LogTemp, Warning, TEXT("[AExperimentDoorLobby::Server_OnEventTrigger_Implementation] Called from server."))
 }

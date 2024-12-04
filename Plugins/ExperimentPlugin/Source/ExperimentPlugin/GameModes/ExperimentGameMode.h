@@ -4,6 +4,7 @@
 #include "GameFramework/GameMode.h"
 #include "ExperimentPlugin/Characters/ExperimentPawn.h"
 #include "ExperimentPlugin/Client/ExperimentClient.h"
+#include "ExperimentPlugin/HabitatComponents/Habitat.h"
 #include "ExperimentGameMode.generated.h"
 
 UCLASS()
@@ -12,6 +13,7 @@ class EXPERIMENTPLUGIN_API AExperimentGameMode : public AGameMode {
 public:
 	AExperimentGameMode();
 
+	/* == aactor overrides == */
 	virtual void InitGame(const FString& MapName, const FString& Options, FString& ErrorMessage) override;
 	virtual void InitGameState() override;
 	virtual void StartPlay() override;
@@ -25,6 +27,12 @@ public:
 	virtual void OnPostLogin(AController* NewPlayer) override;
 	virtual void Logout(AController* Exiting) override;
 
+	/* == helpers == */
+	TObjectPtr<AHabitat> FindHabitatInLevel();
+
+	UPROPERTY(VisibleAnywhere)
+	TObjectPtr<AHabitat> Habitat;
+	
 	UPROPERTY(VisibleAnywhere)
 	TObjectPtr<AExperimentCharacter> ExperimentCharacter = nullptr;
 

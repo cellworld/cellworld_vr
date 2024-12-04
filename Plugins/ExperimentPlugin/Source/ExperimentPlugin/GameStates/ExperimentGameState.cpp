@@ -7,3 +7,9 @@ void AExperimentGameState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>&
 	// todo: add variables for replication
 	//	DOREPLIFETIME(ABlasterGameState, TopScoringPlayers);
 }
+
+void AExperimentGameState::Server_OnLobbyEntered_Implementation() {
+	UE_LOG(LogTemp,Log,TEXT("[AExperimentGameState::Server_OnLobbyEntered_Implementation]"))
+}
+
+

@@ -11,4 +11,7 @@ public:
 
 	virtual void OnValidEventTrigger() override;
 	
+	// virtual void Server_OnEventTrigger() override;
+	virtual void Server_OnEventTrigger_Implementation() override;
+
 };

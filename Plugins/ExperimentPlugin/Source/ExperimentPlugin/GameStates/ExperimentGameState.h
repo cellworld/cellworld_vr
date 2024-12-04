@@ -10,4 +10,8 @@ class EXPERIMENTPLUGIN_API AExperimentGameState : public AGameState {
 public:
 	AExperimentGameState();
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
+
+	UFUNCTION(Server, Reliable)
+	void Server_OnLobbyEntered();
+	
 };

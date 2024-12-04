@@ -9,14 +9,13 @@
 #include "GameFramework/PhysicsVolume.h"
 
 bool AExperimentCharacter::Server_UpdateMovement_Validate(const FVector& InLocation, const FRotator& InRotation) {
-	UE_LOG(LogTemp, Log, TEXT("[AExperimentCharacter::Server_UpdateMovement_Validate] always true"))
 	return true;
 }
 
 void AExperimentCharacter::
 Server_UpdateMovement_Implementation(const FVector& InLocation, const FRotator& InRotation) {
-	UE_LOG(LogTemp, Warning, TEXT("[AExperimentCharacter::Server_UpdateMovement_Implementation] InLocation: %s | InRotation: %s"),
-		*InLocation.ToString(), *InRotation.ToString())
+	// UE_LOG(LogTemp, Warning, TEXT("[AExperimentCharacter::Server_UpdateMovement_Implementation] InLocation: %s | InRotation: %s"),
+	// 	*InLocation.ToString(), *InRotation.ToString())
 	if (!HasAuthority()) {
 		UE_LOG(LogTemp, Error,
 			TEXT("[AExperimentCharacter::Server_UpdateMovement_Implementation] Can't send to Client, doesn't have authority!"))
@@ -28,7 +27,6 @@ Server_UpdateMovement_Implementation(const FVector& InLocation, const FRotator& 
 			TEXT("[AExperimentCharacter::Server_UpdateMovement_Implementation] Calling: ExperimentGameMode->OnUpdatePreyPosition"))
 		ExperimentGameMode->OnUpdatePreyPosition(InLocation,InRotation);
 	}
-	
 }
 
 AExperimentCharacter::AExperimentCharacter() {
@@ -137,10 +135,10 @@ void AExperimentCharacter::SetupSampling() {
 }
 
 void AExperimentCharacter::UpdateMovement() {
-	UE_LOG(LogTemp, Log, TEXT("[AExperimentCharacter::UpdateMovement] Running on client."))
 	if (HasAuthority()) {
 		UE_LOG(LogTemp, Warning,TEXT("[AExperimentPawn::UpdateMovement] Ran from server!"))
 	} else {
+		UE_LOG(LogTemp, Log, TEXT("[AExperimentCharacter::UpdateMovement] Running on client."))
 		if (bUseVR) { // todo: bUseVR - Make variable 
 			FRotator HMDRotation {};
 			FVector HMDLocation {};
@@ -155,7 +153,6 @@ void AExperimentCharacter::UpdateMovement() {
 		}
 	}
 	Server_UpdateMovement(CurrentLocation, CurrentRotation);
-	UE_LOG(LogTemp, Warning,TEXT("[AExperimentPawn::UpdateMovement] exiting!"))
 }
 
 void AExperimentCharacter::UpdateRoomScaleLocation() {
@@ -270,7 +267,6 @@ void AExperimentCharacter::MoveForward(float Value) {
 }
 
 void AExperimentCharacter::MoveRight(float Value) {
-	UE_LOG(LogTemp, Error, TEXT("[AExperimentCharacter::MoveRight] Value: %0.2f"),Value)
 	if (Value != 0.0f) {
 		UE_LOG(LogTemp, Error, TEXT("[AExperimentCharacter::MoveRight] value valid"))
 		if (GetMovementComponent() && (GetMovementComponent()->UpdatedComponent == RootComponent)) {
