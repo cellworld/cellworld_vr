@@ -52,6 +52,11 @@ public:
 	UPROPERTY(VisibleAnywhere)
 	UEventTimer* EventTimer;
 
+	UFUNCTION(BlueprintCallable)
+	void SpawnHabitat(const FVector& InLocation, const int& InScale);
+	
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Spawning")
+    UClass* MyActorClass;
 	// UPROPERTY(EditAnywhere)
 	// TObjectPtr<AExperimentClient> ExperimentClient = nullptr;
 

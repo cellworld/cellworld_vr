@@ -12,10 +12,12 @@ AExperimentPlayerControllerVR::AExperimentPlayerControllerVR() {
 
 void AExperimentPlayerControllerVR::BeginPlay() {
 	Super::BeginPlay();
-	UE_LOG(LogTemp, Warning, TEXT("AExperimentPlayerControllerVR::BeginPlay()"));
+	UE_LOG(LogTemp, Warning, TEXT("[AExperimentPlayerControllerVR::BeginPlay]"));
 
 	if (GetWorld()) {
 		PossessedCharacter = Cast<AExperimentCharacter>(GetCharacter());
+	}else {
+		UE_LOG(LogTemp, Error, TEXT("[AExperimentPlayerControllerVR::BeginPlay] GetWorld() NULL"))
 	}
 	return;
 }
@@ -44,7 +46,7 @@ void AExperimentPlayerControllerVR::Tick(float DeltaTime) {
 	Super::Tick(DeltaTime);
 
 	if (!PossessedCharacter) {
-		PossessedCharacter = Cast<AExperimentCharacter>(GetCharacter());
+		PossessedCharacter = Cast<AExperimentCharacter>(GetPawn());
 		UE_LOG(LogTemp, Error, TEXT("[AExperimentPlayerControllerVR::Tick] PossessedPawn NULL. Recasting."))
 		return;
 	}
@@ -63,7 +65,7 @@ void AExperimentPlayerControllerVR::QuitGame()
 {
 	/*FGenericPlatformMisc::RequestExit(false);*/
 	UKismetSystemLibrary::QuitGame(this, this, EQuitPreference::Quit,false);
-	UE_LOG(LogTemp, Warning, TEXT("AExperimentPlayerControllerVR::QuitGame() Requesting Exit."));
+	UE_LOG(LogTemp, Warning, TEXT("[AExperimentPlayerControllerVR::QuitGame] Requesting Exit."));
 }
 
 void AExperimentPlayerControllerVR::MoveForward(float AxisValue) {

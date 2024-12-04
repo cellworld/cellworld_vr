@@ -20,6 +20,12 @@ AExperimentGameMode::AExperimentGameMode(){
 	PrimaryActorTick.bCanEverTick = true;
 	
 	bStartPlayersAsSpectators = false;
+	// UObject* SpawnActor = Cast<UObject>(StaticLoadObject(UObject::StaticClass(), NULL,
+	// 	TEXT("/Game/Levels/BP_Habitat_Actor.BP_Habitat_Actor")));
+	// // static ConstructorHelpers::FClassFinder<AActor> BPMazeActorClass(TEXT("/Game/Levels/BP_Habitat_Actor.BP_Habitat_Actor"));
+	// if (SpawnActor->StaticClass() != nullptr) {
+ //        MyActorClass = SpawnActor->StaticClass(); // Store the Blueprint class
+	// }
 }
 
 void AExperimentGameMode::InitGame(const FString& MapName, const FString& Options, FString& ErrorMessage)
@@ -58,7 +64,8 @@ void AExperimentGameMode::StartPlay() {
 	if (GetNetMode() == NM_DedicatedServer) {
 		UE_LOG(LogTemp, Log, TEXT("[AExperimentGameMode::StartPlay] Running on a dedicated server."))
 	}
-
+	UE_LOG(LogTemp, Log, TEXT("[AExperimentGameMode::StartPlay] Calling SpawnHabitat!"))
+	SpawnHabitat(FVector::ZeroVector,15.0f);
 	// todo: get Worldscale from GameInstance
 
 #if !WITH_EDITOR
@@ -239,4 +246,33 @@ bool AExperimentGameMode::ExperimentStopEpisode() {
 	}
 	UE_LOG(LogTemp, Log, TEXT("[AGameModeMain::ExperimentStopEpisode] Calling StopEpisode(false)"))
 	return ExperimentClient->StopEpisode(false);
+}
+
+void AExperimentGameMode::SpawnHabitat(const FVector& InLocation, const int& InScale) {
+	UE_LOG(LogTemp, Log, TEXT("[AExperimentGameMode::SpawnHabitat] Called!"))
+
+	if (MyActorClass != nullptr) {
+		// Get the world context
+		UWorld* World = GetWorld();
+		if (World) {
+			// Define spawn parameters
+			FActorSpawnParameters SpawnParams;
+			SpawnParams.Owner = this; // Optional: Set the owner
+			// SpawnParams.Instigator = GetInstigator(); // Optional: Set the instigator
+			// Define spawn location and rotation
+			FVector SpawnLocation = FVector(0.0f, 0.0f, 0.0f);
+			FRotator SpawnRotation = FRotator::ZeroRotator;
+
+			// Spawn the actor
+			AActor* SpawnedActor = World->SpawnActor<AActor>(MyActorClass, SpawnLocation, SpawnRotation, SpawnParams);
+
+			if (SpawnedActor) {
+				UE_LOG(LogTemp, Warning, TEXT("[AExperimentGameMode::SpawnHabitat] Spawned actor"));
+			}
+		}
+	} else {
+		UE_LOG(LogTemp, Error, TEXT("[AExperimentGameMode::SpawnHabitat] MyActorClass is null. Check your Blueprint assignment."));
+	}
+	UE_LOG(LogTemp, Log, TEXT("[AExperimentGameMode::SpawnHabitat] Exiting OK"))
+
 }

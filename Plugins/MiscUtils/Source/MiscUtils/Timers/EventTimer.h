@@ -69,7 +69,7 @@ public:
 		
 		return TimerHandlePtr->IsValid(); 
 	}
-	bool Stop()  {
+	bool Stop() const  {
 		if (!TimerHandlePtr) { return false; }
 		
 		GetWorld()->GetTimerManager().ClearTimer(*TimerHandlePtr);

@@ -1,7 +1,6 @@
 #include "BotEvadeModule/Public/CharacterComponents/MenuCharacterVR.h"
 #include "HeadMountedDisplayFunctionLibrary.h"
 #include "Camera/CameraComponent.h"
-#include "Online/OnlineSessionNames.h" // required for version > 5.1 for `SEARCH_PRESENCE` macro
 #include "Components/CapsuleComponent.h"
 #include "Components/InputComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
@@ -10,6 +9,7 @@
 #include "OnlineSubsystem.h"
 #include "OnlineSessionSettings.h"
 #include "OnlineSubsystemUtils.h"
+#include "GeometryCollection/GeometryCollectionEngineSizeSpecificUtility.h"
 
 //////////////////////////////////////////////////////////////////////////
 // AMenuCharacterVR
@@ -22,15 +22,17 @@ AMenuCharacterVR::AMenuCharacterVR():
 {
 	// Set size for collision capsule
 	GetCapsuleComponent()->InitCapsuleSize(42.f, 96.0f);
-
+	GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::Type::QueryOnly);
+	// GetMesh()->SetCollisionEnabled(ECollisionEnabled::Type::NoCollision);
+	GetMesh()->SetGenerateOverlapEvents(false);
 	// set our turn rates for input
 	BaseTurnRate = 45.f;
 	BaseLookUpRate = 45.f;
 
 	// Don't rotate when the controller rotates. Let that just affect the camera.
 	bUseControllerRotationPitch = false;
-	bUseControllerRotationYaw = false;
-	bUseControllerRotationRoll = false;
+	bUseControllerRotationYaw   = false;
+	bUseControllerRotationRoll  = false;
 
 	// Configure character movement
 	GetCharacterMovement()->bOrientRotationToMovement = true; // Character moves in the direction of input...	
@@ -48,39 +50,6 @@ AMenuCharacterVR::AMenuCharacterVR():
 	FollowCamera = CreateDefaultSubobject<UCameraComponent>(TEXT("FollowCamera"));
 	FollowCamera->SetupAttachment(CameraBoom, USpringArmComponent::SocketName); // Attach the camera to the end of the boom and let the boom adjust to match the controller orientation
 	FollowCamera->bUsePawnControlRotation = false; // Camera does not rotate relative to arm
-
-	// Note: The skeletal mesh and anim blueprint references on the Mesh component (inherited from Character) 
-	// are set in the derived blueprint asset named MyCharacter (to avoid direct content references in C++)
-
-	// IOnlineSubsystem* OnlineSubsystem = IOnlineSubsystem::Get();
-	// if (OnlineSubsystem) {
-	// 	UE_LOG(LogTemp, Log, TEXT("AMenuCharacterVR::AMenuCharacterVR(): OnlineSubsystem valid!"))
-	// 	OnlineSessionInterface = OnlineSubsystem->GetSessionInterface();
-	//
-	// 	if (GEngine) {
-	// 		// OnlineSessionInterface = Online::GetSessionInterface(GEngine->GetWorld()); // v2 - find foru link..
-	// 		GEngine->AddOnScreenDebugMessage(
-	// 			-1,
-	// 			5.f,
-	// 			FColor::Blue,
-	// 			FString::Printf(TEXT("[AMenuCharacterVR::AMenuCharacterVR] Found subsystem: %s"),
-	// 				*OnlineSubsystem->GetSubsystemName().ToString())
-	// 		);
-	// 	}
-	//
-	// }
-	//
-	// if(!OnlineSessionInterface.IsValid()) {
-	// 	if (GEngine) {
-	// 		// OnlineSessionInterface = Online::GetSessionInterface(GEngine->GetWorld()); // v2 - find foru link..
-	// 		GEngine->AddOnScreenDebugMessage(
-	// 			-1,
-	// 			5.f,
-	// 			FColor::Blue,
-	// 			FString::Printf(TEXT("[AMenuCharacterVR::AMenuCharacterVR] OnlineSessionInterface: not valid!"))
-	// 		);
-	// 	}
-	// }
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -228,7 +197,7 @@ void AMenuCharacterVR::TurnAtRate(float Rate) {
 
 void AMenuCharacterVR::LookUpAtRate(float Rate) {
 	// calculate delta for this frame from the rate information
-	AddControllerPitchInput(Rate * BaseLookUpRate * GetWorld()->GetDeltaSeconds());
+	AddControllerPitchInput(-1*Rate * BaseLookUpRate * GetWorld()->GetDeltaSeconds());
 }
 
 void AMenuCharacterVR::MoveForward(float Value) {

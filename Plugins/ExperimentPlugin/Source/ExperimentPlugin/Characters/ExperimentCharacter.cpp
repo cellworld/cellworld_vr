@@ -6,6 +6,7 @@
 #include "ExperimentPlugin/GameModes/ExperimentGameMode.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "GameFramework/Controller.h"
+#include "GameFramework/PhysicsVolume.h"
 
 bool AExperimentCharacter::Server_UpdateMovement_Validate(const FVector& InLocation, const FRotator& InRotation) {
 	UE_LOG(LogTemp, Log, TEXT("[AExperimentCharacter::Server_UpdateMovement_Validate] always true"))
@@ -41,9 +42,7 @@ AExperimentCharacter::AExperimentCharacter() {
 	bUseControllerRotationPitch = false;
 	bUseControllerRotationYaw = false;
 	bUseControllerRotationRoll = false;
-
 	bSimGravityDisabled = true;
-	
 	
 	VROrigin = CreateDefaultSubobject<USceneComponent>(TEXT("VROrigin"));
 	RootComponent = VROrigin;
@@ -52,6 +51,8 @@ AExperimentCharacter::AExperimentCharacter() {
 	GetCapsuleComponent()->SetupAttachment(RootComponent);
 	GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::Type::QueryOnly);
 	GetCapsuleComponent()->SetMobility(EComponentMobility::Movable);
+	GetCapsuleComponent()->OnComponentBeginOverlap.AddDynamic(this, &ThisClass::OnOverlapBegin);
+	GetCapsuleComponent()->OnComponentEndOverlap.AddDynamic(this, &ThisClass::OnOverlapEnd);
 	
 	// Configure character movement
 	GetCharacterMovement()->bOrientRotationToMovement = true; // Character moves in the direction of input...	
@@ -87,6 +88,17 @@ AExperimentCharacter::AExperimentCharacter() {
 	ACharacter::SetReplicateMovement(true);
 }
 
+void AExperimentCharacter::OnOverlapBegin(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp,
+							   int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
+{
+	// if (GEngine) GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Red, FString::Printf(TEXT("[APawnMain::OnOverlapBegin()] Hit something!")));
+}
+
+void AExperimentCharacter::OnOverlapEnd(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp,
+							 int32 OtherBodyIndex)
+{
+}
+
 bool AExperimentCharacter::StartPositionSamplingTimer(const float InRateHz) {
 	UE_LOG(LogTemp, Log, TEXT("[AExperimentCharacter::StartPositionSamplingTimer]"))
 	EventTimer = NewObject<UEventTimer>(this, UEventTimer::StaticClass());
@@ -109,8 +121,12 @@ bool AExperimentCharacter::StartPositionSamplingTimer(const float InRateHz) {
 
 void AExperimentCharacter::SetupSampling() {
 	UE_LOG(LogTemp, Log, TEXT("[AExperimentCharacter::BeginPlay] Running on Android"))
-	UHeadMountedDisplayFunctionLibrary::SetTrackingOrigin(EHMDTrackingOrigin::Stage);
-	Camera->bUsePawnControlRotation = false;
+	if (bUseVR){
+		UHeadMountedDisplayFunctionLibrary::SetTrackingOrigin(EHMDTrackingOrigin::Stage);
+		Camera->bUsePawnControlRotation = false; 
+	}else {
+		Camera->bUsePawnControlRotation = true; 
+	}
 	// ReSharper disable once CppTooWideScopeInitStatement
 	constexpr float FS = 60.0f;
 	if (!ensure(this->StartPositionSamplingTimer(FS))) {
@@ -125,7 +141,7 @@ void AExperimentCharacter::UpdateMovement() {
 	if (HasAuthority()) {
 		UE_LOG(LogTemp, Warning,TEXT("[AExperimentPawn::UpdateMovement] Ran from server!"))
 	} else {
-		if (true) { // todo: bUseVR - Make variable 
+		if (bUseVR) { // todo: bUseVR - Make variable 
 			FRotator HMDRotation {};
 			FVector HMDLocation {};
 			UHeadMountedDisplayFunctionLibrary::GetOrientationAndPosition(HMDRotation, HMDLocation);
@@ -137,9 +153,9 @@ void AExperimentCharacter::UpdateMovement() {
 			CurrentLocation = RootComponent->GetComponentLocation();
 			CurrentRotation = GetActorRotation();
 		}
-		Server_UpdateMovement(CurrentLocation, CurrentRotation);
 	}
-	UE_LOG(LogTemp, Warning,TEXT("[AExperimentPawn::UpdateMovement] MultiDelegate_ called!"))
+	Server_UpdateMovement(CurrentLocation, CurrentRotation);
+	UE_LOG(LogTemp, Warning,TEXT("[AExperimentPawn::UpdateMovement] exiting!"))
 }
 
 void AExperimentCharacter::UpdateRoomScaleLocation() {
@@ -229,6 +245,9 @@ void AExperimentCharacter::LookUpAtRate(float Rate) {
 }
 
 void AExperimentCharacter::UpdateMovementComponent(FVector InputVector, bool bForce) {
+	UE_LOG(LogTemp, Log, TEXT("[AExperimentCharacter::UpdateMovementComponent] InputVector: %s"),
+		*InputVector.ToString())
+
 	FHitResult OutHit;
 	GetMovementComponent()->SafeMoveUpdatedComponent(
 	InputVector,
@@ -245,19 +264,22 @@ void AExperimentCharacter::MoveForward(float Value) {
 			CameraForwardVector.Z = 0.0;
 			this->UpdateMovementComponent(CameraForwardVector * Value * 10, /*force*/ true);
 		}else {
-			UE_LOG(LogTemp, Error, TEXT("GetMovementComponent NULL"))
+			UE_LOG(LogTemp, Error, TEXT("[AExperimentCharacter::MoveForward] GetMovementComponent NULL"))
 		}
 	}
 }
 
 void AExperimentCharacter::MoveRight(float Value) {
+	UE_LOG(LogTemp, Error, TEXT("[AExperimentCharacter::MoveRight] Value: %0.2f"),Value)
 	if (Value != 0.0f) {
+		UE_LOG(LogTemp, Error, TEXT("[AExperimentCharacter::MoveRight] value valid"))
 		if (GetMovementComponent() && (GetMovementComponent()->UpdatedComponent == RootComponent)) {
+			UE_LOG(LogTemp, Error, TEXT("[AExperimentCharacter::MoveRight] inside if"))
 			FVector CameraRightVector = this->Camera->GetRightVector();
 			CameraRightVector.Z = 0.0;
 			this->UpdateMovementComponent(CameraRightVector * Value * 10, /* force */true);
 		}else {
-			UE_LOG(LogTemp, Error, TEXT("GetMovementComponent NULL"))
+			UE_LOG(LogTemp, Error, TEXT("[AExperimentCharacter::MoveForward] GetMovementComponent NULL"))
 		}
 	}
 }

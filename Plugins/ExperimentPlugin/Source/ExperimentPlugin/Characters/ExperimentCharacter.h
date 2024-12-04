@@ -15,11 +15,12 @@ class EXPERIMENTPLUGIN_API AExperimentCharacter : public ACharacter
 	/** Camera boom positioning the camera behind the character */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"))
 	class USpringArmComponent* CameraBoom;
-
+	
 	/** Follow camera */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"))
 	class UCameraComponent* Camera;
 
+	const bool bUseVR = false;
 	UFUNCTION()
 	void SetupSampling();
 	UFUNCTION()
@@ -37,6 +38,14 @@ class EXPERIMENTPLUGIN_API AExperimentCharacter : public ACharacter
 public:
 	// Sets default values for this character's properties
 	AExperimentCharacter();
+	
+	UFUNCTION(BlueprintCallable)
+	void OnOverlapBegin(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp,
+	                    int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
+
+	UFUNCTION(BlueprintCallable)
+	void OnOverlapEnd(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp,
+	                  int32 OtherBodyIndex);
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "SpatialComponents")
 	TObjectPtr<USceneComponent> VROrigin;
