@@ -179,17 +179,10 @@ void AExperimentDoorBase::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& 
 }
 
 bool AExperimentDoorBase::Server_OnEventTrigger_Validate() {
-	UE_LOG(LogTemp, Log, TEXT("[AExperimentDoorBase::Server_OnEventTrigger_Validate]"))
 	return true;
 }
 
 void AExperimentDoorBase::Server_OnEventTrigger_Implementation() {
-	UE_LOG(LogTemp, Log, TEXT("[AExperimentDoorBase::Server_OnEventTrigger_Implementation] Called"))
-	const bool bHasAuthority = HasAuthority();
-	UE_LOG(LogTemp, Log, TEXT("[AExperimentDoorBase::Server_OnEventTrigger_Implementation] HasAuthority: %i"),
-		bHasAuthority)
-
-	// SetOwner(nullptr);
 }
 
 void AExperimentDoorBase::NotifyActorBeginOverlap(AActor* OtherActor) {
@@ -261,12 +254,12 @@ void AExperimentDoorBase::Tick(float DeltaTime) {
 	AnimationDoorTimeline->TickComponent(DeltaTime, ELevelTick::LEVELTICK_TimeOnly, NULL);
 	if (HasNetOwner()) {
 		if (!dbg_bFuncCalled) {
-			UE_LOG(LogTemp, Log, TEXT("[AExperimentDoorBase::AnimationDoorFinished] Has net owner!"))
+			UE_LOG(LogTemp, Log, TEXT("[AExperimentDoorBase::Tick] Has net owner!"))
 			OnValidEventTrigger();
 			dbg_bFuncCalled = true;
 		}
 	}else {
-		UE_LOG(LogTemp, Log, TEXT("[AExperimentDoorBase::AnimationDoorFinished] Has net owner!"))
+		UE_LOG(LogTemp, Log, TEXT("[AExperimentDoorBase::Tick] No net owner!"))
 	}
 }
 

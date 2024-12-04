@@ -52,8 +52,8 @@ public:
 
 	UFUNCTION(Server, Reliable, WithValidation, Category = "Events")
 	virtual void Server_OnEventTrigger();
-	// virtual bool Server_OnEventTrigger_Validate();
-	// virtual void Server_OnEventTrigger_Implementation();
+	virtual bool Server_OnEventTrigger_Validate();
+	virtual void Server_OnEventTrigger_Implementation();
 
 	bool dbg_bFuncCalled = false;
 	virtual void NotifyActorBeginOverlap(AActor* OtherActor) override;

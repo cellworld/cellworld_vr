@@ -854,10 +854,10 @@ bool AExperimentClient::Test() {
 	// 	// PlayerIndex = ExperimentManager->RegisterNewPlayer(PlayerPawn, NewExperimentMonitorData);
 	// 	// ExperimentManager->SetActivePlayerIndex(PlayerIndex);
 	// }
-	else {
-		UE_LOG(LogTemp, Error,
-		       TEXT("[AExperimentClient::Test] Failed to Register new player. ExperimentManager not valid!"))
-	}
+	// else {
+	// 	UE_LOG(LogTemp, Error,
+	// 	       TEXT("[AExperimentClient::Test] Failed to Register new player. ExperimentManager not valid!"))
+	// }
 
 	/* get cell locations */
 	if (!this->SendGetOcclusionLocationsRequest()) {
