@@ -80,7 +80,7 @@ Server_UpdateMovement_Implementation(const FVector& InLocation, const FRotator& 
 	}
 	AExperimentGameMode* ExperimentGameMode = Cast<AExperimentGameMode>(GetWorld()->GetAuthGameMode());
 	if (ExperimentGameMode) {
-		UE_LOG(LogTemp, Error,
+		UE_LOG(LogTemp, Log,
 			TEXT("[AExperimentCharacter::Server_UpdateMovement_Implementation] Calling: ExperimentGameMode->OnUpdatePreyPosition"))
 		ExperimentGameMode->OnUpdatePreyPosition(InLocation,InRotation);
 	}
@@ -136,8 +136,23 @@ void AExperimentCharacter::SetupSampling() {
 }
 
 void AExperimentCharacter::UpdateMovement() {
+#if WITH_EDITOR
+	UE_LOG(LogTemp, Warning,
+		TEXT("[AExperimentCharacter::UpdateMovement] running with editor, forcing update to work with MetaXR simulator!"))
+	if (bUseVR) {
+		// todo: bUseVR - Make variable 
+		FRotator HMDRotation {};
+		FVector HMDLocation {};
+		UHeadMountedDisplayFunctionLibrary::GetOrientationAndPosition(HMDRotation, HMDLocation);
+		CurrentLocation = HMDLocation + this->VROrigin->GetComponentLocation();
+		CurrentRotation = HMDRotation;
+		UpdateRoomScaleLocation();
+	}
+	Server_UpdateMovement(CurrentLocation, CurrentRotation);
+	return;
+#endif
 	if (HasAuthority()) {
-		UE_LOG(LogTemp, Warning,TEXT("[AExperimentPawn::UpdateMovement] Ran from server!"))
+		UE_LOG(LogTemp, Warning,TEXT("[AExperimentCharacter::UpdateMovement] Ran from server!"))
 	} else {
 		UE_LOG(LogTemp, Log, TEXT("[AExperimentCharacter::UpdateMovement] Running on client."))
 		if (bUseVR) { // todo: bUseVR - Make variable 
@@ -166,12 +181,12 @@ void AExperimentCharacter::UpdateRoomScaleLocation() {
 	VROrigin->AddWorldOffset(-DeltaLocation, false, nullptr, ETeleportType::TeleportPhysics);
 	GetCapsuleComponent()->SetWorldLocation(CameraLocation);
 
-	UE_LOG(LogTemp, Log, TEXT("[AExperimentCharacter::UpdateRoomScaleLocation] VROrigin: Location: %s | Rotation: %s"),
-		*VROrigin->GetComponentLocation().ToString(), *VROrigin->GetComponentRotation().ToString())
-
-	UE_LOG(LogTemp, Log, TEXT("[AExperimentCharacter::UpdateRoomScaleLocation] Capsule: Location: %s | Rotation: %s"),
-		*GetCapsuleComponent()->GetComponentLocation().ToString(), *GetCapsuleComponent()->GetComponentRotation().ToString())
-	
+	// UE_LOG(LogTemp, Log, TEXT("[AExperimentCharacter::UpdateRoomScaleLocation] VROrigin: Location: %s | Rotation: %s"),
+	// 	*VROrigin->GetComponentLocation().ToString(), *VROrigin->GetComponentRotation().ToString())
+	//
+	// UE_LOG(LogTemp, Log, TEXT("[AExperimentCharacter::UpdateRoomScaleLocation] Capsule: Location: %s | Rotation: %s"),
+	// 	*GetCapsuleComponent()->GetComponentLocation().ToString(), *GetCapsuleComponent()->GetComponentRotation().ToString())
+	//
 }
 
 void AExperimentCharacter::BeginPlay() {

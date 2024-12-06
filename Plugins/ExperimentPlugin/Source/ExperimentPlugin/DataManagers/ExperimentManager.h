@@ -131,14 +131,19 @@ public:
 	 * @return Index of new player. -1 if Index is already used or error. 
 	 */
 	UFUNCTION()
-	int RegisterNewPlayer(APawn* InPawn) {
+	int RegisterNewPlayer(AController* InController) {
+		// todo: make sure player is not already registered/duplicate
 		UExperimentData* NewExperimentMonitorData = NewObject<UExperimentData>(this);
-		if (!InPawn->IsValidLowLevelFast() || !NewExperimentMonitorData->IsValidLowLevelFast()) {
-			UE_LOG(LogTemp, Error, TEXT("[UExperimentManager::RegisterNewPlayer] Failed to register player. APawn is not valid."))
+		if (!InController->IsValidLowLevel()) {
+			UE_LOG(LogTemp, Error, TEXT("[UExperimentManager::RegisterNewPlayer] Failed to register player. InController is NULL"))
 			return -1;
 		}
-		
-		const int NewPlayerIndex = Data.Add(NewExperimentMonitorData);
+		if (!NewExperimentMonitorData->IsValidLowLevelFast()) {
+			UE_LOG(LogTemp, Error, TEXT("[UExperimentManager::RegisterNewPlayer] Failed to register player. NewExperimentMonitorData NULL"))
+			return -1;
+		}
+				
+		const int NewPlayerIndex = Data.Add(NewExperimentMonitorData); // todo: make sure its unique
 		UE_LOG(LogTemp, Warning, TEXT("[UExperimentManager::RegisterNewPlayer] Registered new player: Player %i"), NewPlayerIndex)
 		return NewPlayerIndex;
 	}
@@ -273,7 +278,7 @@ public:
 		if (IsInEpisode()) {
 			UE_LOG(LogTemp, Log,
 				TEXT("[UExperimentManager::ProcessStartEpisodeResponse] Broadcasting: OnEpisodeStartedFailedDelegate"))
-			OnEpisodeStartedFailedDelegate.Broadcast("[ProcessStartEpisodeResponse] bInEpisode = true;");
+			OnEpisodeStartedFailedDelegate.Broadcast("[ProcessStartEpisodeResponse] OnEpisodeStartedFailedDelegate bInEpisode = true;");
 		} else {
 			UE_LOG(LogTemp, Log,
 				TEXT("[UExperimentManager::ProcessStartEpisodeResponse] Broadcasting: OnEpisodeStartedSuccessDelegate"))
@@ -307,36 +312,37 @@ public:
 		UE_LOG(LogTemp, Log, TEXT("[UExperimentManager::OnEpisodeFinished] setting: bInEpisode = false"))
 		SetInEpisode(false);
 		NotifyEpisodeFinished.Broadcast();
-
-		// check if player is in list
-		if (!ensure(Data.IsValidIndex(PlayerIndex))) {
-			UE_LOG(LogTemp, Error,
-				TEXT("[UExperimentManager::OnEpisodeFinished] Failed to modify ExperimentData. InPlayerIndex not valid."))
-			return; 
-		}
-
-		UE_LOG(LogTemp, Log, TEXT("[UExperimentManager::OnEpisodeFinished] Player finished episode: %i"),
-			PlayerIndex)
 		
-		double EpisodeDurationTemp = 0.0f; 
+		double EpisodeDurationTemp = 0.0f;
 		if (!ensure(this->StopTimerEpisode(EpisodeDurationTemp))) {
 			UE_LOG(LogTemp, Error, TEXT("[UExperimentManager::OnEpisodeFinished] StopTimerEpisode FAILED"))
 		}else {
 			UE_LOG(LogTemp, Log, TEXT("[UExperimentManager::OnEpisodeFinished] StopTimerEpisode OK"))
 		}
-		
-		Data[PlayerIndex]->AddEpisodeAndCompletedTime(EpisodeDurationTemp);
-		
-		UE_LOG(LogTemp, Log, TEXT("[UExperimentManager::OnEpisodeFinished] Added new episode to data! Player: %i, Duration: %0.3f. Total time: %0.2f."),
-					PlayerIndex, EpisodeDurationTemp, Data[PlayerIndex]->GetEpisodesCompletedTime())
+
+		// check if player is in list
+		if (ensure(Data.IsValidIndex(PlayerIndex))) {
+			UE_LOG(LogTemp, Error,
+				TEXT("[UExperimentManager::OnEpisodeFinished] Failed to modify ExperimentData. InPlayerIndex not valid."))
+			UE_LOG(LogTemp, Log, TEXT("[UExperimentManager::OnEpisodeFinished] Player finished episode: %i"),
+				PlayerIndex)
+			Data[PlayerIndex]->AddEpisodeAndCompletedTime(EpisodeDurationTemp);
+			UE_LOG(LogTemp, Log, TEXT("[UExperimentManager::OnEpisodeFinished] Added new episode to data! Player: %i, Duration: %0.3f. Total time: %0.2f."),
+				PlayerIndex, EpisodeDurationTemp, Data[PlayerIndex]->GetEpisodesCompletedTime())
+
+			if (IsExperimentDone(PlayerIndex)) {
+				NotifyOnExperimentFinishedDelegate.Broadcast(PlayerIndex);
+				UE_LOG(LogTemp, Log,
+					TEXT("[UExperimentManager::OnEpisodeFinished] Player (%i) finished experiment! Broadcasting to delegates (NotifyOnExperimentFinishedDelegate)."),
+					PlayerIndex)
+			}
+			return; 
+		}
+
+		UE_LOG(LogTemp, Log, TEXT("[UExperimentManager::OnEpisodeFinished] TEMP - Player finished episode: %i"),
+			PlayerIndex)
 		
 		// check if we finished everything and if so, notify delegates 
-		if (IsExperimentDone(PlayerIndex)) {
-			NotifyOnExperimentFinishedDelegate.Broadcast(PlayerIndex);
-			UE_LOG(LogTemp, Log,
-				TEXT("[UExperimentManager::OnEpisodeFinished] Player (%i) finished experiment! Broadcasting to delegates (NotifyOnExperimentFinishedDelegate)."),
-				PlayerIndex)
-		}
 
 	}
 	

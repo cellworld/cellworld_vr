@@ -17,7 +17,7 @@ void AExperimentClient::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& Ou
 }
 
 void AExperimentClient::OnExperimentFinished(const int InPlayerIndex) {
-	UE_LOG(LogTemp, Log, TEXT("AExperimentClient::OnExperimentFinished"))
+	UE_LOG(LogTemp, Log, TEXT("[AExperimentClient::OnExperimentFinished]"))
 }
 
 //TODO - add argument to include MessageType (Log, Warning, Error, Fatal)
@@ -373,7 +373,7 @@ void AExperimentClient::UpdatePredator(const FMessage& InMessage) {
 
 /* get updated player position and send to prey route via tracking service client */
 void AExperimentClient::UpdatePreyPosition(const FVector InVector, const FRotator InRotation) {
-	UE_LOG(LogTemp, Log, TEXT("[AExperimentClient::UpdatePreyPosition] Called | bCanUpdatePrey = %i"),bCanUpdatePrey)
+	// UE_LOG(LogTemp, Log, TEXT("[AExperimentClient::UpdatePreyPosition] Called | bCanUpdatePrey = %i"),bCanUpdatePrey)
 	// if (!ensure(ExperimentManager->IsValidLowLevelFast())) { return; }
 	// if (!ExperimentManager->IsInEpisode()) { return; }
 	if (!bConnectedToServer) {
@@ -651,7 +651,6 @@ void AExperimentClient::HandleGetOcclusionLocationsResponse(const FString Respon
 	UE_LOG(LogTemp, Log,
 	       TEXT("[AExperimentClient::HandleGetOcclusionLocationsResponse] Response:%s"),
 	       *ResponseIn);
-
 	if (!OcclusionsStruct.bAllLocationsLoaded) { OcclusionsStruct.SetAllLocations(ResponseIn); }
 	if (!OcclusionsStruct.bSpawnedAll) {
 		UE_LOG(LogTemp, Log,
@@ -824,7 +823,6 @@ bool AExperimentClient::SetupConnections() {
 }
 
 
-
 bool AExperimentClient::Test() {
 	TrackingClient = this->CreateNewClient();
 
@@ -847,10 +845,13 @@ bool AExperimentClient::Test() {
 	if (!ensure(this->RouteOnCapture())) { return false; }
 	if (!ensure(this->SubscribeToTracking())) { return false; }
 
-	// UExperimentData* NewExperimentMonitorData = NewObject<UExperimentData>(this);
 	// if (ExperimentManager) {
-	// 	// PlayerIndex = ExperimentManager->RegisterNewPlayer(PlayerPawn, NewExperimentMonitorData);
-	// 	// ExperimentManager->SetActivePlayerIndex(PlayerIndex);
+	// 	if (PlayerPawn) {
+	// 		PlayerIndex = ExperimentManager->RegisterNewPlayer(PlayerPawn);
+	// 	}else {
+	// 		UE_LOG(LogTemp, Log, TEXT("Cannot register new player, pawn is NULL"))
+	// 	}
+	// 	ExperimentManager->SetActivePlayerIndex(PlayerIndex);
 	// }
 	// else {
 	// 	UE_LOG(LogTemp, Error,
@@ -902,6 +903,7 @@ void AExperimentClient::OnEpisodeStarted() {
 }
 
 void AExperimentClient::ResetWorldState() {
+	UE_LOG(LogTemp, Log, TEXT("[AExperimentClient::ResetWorldState] called"))
 	bCanUpdatePrey = false;
 	if (!ensure(ExperimentManager->IsValidLowLevelFast())){ return; }
 	ExperimentManager->SetInEpisode(false);

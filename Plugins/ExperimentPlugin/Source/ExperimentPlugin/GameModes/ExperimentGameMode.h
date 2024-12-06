@@ -18,6 +18,7 @@ public:
 	virtual void InitGame(const FString& MapName, const FString& Options, FString& ErrorMessage) override;
 	virtual void InitGameState() override;
 	virtual void StartPlay() override;
+	virtual void UpdateNetOwnerHabitat(AController* InHabitatNetOwnerController, bool bForceUpdate);
 	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 	virtual void Tick(float DeltaTime) override;
 	virtual void PostLogin(APlayerController* NewPlayer) override;
@@ -28,8 +29,14 @@ public:
 	virtual void OnPostLogin(AController* NewPlayer) override;
 	virtual void Logout(AController* Exiting) override;
 
+	/* == temp | debug */
+	UPROPERTY(/*Replicated*/)
+	TObjectPtr<APawn> PawnToRegister = nullptr;
+	UPROPERTY(/*Replicated*/)
+	TObjectPtr<AController> NewPC = nullptr;
+	
 	/* == helpers == */
-	TObjectPtr<AHabitat> FindHabitatInLevel();
+	TObjectPtr<AHabitat> FindHabitatInLevel() const;
 
 	UPROPERTY(VisibleAnywhere)
 	TObjectPtr<AHabitat> Habitat;

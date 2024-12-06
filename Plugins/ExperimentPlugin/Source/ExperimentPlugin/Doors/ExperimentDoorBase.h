@@ -27,13 +27,14 @@ protected:
 
 	bool bCanCollide = true;
 
-	UFUNCTION()
-	void OnEventCooldownFinished();
+	UFUNCTION(Category = "Events|Trigger")
+	virtual void OnEventCooldownFinished();
 
 	bool SetupEventCooldownTimer();
 	void SetCanCallEventTrigger(bool bNewCanCallEventTrigger);
+	
 	const float DeltaTimeTimeline = 0.1;
-	bool bCanCallEventTrigger = false;
+	bool bCanCallEventTrigger = true;
 
 	UPROPERTY(BlueprintReadWrite,Category= "Door Events")
 	float ValidEventTriggerCooldownTime = 10.0f;
@@ -42,15 +43,17 @@ public:
 
 	UPROPERTY()
 	UEventTimer* TriggerCooldownTimer = nullptr;
+
+	UFUNCTION(Category = "Events|Trigger")
+	virtual bool IsValidEventTriggerReady();
 	
-	bool IsValidEventTriggerReady();
 	void RPCTest();
 	// FOnValidEventTriggered OnValidEventTriggered;
 	virtual void OnValidEventTrigger();
 	virtual void OnRep_Owner() override;	
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
-	UFUNCTION(Server, Reliable, WithValidation, Category = "Events")
+	UFUNCTION(Server, Reliable, WithValidation, Category = "Events|Trigger")
 	virtual void Server_OnEventTrigger();
 	virtual bool Server_OnEventTrigger_Validate();
 	virtual void Server_OnEventTrigger_Implementation();
@@ -64,10 +67,10 @@ public:
 	TObjectPtr<UTimelineComponent> AnimationDoorTimeline = nullptr; 
 
 	UFUNCTION(BlueprintCallable, Category = "Door Animation")
-	void AnimationDoorUpdate(const FVector InVector);
+	virtual void AnimationDoorUpdate(const FVector InVector);
 
 	UFUNCTION(BlueprintCallable, Category = "Door Animation")
-	void AnimationDoorFinished(); 
+	virtual void AnimationDoorFinished(); 
 	
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Door Animation")
 	TObjectPtr<UCurveVector> AnimationDoorCurveVector = nullptr;

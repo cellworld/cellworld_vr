@@ -9,6 +9,7 @@ class EXPERIMENTPLUGIN_API AExperimentDoorExit : public AExperimentDoorBase {
 public:
 	AExperimentDoorExit();
 
+	virtual void BeginPlay() override;
 	virtual void OnValidEventTrigger() override;
 	virtual void Server_OnEventTrigger_Implementation() override;
 

@@ -21,24 +21,24 @@ AExperimentGameMode::AExperimentGameMode(){
 	PrimaryActorTick.bCanEverTick = true;
 	
 	bStartPlayersAsSpectators = false;
-	// UObject* SpawnActor = Cast<UObject>(StaticLoadObject(UObject::StaticClass(), NULL,
-	// 	TEXT("/Game/Levels/BP_Habitat_Actor.BP_Habitat_Actor")));
-	// // static ConstructorHelpers::FClassFinder<AActor> BPMazeActorClass(TEXT("/Game/Levels/BP_Habitat_Actor.BP_Habitat_Actor"));
-	// if (SpawnActor->StaticClass() != nullptr) {
- //        MyActorClass = SpawnActor->StaticClass(); // Store the Blueprint class
-	// }
 }
 
-void AExperimentGameMode::InitGame(const FString& MapName, const FString& Options, FString& ErrorMessage)
-{
+void AExperimentGameMode::InitGame(const FString& MapName, const FString& Options, FString& ErrorMessage) {
 	Super::InitGame(MapName, Options, ErrorMessage);
+	UE_LOG(LogTemp, Log, TEXT("[AExperimentGameMode::InitGame] Called"))
+	
+	UE_LOG(LogTemp, Log, TEXT("[AExperimentGameMode::InitGame] Spawning ExperimentClient!"))
+	SpawnExperimentServiceMonitor();
+	if (!ensure(ExperimentClient->IsValidLowLevelFast())) {
+		UE_LOG(LogTemp, Error, TEXT("[AExperimentGameMode::InitGame] Failed to spawn ExperimentClient!"))
+	}
 }
 
 void AExperimentGameMode::InitGameState() {
 	Super::InitGameState();
 	for (TActorIterator<APlayerStart> It(GetWorld()); It; ++It) {
 		FreePlayerStarts.Add(*It);
-		UE_LOG(LogTemp, Log, TEXT("Found player start: %s"), *(*It)->GetName())
+		UE_LOG(LogTemp, Log, TEXT("[AExperimentGameMode::InitGameState] Found player start: %s"), *(*It)->GetName())
 	}
 }
 
@@ -65,20 +65,40 @@ void AExperimentGameMode::StartPlay() {
 	if (GetNetMode() == NM_DedicatedServer) {
 		UE_LOG(LogTemp, Log, TEXT("[AExperimentGameMode::StartPlay] Running on a dedicated server."))
 	}
-	UE_LOG(LogTemp, Log, TEXT("[AExperimentGameMode::StartPlay] Calling SpawnHabitat!"))
-	// SpawnHabitat(FVector::ZeroVector,15.0f);
-	// todo: get Worldscale from GameInstance
-	Habitat = FindHabitatInLevel();
-	if (!ensure(Habitat)) return;
+}
+
+void AExperimentGameMode::UpdateNetOwnerHabitat(AController* InHabitatNetOwnerController, const bool bForceUpdate) {
+	UE_LOG(LogTemp, Log, TEXT("[AExperimentGameMode::UpdateNetOwnerHabitat] Called"))
+	if (!ensure(InHabitatNetOwnerController)) { return; }
 	
-#if !WITH_EDITOR
-	UE_LOG(LogTemp, Log, TEXT("[AExperimentGameMode::StartPlay] Spawning SpawningClient!"))
-	SpawnExperimentServiceMonitor();
-	if (!ensure(ExperimentClient->IsValidLowLevelFast())) {
-		UE_LOG(LogTemp, Error, TEXT("Failed to spawn ExperimentClient!"))
-		return;
+	UE_LOG(LogTemp, Log, TEXT("[AExperimentGameMode::UpdateNetOwnerHabitat] Controller is valid: %s | bForceUpdate: %i"),
+		*InHabitatNetOwnerController->GetName(), bForceUpdate)
+
+	check(Habitat)
+	if (!ensure(Habitat)) { return; }
+	
+	if (!Habitat->HasNetOwner() || bForceUpdate) {
+		UE_LOG(LogTemp, Log,
+			TEXT("[AExperimentGameMode::UpdateNetOwnerHabitat] Updating Habitat NetOwner. Habitat does not have owner or you pass `force` flag (bForceUpdate = %i)"),
+			bForceUpdate)
+		Habitat->SetOwner(InHabitatNetOwnerController);
+        Habitat->SetReplicateMovement(true);
+        TArray<AActor*> ChildActors;
+        Habitat->GetAllChildActors(ChildActors,true);
+        for (AActor* ChildActor : ChildActors) {
+            if (ChildActor) {
+            	ChildActor->SetOwner(InHabitatNetOwnerController);
+            	ChildActor->SetReplicates(true);
+            	UE_LOG(LogTemp, Log,
+            		TEXT("[AExperimentGameMode::UpdateNetOwnerHabitat] Updated owner for child actor: %s to %s (HasNetOwner?: %i)"),
+            		*ChildActor->GetName(),
+            		*InHabitatNetOwnerController->GetName(),
+            		ChildActor->HasNetOwner());
+            }
+        }
 	}
-#endif
+	
+	UE_LOG(LogTemp, Log, TEXT("[AExperimentGameMode::UpdateNetOwnerHabitat] Exiting"))
 }
 
 void AExperimentGameMode::EndPlay(const EEndPlayReason::Type EndPlayReason) {
@@ -87,10 +107,6 @@ void AExperimentGameMode::EndPlay(const EEndPlayReason::Type EndPlayReason) {
 
 void AExperimentGameMode::Tick(float DeltaTime) {
 	Super::Tick(DeltaTime);
-	UE_LOG(LogTemp, Log, TEXT("Player Count: %i"), NumPlayers)
-	if (NumPlayers == 1) {
-	}
-	// UWorld* World = GetWorld(); // can be true
 }
 
 void AExperimentGameMode::PostLogin(APlayerController* NewPlayer) {
@@ -175,40 +191,31 @@ void AExperimentGameMode::OnPostLogin(AController* NewPlayer) {
 	Super::OnPostLogin(NewPlayer);
 	UE_LOG(LogTemp, Warning, TEXT("[AExperimentGameMode::OnPostLogin] Called"));
 	
-	// int32 NumberOfPlayers = GameState.Get()->PlayerArray.Num();
-	int32 NumberOfPlayers = 0; 
 	if (!ensure(NewPlayer->IsValidLowLevelFast())) { return; }
-	
 	UE_LOG(LogTemp, Log, TEXT("[AExperimentGameMode::OnPostLogin] NewPlayer PlayerController valid!"));
-
-	Habitat->SetOwner(NewPlayer);
-	Habitat->SetReplicateMovement(true);
-	TArray<AActor*> ChildActors;
-	Habitat->GetAllChildActors(ChildActors,true);
-	for (AActor* ChildActor : ChildActors) {
-		if (ChildActor) {
-			ChildActor->SetOwner(NewPlayer);
-			ChildActor->SetReplicates(true);
-			UE_LOG(LogTemp, Log,
-				TEXT("Updated owner for child actor: %s to %s (HasNetOwner?: %i)"),
-				*ChildActor->GetName(),
-				*NewPlayer->GetName(),
-				ChildActor->HasNetOwner());
-
-			// if (AExperimentDoorBase* ExperimentDoorBase = Cast<AExperimentDoorBase>(ChildActor)) {
-			// 	ExperimentDoorBase->OnValidEventTrigger();
-			// }
-		}
+	
+	if (!Habitat && !ensure((Habitat = FindHabitatInLevel()))) { return; }
+	
+	UE_LOG(LogTemp, Log, TEXT("[AExperimentGameMode::OnPostLogin] Habitat found. "))
+	if (!Habitat->HasNetOwner()) {
+		UE_LOG(LogTemp, Log, TEXT("[AExperimentGameMode::OnPostLogin] Habitat has no owner. Setting to AController: %s"),
+			*NewPlayer->GetName())
+		UpdateNetOwnerHabitat(NewPlayer, true);
+	} else {
+		UE_LOG(LogTemp, Log, TEXT("[AExperimentGameMode::OnPostLogin] Habitat already has an owner! %s"),
+			*Habitat->GetNetOwner()->GetName());
 	}
 	
-	// ExperimentClient->SetupPlayerUpdatePosition(NewPlayer->GetPawn());
-	if (ensure(ExperimentClient->ExperimentManager->IsValidLowLevelFast())) {
-		ExperimentClient->PlayerIndex = ExperimentClient->ExperimentManager->RegisterNewPlayer(NewPlayer->GetPawn());
+	if (ExperimentClient && ensure(ExperimentClient->ExperimentManager->IsValidLowLevelFast())) {
+		ExperimentClient->PlayerIndex = ExperimentClient->ExperimentManager->RegisterNewPlayer(NewPlayer);
 		ExperimentClient->ExperimentManager->SetActivePlayerIndex(ExperimentClient->PlayerIndex);
-		UE_LOG(LogTemp, Log, TEXT("[AExperimentGameMode::OnPostLogin] Registered new player pawn. Client->Idx: %i"),
-			ExperimentClient->PlayerIndex)
+		UE_LOG(LogTemp, Log,
+			TEXT("[AExperimentGameMode::OnPostLogin] Registered new player. PlayerName: %s (id: %i)"),
+			*NewPlayer->GetName(),ExperimentClient->PlayerIndex)
+	}else {
+		UE_LOG(LogTemp, Log,
+			TEXT("[AExperimentGameMode::OnPostLogin] ExperimentClient or ExperimentManager are NULL"))
 	}
-	
 }
 
 void AExperimentGameMode::Logout(AController* Exiting) {
@@ -216,32 +223,30 @@ void AExperimentGameMode::Logout(AController* Exiting) {
 	UE_LOG(LogTemp, Log, TEXT("[AExperimentGameMode::Logout] Player logged out: %s"), *Exiting->GetName());
 }
 
-TObjectPtr<AHabitat> AExperimentGameMode::FindHabitatInLevel() {
-	UE_LOG(LogTemp, Log, TEXT("[AExperimentGameMode::FindHabitatInLevel] Called"));
+TObjectPtr<AHabitat> AExperimentGameMode::FindHabitatInLevel() const {
 	TObjectPtr<AHabitat> HabitatTemp = nullptr;
 	for (TActorIterator<AHabitat> ActorItr(GetWorld()); ActorItr; ++ActorItr) {
-		// Found the first instance of AMaze or a subclass (like BP_Maze)
 		HabitatTemp = *ActorItr;
 		if (HabitatTemp) {
-			UE_LOG(LogTemp, Log, TEXT("[AExperimentGameMode::FindHabitatInLevel] Found Maze Actor: %s"), *HabitatTemp->GetName());
+			UE_LOG(LogTemp, Log, TEXT("[AExperimentGameMode::FindHabitatInLevel] Found Maze Actor: %s"),
+				*HabitatTemp->GetName());
 			return HabitatTemp;
 		}
 	}
 
 	UE_LOG(LogTemp, Warning, TEXT("[AExperimentGameMode::FindHabitatInLevel] No Maze Actor found!"));
-	return HabitatTemp;  // No maze found
+	return HabitatTemp; 
 }
 
 void AExperimentGameMode::OnUpdatePreyPosition(const FVector& InLocation, const FRotator& InRotation) {
-	UE_LOG(LogTemp, Warning, TEXT("[AExperimentGameMode::OnUpdatePreyPosition] InLocation: %s | InRotation: %s"),
-			*InLocation.ToString(), *InRotation.ToString())
+	// UE_LOG(LogTemp, Log, TEXT("[AExperimentGameMode::OnUpdatePreyPosition] InLocation: %s | InRotation: %s"),
+	// 		*InLocation.ToString(), *InRotation.ToString())
 	if (!ensure(ExperimentClient->IsValidLowLevelFast())){ return; }
 	if (!ensure(ExperimentClient->TrackingClient)) { return; }
 	if (!ensure(ExperimentClient->TrackingClient->IsConnected())) { return; }
 	UE_LOG(LogTemp, Warning,
 		TEXT("[AExperimentGameMode::OnUpdatePreyPosition] Calling: ExperimentClient->UpdatePreyPosition(...,...)"))
 	ExperimentClient->UpdatePreyPosition(InLocation, InRotation);
-		
 }
 
 void AExperimentGameMode::HandleUpdatePosition(const FVector InLocation, const FRotator InRotation) {

@@ -17,6 +17,7 @@ AExperimentDoorBase::AExperimentDoorBase() {
 	static ConstructorHelpers::FObjectFinder<UCurveVector> Curve(TEXT("/Script/Engine.CurveVector'/Game/Levels/BaseDoors/AnimationDoorCurveVector.AnimationDoorCurveVector'"));
 	check(Curve.Succeeded());
 	AnimationDoorCurveVector = Curve.Object;
+	UE_LOG(LogTemp, Log, TEXT("[AExperimentDoorBase::AExperimentDoorBase] Found curve object!"))
 	
 	SceneRootComponent = CreateDefaultSubobject<USceneComponent>(FName("SceneRootComponent"));
 	SceneRootComponent->AddRelativeLocation(FVector(0.0f,0.0f,-25.0f));
@@ -41,7 +42,7 @@ AExperimentDoorBase::AExperimentDoorBase() {
 	DoorMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("DoorStaticMesh"));
 	DoorMesh->SetCollisionEnabled(ECollisionEnabled::Type::NoCollision);
 	DoorMesh->SetWorldScale3D(FVector(1.0f,2.0f,1.0f));
-	DoorMesh->SetCollisionEnabled(ECollisionEnabled::Type::NoCollision);
+	DoorMesh->SetMobility(EComponentMobility::Type::Movable);
 	DoorMesh->SetupAttachment(RootComponent);
 	
 	InitialDoorLocation = DoorMesh->GetRelativeLocation();
@@ -52,6 +53,7 @@ AExperimentDoorBase::AExperimentDoorBase() {
 
 	if (DoorMeshAsset.Succeeded()) {
 		DoorMesh->SetStaticMesh(DoorMeshAsset.Object);
+		UE_LOG(LogTemp,Log,TEXT("[AExperimentDoorBase::AExperimentDoorBase] Set mesh: OK"));
 	} else {
 		UE_LOG(LogTemp,Error,TEXT("[AExperimentDoorBase::AExperimentDoorBase] Set mesh: Failed"));
 	}
@@ -60,6 +62,7 @@ AExperimentDoorBase::AExperimentDoorBase() {
 	DoorMaterialAsset(TEXT("Material'/Game/NecrosUtilityMatPack/materials/floor/masters/m_diamondplate_01.m_diamondplate_01'"));
 	if (DoorMaterialAsset.Succeeded()) {
 		DoorMesh->SetMaterial(0, DoorMaterialAsset.Object);
+		UE_LOG(LogTemp, Log,TEXT("[AExperimentDoorBase::AExperimentDoorBase] Set Material: OK"));
 	}else {
 		UE_LOG(LogTemp, Error,TEXT("[AExperimentDoorBase::AExperimentDoorBase] Set Material: Failed"));
 	}
@@ -68,40 +71,41 @@ AExperimentDoorBase::AExperimentDoorBase() {
 // Called when the game starts or when spawned
 void AExperimentDoorBase::BeginPlay() {
 	Super::BeginPlay();
-
+	UE_LOG(LogTemp, Log, TEXT("[AExperimentDoorBase::BeginPlay] Called"))
+	check(AnimationDoorCurveVector)
 	if (!ensure(AnimationDoorCurveVector)) return;
+	UE_LOG(LogTemp, Log, TEXT("[AExperimentDoorBase::BeginPlay] AnimationDoorCurve OK"))
 	SetReplicateMovement(true);
-	// AnimationDoorCurveVector = NewObject<UCurveVector>(this,FName("AnimationDoorCurveVector"));
+	
 	OnAnimationDoorUpdateVector.BindUFunction(this, FName("AnimationDoorUpdate"));
 	OnAnimationDoorFinishedEvent.BindUFunction(this, FName("AnimationDoorFinished"));
 
 	AnimationDoorTimeline = NewObject<UTimelineComponent>(this,FName("AnimationDoorTimeline"));
+	check(AnimationDoorTimeline)
 	AnimationDoorTimeline->RegisterComponent();
-	if (!ensure(AnimationDoorTimeline)) { return; }
-	
-	// AnimationDoorTimeline->SetLooping(false);
 	AnimationDoorTimeline->AddInterpVector(AnimationDoorCurveVector, OnAnimationDoorUpdateVector);
 	AnimationDoorTimeline->SetTimelineFinishedFunc(OnAnimationDoorFinishedEvent);
+	UE_LOG(LogTemp, Log, TEXT("[AExperimentDoorBase::BeginPlay] AnimationDoorTimeline VectorCurve set."))
 
-	if (!ensure(SetupEventCooldownTimer())) { return; }
+	check(SetupEventCooldownTimer())
 	SetCanCallEventTrigger(true);
 }
 
 void AExperimentDoorBase::OnEventCooldownFinished() {
-	UE_LOG(LogTemp, Log, TEXT("[AExperimentDoorBase::OnEventCooldownFinished] Setting: bCanCallEventTrigger = true"))
-#if WITH_EDITOR
-	if(GEngine)
-		GEngine->AddOnScreenDebugMessage(-1, 3.0f, FColor::Green, TEXT("TIMER FINISHED"));
-#endif
+	UE_LOG(LogTemp, Log, TEXT("[AExperimentDoorBase::OnEventCooldownFinished] Called. Timer finished"))
+	if (!ensure(EventBoxCollision)) { return; }
 	SetCanCallEventTrigger(true);
 }
 
 bool AExperimentDoorBase::SetupEventCooldownTimer() {
+	UE_LOG(LogTemp, Log, TEXT("[AExperimentDoorBase::SetupEventCooldownTimer] Called!"))
 	TriggerCooldownTimer = NewObject<UEventTimer>(this, UEventTimer::StaticClass());
 	TriggerCooldownTimer->AddToRoot();
 	if (TriggerCooldownTimer->IsValidLowLevel()) {
-		UE_LOG(LogTemp, Log, TEXT("[AExperimentDoorBase::SetupEventCooldownTimer] Starting at Rate 10s!"))
-		TriggerCooldownTimer->SetRateSeconds(3.0f); //todo: make sampling rate GI variable (or somewhere relevant) 
+		constexpr float TriggerCooldownTime = 15.0f;
+		UE_LOG(LogTemp, Log, TEXT("[AExperimentDoorBase::SetupEventCooldownTimer] Starting at Rate %0.2f!"),
+			TriggerCooldownTime)
+		TriggerCooldownTimer->SetRateSeconds(TriggerCooldownTime); //todo: make sampling rate GI variable (or somewhere relevant) 
 		TriggerCooldownTimer->bLoop = false;
 		TriggerCooldownTimer->OnTimerFinishedDelegate.AddDynamic(this, &AExperimentDoorBase::OnEventCooldownFinished);
 	} else {
@@ -112,14 +116,10 @@ bool AExperimentDoorBase::SetupEventCooldownTimer() {
 }
 
 void AExperimentDoorBase::SetCanCallEventTrigger(bool bNewCanCallEventTrigger) {
-	bCanCallEventTrigger = bNewCanCallEventTrigger;
 	UE_LOG(LogTemp, Warning,
-		TEXT("[AExperimentDoorBase::SetCanCallEventTrigger] bCanCallEventTrigger new state: %i (bCanCallEventTrigger: %i)"),
+		TEXT("[AExperimentDoorBase::SetCanCallEventTrigger] bCanCallEventTrigger NEW state: %i (bCanCallEventTrigger: %i)"),
 		bNewCanCallEventTrigger, bCanCallEventTrigger)
-	if (!ensure(EventBoxCollision)) { return; }
-	if(GEngine)
-		GEngine->AddOnScreenDebugMessage(-1, 3.0f, FColor::Green,
-			FString::Printf(TEXT("SetCanCallEventTrigger: New state Called: %i"), bCanCallEventTrigger));
+	bCanCallEventTrigger = bNewCanCallEventTrigger;
 }
 
 bool AExperimentDoorBase::IsValidEventTriggerReady() {
@@ -128,43 +128,37 @@ bool AExperimentDoorBase::IsValidEventTriggerReady() {
 
 void AExperimentDoorBase::RPCTest() {
 	UE_LOG(LogTemp, Log, TEXT("[AExperimentDoorBase::RPCTest] Called"))
-	if (!HasAuthority()) {
+	if (!HasAuthority() && HasNetOwner()) {
 		UE_LOG(LogTemp, Log, TEXT("[AExperimentDoorBase::RPCTest] No authority"))
 		Server_OnEventTrigger();
 	}
 }
 
 void AExperimentDoorBase::OnValidEventTrigger() {
-	if(GEngine) GEngine->AddOnScreenDebugMessage(-1, 3.0f, FColor::Green, TEXT("OnValidEventTrigger Called"));
+	
 	UE_LOG(LogTemp, Warning, TEXT("[AExperimentDoorBase::OnValidEventTrigger] Called"))
-
 	if (!ensure(TriggerCooldownTimer)) { return; }
+	if (!IsValidEventTriggerReady()) { return; }
 
-	if (IsValidEventTriggerReady()) {
-		if(GEngine) GEngine->AddOnScreenDebugMessage(-1, 3.0f, FColor::Green,TEXT("STARTED TIMER"));
-		SetCanCallEventTrigger(false);
-		if (!ensure(TriggerCooldownTimer->Start())) { return; }
-
-		if (!HasAuthority()) {
-			UE_LOG(LogTemp, Warning,
-				TEXT("[AExperimentDoorBase::OnValidEventTrigger] running on client - looking for owner before RPC call"))
-
-			if (!ensure(HasNetOwner())) { return; }
-
-			UE_LOG(LogTemp, Warning,
-				TEXT("[AExperimentDoorBase::OnValidEventTrigger] Door is owned by: %s (ID: %i)"),
-				*GetNetOwner()->GetName(),
-				GetNetOwner()->GetUniqueID())
-
-			Server_OnEventTrigger();
-		} else {
-			UE_LOG(LogTemp, Warning, TEXT("Server_OnEventTrigger called from"));
-		}
-		// Server_OnEventTrigger();
-	} else {
-		if(GEngine)
-			GEngine->AddOnScreenDebugMessage(-1, 3.0f, FColor::Green, TEXT("TIMER ALREADY RUNNING"));
+	UE_LOG(LogTemp, Warning, TEXT("[AExperimentDoorBase::OnValidEventTrigger] Calling trigger and starting timer!"))
+	SetCanCallEventTrigger(false);
+	if (!ensure(TriggerCooldownTimer->Start())) {
+		UE_LOG(LogTemp, Warning, TEXT("[AExperimentDoorBase::OnValidEventTrigger] TIMER ALREADY RUNNING"));
+		return;
 	}
+
+	if (HasAuthority()) { // do nothing - running in server
+		UE_LOG(LogTemp, Warning, TEXT("[AExperimentDoorBase::OnValidEventTrigger] Running from server, not calling Server_OnEventTrigger!"));
+		return;
+	}
+	check(HasNetOwner())
+	if (!ensure(HasNetOwner())) { return; }
+	UE_LOG(LogTemp, Warning,
+		TEXT("[AExperimentDoorBase::OnValidEventTrigger] Door is owned by: %s (ID: %i)"),
+		*GetNetOwner()->GetName(),
+		GetNetOwner()->GetUniqueID())
+	
+	Server_OnEventTrigger();
 }
 
 void AExperimentDoorBase::OnRep_Owner() {
@@ -229,8 +223,8 @@ void AExperimentDoorBase::AnimationDoorUpdate(const FVector InVector) {
 	if (!ensure(DoorMesh)) { return; }
 
 	const FVector NewLocation = FMath::Lerp(InitialDoorLocation,TargetDoorLocation,InVector);
-	UE_LOG(LogTemp, Warning, TEXT("[AExperimentDoorBase::AnimationDoorUpdate] NewLocation: %s"),
-			*NewLocation.ToString())
+	UE_LOG(LogTemp, Warning, TEXT("[AExperimentDoorBase::AnimationDoorUpdate] NewLocation * WorldScale: %s"),
+			*((NewLocation*GetActorScale3D()*10)).ToString())
 
 	const float TimelineValue = AnimationDoorTimeline->GetPlaybackPosition();
 	const FVector TimelineVec = AnimationDoorCurveVector->GetVectorValue(TimelineValue);
@@ -238,11 +232,14 @@ void AExperimentDoorBase::AnimationDoorUpdate(const FVector InVector) {
 	UE_LOG(LogTemp, Warning, TEXT("[AExperimentDoorBase::AnimationDoorUpdate] TimelineVector: %s"),
 			*TimelineVec.ToString())
 	
-	DoorMesh->SetRelativeLocation(NewLocation,false,nullptr,ETeleportType::TeleportPhysics);
+	DoorMesh->SetRelativeLocation(NewLocation*GetActorScale3D()*10,false,nullptr,ETeleportType::TeleportPhysics);
 }
 
 void AExperimentDoorBase::AnimationDoorFinished() {
 	UE_LOG(LogTemp, Log, TEXT("[AExperimentDoorBase::AnimationDoorFinished] Called"))
+	if (AnimationDoorTimeline->IsReversing() || AnimationDoorTimeline->IsPlaying()) {
+		UE_LOG(LogTemp, Log, TEXT("[AExperimentDoorBase::AnimationDoorFinished] Animation still reversing. Doing nothing."))
+	}
 }
 
 // Called every frame
@@ -257,13 +254,18 @@ void AExperimentDoorBase::OnAnimationOverlapBegin(UPrimitiveComponent* Overlappe
 
 	ACharacter* CharacterCast = Cast<ACharacter>(OtherActor);
 	if (!CharacterCast) { return; }
+	UE_LOG(LogTemp, Warning, TEXT("[AExperimentDoorBase::OnAnimationOverlapBegin] Overlap Component: %s (ID: %d)"),
+		*OtherComp->GetName(), OtherComp->GetUniqueID());
 
 	UCapsuleComponent* OtherCapsuleCast = Cast<UCapsuleComponent>(OtherComp);
 	if (!OtherCapsuleCast || OtherCapsuleCast != CharacterCast->GetCapsuleComponent()) { return; } 
 
-	if (AnimationDoorTimeline->IsPlaying()) { return; }
+	if (AnimationDoorTimeline->IsPlaying()) {
+		UE_LOG(LogTemp, Warning, TEXT("[AExperimentDoorBase::OnAnimationOverlapBegin] ANIMATION: IsPlaying = TRUE!"))
+		return;
+	}
 
-	UE_LOG(LogTemp, Warning, TEXT("[AExperimentDoorBase::OnAnimationOverlapBegin] ANIMATION: Starting timeline!"))
+	UE_LOG(LogTemp, Log, TEXT("[AExperimentDoorBase::OnAnimationOverlapBegin] ANIMATION: Starting timeline!"))
 	AnimationDoorTimeline->Play();
 }
 
@@ -279,14 +281,20 @@ void AExperimentDoorBase::OnAnimationOverlapEnd(UPrimitiveComponent* OverlappedC
 	if (!OtherCapsuleCast || OtherCapsuleCast != CharacterCast->GetCapsuleComponent()) { return; } 
 	if (AnimationDoorTimeline->IsReversing()) { return; }
 
-	UE_LOG(LogTemp, Warning, TEXT("[AExperimentDoorBase::OnAnimationOverlapEnd] ANIMATION: Starting timeline!"))
-	AnimationDoorTimeline->Reverse();
+	UE_LOG(LogTemp, Warning, TEXT("[AExperimentDoorBase::OnAnimationOverlapEnd] ANIMATION: Reversing timeline!"))
+	if (!AnimationBoxCollision->IsOverlappingActor(CharacterCast)) {
+		AnimationDoorTimeline->Reverse();
+		UE_LOG(LogTemp, Warning,
+			TEXT("[AExperimentDoorBase::OnAnimationOverlapEnd] No overlaps with other actor. Reversing!"))
+	}else {
+		UE_LOG(LogTemp, Warning,
+			TEXT("[AExperimentDoorBase::OnAnimationOverlapEnd] Still overlapping!"))
+	}
 }
 
 void AExperimentDoorBase::OnEventOverlapBegin(UPrimitiveComponent* OverlappedComp, AActor* OtherActor,
 	UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult) {
 
-	// EventBoxCollision->SetCollisionEnabled(ECollisionEnabled::Type::NoCollision);
 	if (!ensure(EventBoxCollision)) return;
 	if (!ensure(OtherActor->IsValidLowLevelFast())) { return; }
 	ACharacter* CharacterCast = Cast<ACharacter>(OtherActor);
@@ -298,6 +306,7 @@ void AExperimentDoorBase::OnEventOverlapBegin(UPrimitiveComponent* OverlappedCom
 	UCapsuleComponent* OtherCapsuleCast = Cast<UCapsuleComponent>(OtherComp);
 	
 	UE_LOG(LogTemp, Warning, TEXT("[AExperimentDoorBase::OnEventOverlapBegin] Overlap Component: %s (ID: %d)"), *OtherComp->GetName(), OtherComp->GetUniqueID());
+
 	if (OtherCapsuleCast && OtherCapsuleCast == CharacterCast->GetCapsuleComponent()) {
 		
 		if (!IsValidEventTriggerReady()) {
@@ -312,16 +321,11 @@ void AExperimentDoorBase::OnEventOverlapBegin(UPrimitiveComponent* OverlappedCom
 		}else {
 			UE_LOG(LogTemp, Warning, TEXT("[AExperimentDoorBase::OnEventOverlapBegin] Has authority false! Cannot set owner"))
 		}
-		if(GEngine)
-        		GEngine->AddOnScreenDebugMessage(-1, 3.0f, FColor::Green,
-        			FString::Printf(TEXT("EVENT: VALID -  OnValidEventTrigger()")));
-		// EventBoxCollision->SetCollisionEnabled(ECollisionEnabled::Type::NoCollision);
-		OnValidEventTrigger();
-	}else {
-		UE_LOG(LogTemp, Warning, TEXT("[AExperimentDoorBase::OnEventOverlapBegin] INVALID capsule component"))
 
-		if(GEngine)
-			GEngine->AddOnScreenDebugMessage(-1, 3.0f, FColor::Green, TEXT("EVENT: INVALID"));
+		UE_LOG(LogTemp, Warning, TEXT("[AExperimentDoorBase::OnEventOverlapBegin] About to call OnValidEventTrigger!"))
+		OnValidEventTrigger();
+	} else {
+		UE_LOG(LogTemp, Warning, TEXT("[AExperimentDoorBase::OnEventOverlapBegin] INVALID capsule component"))
 	}
 }
 
@@ -329,5 +333,6 @@ void AExperimentDoorBase::OnEventOverlapEnd(UPrimitiveComponent* OverlappedComp,
                                             UPrimitiveComponent* OtherComp, int32 OtherBodyIndex) {
 	if(GEngine)
 		GEngine->AddOnScreenDebugMessage(-1, 3.0f, FColor::Yellow, TEXT("Event: END!"));
+	
 }
 

@@ -270,7 +270,7 @@ public:
 	int FrameCount        = 0; // todo: will probably delete 
 	const float MapLength = 235.185;
 	const float PredatorScaleFactor = 0.5f; 
-	float WorldScale      = 1.0f;
+	float WorldScale      = 15.0f;
 	
 	/* experiment params */
 	const float PositionSamplingRate = 90.0f; 

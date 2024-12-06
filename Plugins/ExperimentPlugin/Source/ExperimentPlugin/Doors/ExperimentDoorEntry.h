@@ -9,7 +9,8 @@ class EXPERIMENTPLUGIN_API AExperimentDoorEntry : public AExperimentDoorBase {
 public:
 	AExperimentDoorEntry();
 
+	virtual void BeginPlay() override;
 	virtual void OnValidEventTrigger() override;
 	virtual void Server_OnEventTrigger_Implementation() override;
-
+	virtual void OnEventCooldownFinished() override;
 };
