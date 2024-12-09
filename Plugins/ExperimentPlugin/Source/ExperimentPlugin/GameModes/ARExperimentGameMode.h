@@ -1,7 +1,7 @@
 ﻿#pragma once
 #include "ARSharedWorldGameMode.h"
 #include "ExperimentGameMode.h"
-#include "AARExperimentGameMode.generated.h"
+#include "ARExperimentGameMode.generated.h"
 
 UCLASS()
 class EXPERIMENTPLUGIN_API AARExperimentGameMode : public AExperimentGameMode {

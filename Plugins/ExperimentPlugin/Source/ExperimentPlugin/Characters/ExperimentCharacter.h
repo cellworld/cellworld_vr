@@ -5,13 +5,13 @@
 #include "MiscUtils/Timers/EventTimer.h"
 // #include "XRDeviceVisualizationComponent.h"
 #include "MotionControllerComponent.h"
+#include "OculusXRPassthroughLayerComponent.h"
 #include "EXperimentCharacter.generated.h"
 
 UCLASS()
-class EXPERIMENTPLUGIN_API AExperimentCharacter : public ACharacter
-{
+class EXPERIMENTPLUGIN_API AExperimentCharacter : public ACharacter {
 	GENERATED_BODY()
-
+public:
 	/** Camera boom positioning the camera behind the character */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"))
 	class USpringArmComponent* CameraBoom;
@@ -19,6 +19,12 @@ class EXPERIMENTPLUGIN_API AExperimentCharacter : public ACharacter
 	/** Follow camera */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"))
 	class UCameraComponent* Camera;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "SpatialComponents")
+	TObjectPtr<UOculusXRPassthroughLayerComponent> XRPassthroughLayer;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "SpatialComponents")
+	TObjectPtr<UOculusXRPassthroughLayerBase> XRPassthroughLayerBase;
 
 	const bool bUseVR = true;
 	UFUNCTION()

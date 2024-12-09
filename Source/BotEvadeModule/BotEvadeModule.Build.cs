@@ -3,19 +3,15 @@ using UnrealBuildTool;
 public class BotEvadeModule : ModuleRules //Replace class name with your module name 
 {
     // ReSharper disable once InconsistentNaming
-    public BotEvadeModule(ReadOnlyTargetRules Target) : base(Target) // Replace constructor name with your module name 
+    public BotEvadeModule(ReadOnlyTargetRules Target) : base(Target) // Replace constructor name with your module name      
     {
         PublicDependencyModuleNames.AddRange(new string[] { "Core", "CoreUObject", "Engine", 
             "InputCore", "TCPMessages", "ExperimentPlugin","Networking",
             "EnhancedInput", "HeadMountedDisplay", "UMG", "Slate","SlateCore",
             "OnlineSubsystem","OnlineSubsystemNull", "OnlineSubsystemUtils", "MiscUtils"
         });
-        
         PrivateDependencyModuleNames.AddRange(new string[] { "XRBase"  });
-
     }
-    
-
 }
 
 // Make sure to add whatever module name you use here in your:

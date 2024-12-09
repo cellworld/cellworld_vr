@@ -43,6 +43,18 @@ AExperimentCharacter::AExperimentCharacter() {
 	Camera->bUsePawnControlRotation = false; // Camera does not rotate relative to arm
 	bReplicates = true;
 
+	XRPassthroughLayer = CreateDefaultSubobject<UOculusXRPassthroughLayerComponent>(TEXT("OculusXRPassthroughLayer"));
+	if (XRPassthroughLayer) {
+		UE_LOG(LogTemp, Log, TEXT("[AExperimentCharacter::AExperimentCharacter] XRPassthroughLayer valid"))
+		XRPassthroughLayer->bSupportsDepth = true;
+		XRPassthroughLayer->bLiveTexture    = false;
+		XRPassthroughLayer->bNoAlphaChannel = true;
+		XRPassthroughLayer->SetAutoActivate(true);
+		XRPassthroughLayer->AttachToComponent(Camera,FAttachmentTransformRules::KeepRelativeTransform);
+	}else {
+		UE_LOG(LogTemp, Error, TEXT("[AExperimentCharacter::AExperimentCharacter] - XRPassthroughLayer null "));
+	}
+
 	/*Create Motion Controllers*/
 	MotionControllerLeft = CreateDefaultSubobject<UMotionControllerComponent>(TEXT("MotionControllerLeft"));
 	MotionControllerLeft->CreationMethod = EComponentCreationMethod::Native;
@@ -119,7 +131,7 @@ bool AExperimentCharacter::StartPositionSamplingTimer(const float InRateHz) {
 }
 
 void AExperimentCharacter::SetupSampling() {
-	UE_LOG(LogTemp, Log, TEXT("[AExperimentCharacter::BeginPlay] Running on Android"))
+	UE_LOG(LogTemp, Log, TEXT("[AExperimentCharacter::SetupSampling] Running on Android"))
 	if (bUseVR){
 		UHeadMountedDisplayFunctionLibrary::SetTrackingOrigin(EHMDTrackingOrigin::Stage);
 		Camera->bUsePawnControlRotation = false; 
@@ -196,7 +208,11 @@ void AExperimentCharacter::BeginPlay() {
 	SetupSampling();
 	SetReplicates(true);
 	SetReplicateMovement(true);
+	if (UHeadMountedDisplayFunctionLibrary::IsHeadMountedDisplayConnected()) {
+		UHeadMountedDisplayFunctionLibrary::SetTrackingOrigin(EHMDTrackingOrigin::Floor);
+	}
 #endif
+	
 }
 
 void AExperimentCharacter::SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) {

@@ -19,6 +19,8 @@ void AExperimentPlayerControllerVR::BeginPlay() {
 	}else {
 		UE_LOG(LogTemp, Error, TEXT("[AExperimentPlayerControllerVR::BeginPlay] GetWorld() NULL"))
 	}
+
+	
 	return;
 }
 
