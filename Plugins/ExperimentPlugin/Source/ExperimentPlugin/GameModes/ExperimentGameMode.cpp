@@ -14,7 +14,6 @@ AExperimentGameMode::AExperimentGameMode(){
 
 	PlayerStateClass      = AExperimentPlayerState::StaticClass(); 
 	GameStateClass        = AExperimentGameState::StaticClass();
-	DefaultPawnClass      = AExperimentCharacter::StaticClass();
 	PlayerControllerClass = AExperimentPlayerControllerVR::StaticClass();
 	
 	PrimaryActorTick.bStartWithTickEnabled = true;
@@ -193,7 +192,8 @@ void AExperimentGameMode::OnPostLogin(AController* NewPlayer) {
 	
 	if (!ensure(NewPlayer->IsValidLowLevelFast())) { return; }
 	UE_LOG(LogTemp, Log, TEXT("[AExperimentGameMode::OnPostLogin] NewPlayer PlayerController valid!"));
-	
+
+	// todo: move this to: handled by call UpdateNetOwnerHabitat from BP_ExperimentCharacter if Habitat has no owner
 	if (!Habitat && !ensure((Habitat = FindHabitatInLevel()))) { return; }
 	
 	UE_LOG(LogTemp, Log, TEXT("[AExperimentGameMode::OnPostLogin] Habitat found. "))
