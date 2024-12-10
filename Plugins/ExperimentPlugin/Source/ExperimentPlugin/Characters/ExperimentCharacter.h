@@ -35,7 +35,17 @@ public:
 	UPROPERTY(EditAnywhere)
 	// TObjectPtr<UEventTimer> EventTimer;
 	UEventTimer* EventTimer;
-
+	
+	UFUNCTION(Server, Reliable, WithValidation, BlueprintCallable)
+	virtual void Server_OnExperimentStarted();
+	virtual bool Server_OnExperimentStarted_Validate();
+	virtual void Server_OnExperimentStarted_Implementation();
+	
+	UFUNCTION(Server, Reliable, WithValidation, BlueprintCallable)
+	void Server_RegisterActorOwner(AActor* InActor, const bool bForceUpdate);
+	bool Server_RegisterActorOwner_Validate(AActor* InActor, const bool bForceUpdate);
+	void Server_RegisterActorOwner_Implementation(AActor* InActor, const bool bForceUpdate);
+	
 	UFUNCTION(Server, Reliable, WithValidation, BlueprintCallable)
 	void Server_UpdateMovement(const FVector& InLocation, const FRotator& InRotation);
 	bool Server_UpdateMovement_Validate(const FVector& InLocation, const FRotator& InRotation);

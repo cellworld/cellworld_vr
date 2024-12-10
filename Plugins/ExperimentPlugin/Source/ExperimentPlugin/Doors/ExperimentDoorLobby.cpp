@@ -14,7 +14,6 @@ void AExperimentDoorLobby::OnValidEventTrigger() {
 void AExperimentDoorLobby::BeginPlay() {
 	Super::BeginPlay();
 	UE_LOG(LogTemp, Log, TEXT("[AExperimentDoorLobby::BeginPlay] Called super:: from LOBBY"))
-
 }
 
 void AExperimentDoorLobby::Server_OnEventTrigger_Implementation() {

@@ -31,7 +31,8 @@ public class ExperimentPlugin : ModuleRules
 				"MiscUtils",
 				"OculusXRHMD",
 				"OculusXRAnchors",
-				"OculusXRPassthrough"
+				"OculusXRPassthrough",
+				"MRMesh"
 				// ... add other public dependencies that you statically link with here ...
 			}
 			);

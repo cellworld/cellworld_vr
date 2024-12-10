@@ -130,6 +130,86 @@ bool AExperimentCharacter::StartPositionSamplingTimer(const float InRateHz) {
 	return true;
 }
 
+bool AExperimentCharacter::Server_OnExperimentStarted_Validate() {
+	UE_LOG(LogTemp, Error, TEXT("[AExperimentCharacter::Server_OnExperimentStarted_Validate] Called!"))
+	return true;
+}
+
+void AExperimentCharacter::Server_OnExperimentStarted_Implementation() {
+	UE_LOG(LogTemp, Log, TEXT("[AExperimentCharacter::Server_OnExperimentStarted_Implementation] Called!"))
+
+	// if (!HasAuthority()) {
+	// 	UE_LOG(LogTemp, Log,
+	// 		TEXT("[AExperimentCharacter::Server_OnExperimentStarted_Implementation] No authority!"))
+	// 	return;
+	// }
+	// UE_LOG(LogTemp, Log, TEXT("[AExperimentCharacter::Server_OnExperimentStarted_Implementation] Called!"))
+	// if (UWorld* World = GetWorld()) {
+	// 	UE_LOG(LogTemp, Log, TEXT("[AExperimentCharacter::Server_OnExperimentStarted_Implementation] World valid!"))
+	//
+	// 	AGameModeBase* GameMode = World->GetAuthGameMode();
+	// 	if (AExperimentGameMode* ExperimentGameMode = Cast<AExperimentGameMode>(GameMode)){
+	// 		UE_LOG(LogTemp, Log,
+	// 			TEXT("[AExperimentCharacter::Server_OnExperimentStarted_Implementation] ExperimentGameMode valid!"))
+	//
+	// 		if (ensure(ExperimentGameMode->ExperimentClient)) {
+	// 			UE_LOG(LogTemp, Log,
+	// 				TEXT("[AExperimentCharacter::Server_OnExperimentStarted_Implementation] ExperimentClient valid!"))
+	// 			APlayerController* PlayerController = Cast<APlayerController>(GetController());
+	// 			if (!ensure(PlayerController)) { return; }
+	// 			ExperimentGameMode->UpdateNetOwnerHabitat(PlayerController, true);
+	// 			UE_LOG(LogTemp, Log,
+	// 				TEXT("[AExperimentCharacter::Server_OnExperimentStarted_Implementation] PlayerController valid!"))
+	// 		}
+	// 	}
+	// }
+	// get game mode
+	// get experiment client
+	// UpdateHabitatNetOwner 
+}
+
+bool AExperimentCharacter::Server_RegisterActorOwner_Validate(AActor* InActor, const bool bForceUpdate) {
+	UE_LOG(LogTemp, Log, TEXT("[AExperimentCharacter::Server_RegisterActorOwner_Validate] Called!"))
+
+	return true;
+}
+void AExperimentCharacter::Server_RegisterActorOwner_Implementation(AActor* InActor, const bool bForceUpdate) {
+	UE_LOG(LogTemp, Log, TEXT("[AExperimentCharacter::Server_RegisterActorOwner_Implementation] Called!"))
+
+	if (!ensure(InActor)) { return; }
+
+	if (!HasAuthority()) {
+		UE_LOG(LogTemp, Log, TEXT("[AExperimentCharacter::Server_RegisterActorOwner_Implementation] No authority!"))
+		return;
+	}
+
+	APlayerController* PlayerController = Cast<APlayerController>(GetController());
+	if (!ensure(PlayerController)) { return; }
+
+	if (!InActor->HasNetOwner() || bForceUpdate) {
+		UE_LOG(LogTemp, Log,
+			TEXT("[AExperimentGameMode::Server_RegisterActorOwner_Implementation] Updating Habitat NetOwner. Habitat does not have owner or you pass `force` flag (bForceUpdate = %i)"),
+			bForceUpdate)
+		InActor->SetOwner(PlayerController);
+		InActor->SetReplicateMovement(true);
+		TArray<AActor*> ChildActors;
+		InActor->GetAllChildActors(ChildActors,true);
+		for (AActor* ChildActor : ChildActors) {
+			if (ChildActor) {
+				ChildActor->SetOwner(PlayerController);
+				ChildActor->SetReplicates(true);
+				UE_LOG(LogTemp, Log,
+					TEXT("[AExperimentGameMode::Server_RegisterActorOwner_Implementation] Updated owner for child actor: %s to %s (HasNetOwner?: %i)"),
+					*ChildActor->GetName(),
+					*PlayerController->GetName(),
+					ChildActor->HasNetOwner());
+			}
+		}
+	}
+
+	
+}
+
 void AExperimentCharacter::SetupSampling() {
 	UE_LOG(LogTemp, Log, TEXT("[AExperimentCharacter::SetupSampling] Running on Android"))
 	if (bUseVR){

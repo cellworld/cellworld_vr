@@ -1,5 +1,4 @@
 ﻿#include "ExperimentGameMode.h"
-
 #include "GameFramework/PlayerStart.h"
 #include "EngineUtils.h"
 #include "ExperimentPlugin/Characters/ExperimentPawn.h"
@@ -10,16 +9,13 @@
 #include "ExperimentPlugin/PlayerStates/ExperimentPlayerState.h"
 
 AExperimentGameMode::AExperimentGameMode(){
-	UE_LOG(LogTemp, Log, TEXT("Initializing AExperimentGameMode()"))
-
+	UE_LOG(LogTemp, Log, TEXT("[AExperimentGameMode::AExperimentGameMode] Initializing AExperimentGameMode()"))
 	PlayerStateClass      = AExperimentPlayerState::StaticClass(); 
 	GameStateClass        = AExperimentGameState::StaticClass();
 	PlayerControllerClass = AExperimentPlayerControllerVR::StaticClass();
-	
 	PrimaryActorTick.bStartWithTickEnabled = true;
-	PrimaryActorTick.bCanEverTick = true;
-	
-	bStartPlayersAsSpectators = false;
+	PrimaryActorTick.bCanEverTick		   = true;
+	bStartPlayersAsSpectators			   = false;
 }
 
 void AExperimentGameMode::InitGame(const FString& MapName, const FString& Options, FString& ErrorMessage) {
@@ -70,6 +66,9 @@ void AExperimentGameMode::UpdateNetOwnerHabitat(AController* InHabitatNetOwnerCo
 	UE_LOG(LogTemp, Log, TEXT("[AExperimentGameMode::UpdateNetOwnerHabitat] Called"))
 	if (!ensure(InHabitatNetOwnerController)) { return; }
 	
+	if (!Habitat && !ensure((Habitat = FindHabitatInLevel()))) { return; }
+	
+	check(Habitat)
 	UE_LOG(LogTemp, Log, TEXT("[AExperimentGameMode::UpdateNetOwnerHabitat] Controller is valid: %s | bForceUpdate: %i"),
 		*InHabitatNetOwnerController->GetName(), bForceUpdate)
 
@@ -194,17 +193,17 @@ void AExperimentGameMode::OnPostLogin(AController* NewPlayer) {
 	UE_LOG(LogTemp, Log, TEXT("[AExperimentGameMode::OnPostLogin] NewPlayer PlayerController valid!"));
 
 	// todo: move this to: handled by call UpdateNetOwnerHabitat from BP_ExperimentCharacter if Habitat has no owner
-	if (!Habitat && !ensure((Habitat = FindHabitatInLevel()))) { return; }
-	
-	UE_LOG(LogTemp, Log, TEXT("[AExperimentGameMode::OnPostLogin] Habitat found. "))
-	if (!Habitat->HasNetOwner()) {
-		UE_LOG(LogTemp, Log, TEXT("[AExperimentGameMode::OnPostLogin] Habitat has no owner. Setting to AController: %s"),
-			*NewPlayer->GetName())
-		UpdateNetOwnerHabitat(NewPlayer, true);
-	} else {
-		UE_LOG(LogTemp, Log, TEXT("[AExperimentGameMode::OnPostLogin] Habitat already has an owner! %s"),
-			*Habitat->GetNetOwner()->GetName());
-	}
+	// if (!Habitat && !ensure((Habitat = FindHabitatInLevel()))) { return; }
+	//
+	// UE_LOG(LogTemp, Log, TEXT("[AExperimentGameMode::OnPostLogin] Habitat found. "))
+	// if (!Habitat->HasNetOwner()) {
+	// 	UE_LOG(LogTemp, Log, TEXT("[AExperimentGameMode::OnPostLogin] Habitat has no owner. Setting to AController: %s"),
+	// 		*NewPlayer->GetName())
+	// 	UpdateNetOwnerHabitat(NewPlayer, true);
+	// } else {
+	// 	UE_LOG(LogTemp, Log, TEXT("[AExperimentGameMode::OnPostLogin] Habitat already has an owner! %s"),
+	// 		*Habitat->GetNetOwner()->GetName());
+	// }
 	
 	if (ExperimentClient && ensure(ExperimentClient->ExperimentManager->IsValidLowLevelFast())) {
 		ExperimentClient->PlayerIndex = ExperimentClient->ExperimentManager->RegisterNewPlayer(NewPlayer);
