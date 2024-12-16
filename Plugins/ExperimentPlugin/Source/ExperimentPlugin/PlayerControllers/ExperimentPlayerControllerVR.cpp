@@ -7,7 +7,6 @@ class AGameModeMain;
 AExperimentPlayerControllerVR::AExperimentPlayerControllerVR() {
 	PrimaryActorTick.bStartWithTickEnabled = true;
 	PrimaryActorTick.bCanEverTick = true;
-	SetReplicates(true);
 }
 
 void AExperimentPlayerControllerVR::BeginPlay() {
@@ -34,7 +33,7 @@ void AExperimentPlayerControllerVR::SetupInputComponent() {
 
 	InputComponent->BindAxis("MoveForward",this, &AExperimentPlayerControllerVR::MoveForward);
 	InputComponent->BindAxis("MoveRight",this, &AExperimentPlayerControllerVR::MoveRight);
-
+	SetReplicates(true);
 	// todo: change to Start: Experiment,Episode; Stop: Experiment, Episode; Send: GetOcclusions; GetOcclusionLocations
 }
 

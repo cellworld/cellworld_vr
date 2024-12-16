@@ -105,6 +105,9 @@ void AExperimentGameMode::EndPlay(const EEndPlayReason::Type EndPlayReason) {
 
 void AExperimentGameMode::Tick(float DeltaTime) {
 	Super::Tick(DeltaTime);
+	if (!FindHabitatInLevel()) {
+		return;
+	}
 }
 
 void AExperimentGameMode::PostLogin(APlayerController* NewPlayer) {
@@ -117,9 +120,7 @@ void AExperimentGameMode::PostLogin(APlayerController* NewPlayer) {
 		UE_LOG(LogTemp, Error, TEXT("[AExperimentGameMode::PostLogin] PlayerController is NULL during PostLogin!"));
 	}
 	
-	if (!ensure(Habitat)) return;
-
-
+	// if (!ensure(Habitat)) return;
 	// if (!ensure(Habitat->HasNetOwner())) return;
 	
 	// if (GameState) {
@@ -189,9 +190,13 @@ void AExperimentGameMode::OnPostLogin(AController* NewPlayer) {
 	Super::OnPostLogin(NewPlayer);
 	UE_LOG(LogTemp, Warning, TEXT("[AExperimentGameMode::OnPostLogin] Called"));
 	
+	
 	if (!ensure(NewPlayer->IsValidLowLevelFast())) { return; }
 	UE_LOG(LogTemp, Log, TEXT("[AExperimentGameMode::OnPostLogin] NewPlayer PlayerController valid!"));
-
+	NewPlayer->SetReplicates(true);
+	if (NewPlayer->GetCharacter()) {
+		NewPlayer->GetCharacter()->SetReplicates(true);
+	}
 	// todo: move this to: handled by call UpdateNetOwnerHabitat from BP_ExperimentCharacter if Habitat has no owner
 	// if (!Habitat && !ensure((Habitat = FindHabitatInLevel()))) { return; }
 	//
@@ -222,18 +227,21 @@ void AExperimentGameMode::Logout(AController* Exiting) {
 	UE_LOG(LogTemp, Log, TEXT("[AExperimentGameMode::Logout] Player logged out: %s"), *Exiting->GetName());
 }
 
+
 TObjectPtr<AHabitat> AExperimentGameMode::FindHabitatInLevel() const {
 	TObjectPtr<AHabitat> HabitatTemp = nullptr;
+	int idx = 0; 
 	for (TActorIterator<AHabitat> ActorItr(GetWorld()); ActorItr; ++ActorItr) {
 		HabitatTemp = *ActorItr;
 		if (HabitatTemp) {
+			idx+=1; 
 			UE_LOG(LogTemp, Log, TEXT("[AExperimentGameMode::FindHabitatInLevel] Found Maze Actor: %s"),
 				*HabitatTemp->GetName());
-			return HabitatTemp;
+			// return HabitatTemp;
 		}
 	}
-
-	UE_LOG(LogTemp, Warning, TEXT("[AExperimentGameMode::FindHabitatInLevel] No Maze Actor found!"));
+	// UE_LOG(LogTemp, Warning, TEXT("[AExperimentGameMode::FindHabitatInLevel] No Maze Actor found!"));
+	UE_LOG(LogTemp, Warning, TEXT("[AExperimentGameMode::FindHabitatInLevel] Maze actors found: %i"),idx);
 	return HabitatTemp; 
 }
 
@@ -300,7 +308,7 @@ bool AExperimentGameMode::ExperimentStopEpisode() {
 void AExperimentGameMode::SpawnHabitat(const FVector& InLocation, const int& InScale) {
 	UE_LOG(LogTemp, Log, TEXT("[AExperimentGameMode::SpawnHabitat] Called!"))
 
-	if (MyActorClass != nullptr) {
+	if (HabitatBPClass) {
 		// Get the world context
 		UWorld* World = GetWorld();
 		if (World) {
@@ -313,15 +321,14 @@ void AExperimentGameMode::SpawnHabitat(const FVector& InLocation, const int& InS
 			FRotator SpawnRotation = FRotator::ZeroRotator;
 
 			// Spawn the actor
-			AActor* SpawnedActor = World->SpawnActor<AActor>(MyActorClass, SpawnLocation, SpawnRotation, SpawnParams);
+			Habitat = GetWorld()->SpawnActor<AHabitat>(HabitatBPClass,  SpawnLocation, SpawnRotation, SpawnParams);
 
-			if (SpawnedActor) {
-				UE_LOG(LogTemp, Warning, TEXT("[AExperimentGameMode::SpawnHabitat] Spawned actor"));
+			if (Habitat) {
+				UE_LOG(LogTemp, Warning, TEXT("[AExperimentGameMode::SpawnHabitat] Spawned Habitat"));
 			}
 		}
 	} else {
-		UE_LOG(LogTemp, Error, TEXT("[AExperimentGameMode::SpawnHabitat] MyActorClass is null. Check your Blueprint assignment."));
+		UE_LOG(LogTemp, Error, TEXT("[AExperimentGameMode::SpawnHabitat] HabitatBPClass is null. Check your Blueprint assignment."));
 	}
 	UE_LOG(LogTemp, Log, TEXT("[AExperimentGameMode::SpawnHabitat] Exiting OK"))
-
 }

@@ -18,27 +18,33 @@ public:
 	AHabitat();
 	
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
+	virtual void PostInitializeComponents() override;
+	UPROPERTY(Replicated, BlueprintReadWrite, VisibleAnywhere)
+	TObjectPtr<USceneComponent> DefaultSceneRoot; 
 	
-	// UPROPERTY(Replicated)
-	// TObjectPtr<USceneComponent> EntrySceneComponent;
-	//
-	UPROPERTY(Replicated)
+	UPROPERTY(Replicated, BlueprintReadWrite, VisibleAnywhere)
+	TObjectPtr<USceneComponent> EntrySceneComponent;
+
+	UPROPERTY(Replicated, BlueprintReadWrite, VisibleAnywhere)
 	TObjectPtr<UStaticMeshComponent> MeshHabitat;
-	//
-	// UPROPERTY(Replicated)
-	// TObjectPtr<UChildActorComponent> DoorExit;
-	//
-	// UPROPERTY(Replicated)
-	// TObjectPtr<UChildActorComponent> DoorEntry; 
-	//
-	// UPROPERTY(Replicated)
-	// TObjectPtr<UMRMeshComponent> AnchorMRMeshComponent; 
-	//
-	// UPROPERTY(Replicated)
-	// TObjectPtr<UMRMeshComponent> MRMesh_Anchor_Entry; 
-	//
-	// UPROPERTY(Replicated)
-	// TObjectPtr<UMRMeshComponent> MRMesh_Anchor_Exit; 
+	
+	UPROPERTY(Replicated, BlueprintReadWrite, VisibleAnywhere)
+	TObjectPtr<UChildActorComponent> DoorExit;
+
+	UPROPERTY(Replicated, BlueprintReadWrite, VisibleAnywhere)
+	TObjectPtr<UChildActorComponent> DoorEntryRoom;
+	
+	UPROPERTY(Replicated, BlueprintReadWrite, VisibleAnywhere)
+	TObjectPtr<UChildActorComponent> DoorEntry; 
+	
+	UPROPERTY(Replicated, BlueprintReadWrite, VisibleAnywhere)
+	TObjectPtr<UMRMeshComponent> AnchorMRMeshComponent; 
+	
+	UPROPERTY(Replicated, BlueprintReadWrite, VisibleAnywhere)
+	TObjectPtr<UMRMeshComponent> MRMesh_Anchor_Entry; 
+	
+	UPROPERTY(Replicated, BlueprintReadWrite, VisibleAnywhere)
+	TObjectPtr<UMRMeshComponent> MRMesh_Anchor_Exit; 
 
 protected:
 	// Called when the game starts or when spawned

@@ -12,6 +12,7 @@ AExperimentCharacter::AExperimentCharacter() {
 	// set our turn rates for input
 	BaseTurnRate = 45.f;
 	BaseLookUpRate = 45.f;
+	SetReplicates(true);
 
 	// Don't rotate when the controller rotates. Let that just affect the camera.
 	bUseControllerRotationPitch = false;
@@ -46,7 +47,7 @@ AExperimentCharacter::AExperimentCharacter() {
 	XRPassthroughLayer = CreateDefaultSubobject<UOculusXRPassthroughLayerComponent>(TEXT("OculusXRPassthroughLayer"));
 	if (XRPassthroughLayer) {
 		UE_LOG(LogTemp, Log, TEXT("[AExperimentCharacter::AExperimentCharacter] XRPassthroughLayer valid"))
-		XRPassthroughLayer->bSupportsDepth = true;
+		XRPassthroughLayer->bSupportsDepth  = true;
 		XRPassthroughLayer->bLiveTexture    = false;
 		XRPassthroughLayer->bNoAlphaChannel = true;
 		XRPassthroughLayer->SetAutoActivate(true);
@@ -286,7 +287,6 @@ void AExperimentCharacter::BeginPlay() {
 #if !UE_SERVER
 	UE_LOG(LogTemp, Log, TEXT("[AExperimentCharacter::BeginPlay] Running on client."))
 	SetupSampling();
-	SetReplicates(true);
 	SetReplicateMovement(true);
 	if (UHeadMountedDisplayFunctionLibrary::IsHeadMountedDisplayConnected()) {
 		UHeadMountedDisplayFunctionLibrary::SetTrackingOrigin(EHMDTrackingOrigin::Floor);

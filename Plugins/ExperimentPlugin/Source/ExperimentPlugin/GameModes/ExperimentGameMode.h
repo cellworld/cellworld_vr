@@ -36,6 +36,10 @@ public:
 	TObjectPtr<AController> NewPC = nullptr;
 	
 	/* == helpers == */
+	
+	UPROPERTY(EditDefaultsOnly,Category="Habitat Spawning")
+	TSubclassOf<AHabitat> HabitatBPClass;
+	
 	TObjectPtr<AHabitat> FindHabitatInLevel() const;
 
 	UPROPERTY(VisibleAnywhere)

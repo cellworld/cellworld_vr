@@ -151,7 +151,7 @@ void AExperimentDoorBase::OnValidEventTrigger() {
 		UE_LOG(LogTemp, Warning, TEXT("[AExperimentDoorBase::OnValidEventTrigger] Running from server, not calling Server_OnEventTrigger!"));
 		return;
 	}
-	check(HasNetOwner())
+	// check(HasNetOwner())
 	if (!ensure(HasNetOwner())) { return; }
 	UE_LOG(LogTemp, Warning,
 		TEXT("[AExperimentDoorBase::OnValidEventTrigger] Door is owned by: %s (ID: %i)"),

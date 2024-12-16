@@ -6,8 +6,7 @@ pre-major (door) version - revamping client/server system and creating dedicated
 I still need to fill this out. ****
 
 ## Introduction 
-Current version works well for `single-player` in VR at 90Hz. 
-
+Current version works well for `single-player` in VR at 60Hz. 
 
 ### System 
 

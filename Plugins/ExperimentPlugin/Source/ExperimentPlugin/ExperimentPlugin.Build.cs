@@ -52,7 +52,7 @@ public class ExperimentPlugin : ModuleRules
 				"JsonUtilities",
 				"TCPMessages",
 				"UMG",
-				"HeadMountedDisplay",
+				"HeadMountedDisplay", 
 				// "OculusXRAnchors",
 				// "OculusXRHMD",
 				// "OculusXRPassthrough",
