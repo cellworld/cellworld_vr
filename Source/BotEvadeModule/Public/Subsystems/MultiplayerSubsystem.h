@@ -22,7 +22,7 @@ DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FMultiplayerOnStartSessionComplete, 
  * 
  */
 UCLASS()
-class UMultiplayerSubsystem : public UGameInstanceSubsystem
+class BOTEVADEMODULE_API UMultiplayerSubsystem : public UGameInstanceSubsystem
 {
 	GENERATED_BODY()
 public:
@@ -31,6 +31,7 @@ public:
 	/* To handle session functionality. The Menu class will call these */
 	void CreateSession(int32 NumPublicConnections, FString MatchType);
 	void FindSessions(int32 MaxSearchResults);
+	UFUNCTION(BlueprintCallable)
 	void JoinSessionAddress(const FString& InIPAddress);
 	void JoinSession(const FOnlineSessionSearchResult& SessionResult);
 	void DestroySession();

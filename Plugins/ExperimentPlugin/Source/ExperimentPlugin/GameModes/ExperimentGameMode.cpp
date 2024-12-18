@@ -1,6 +1,7 @@
 ﻿#include "ExperimentGameMode.h"
 #include "GameFramework/PlayerStart.h"
 #include "EngineUtils.h"
+#include "GameplayStatics.h"
 #include "ExperimentPlugin/Characters/ExperimentPawn.h"
 #include "ExperimentPlugin/PlayerControllers/ExperimentPlayerControllerVR.h"
 #include "ExperimentPlugin/Characters/ExperimentCharacter.h"
@@ -12,6 +13,7 @@ AExperimentGameMode::AExperimentGameMode(){
 	UE_LOG(LogTemp, Log, TEXT("[AExperimentGameMode::AExperimentGameMode] Initializing AExperimentGameMode()"))
 	PlayerStateClass      = AExperimentPlayerState::StaticClass(); 
 	GameStateClass        = AExperimentGameState::StaticClass();
+	
 	PlayerControllerClass = AExperimentPlayerControllerVR::StaticClass();
 	PrimaryActorTick.bStartWithTickEnabled = true;
 	PrimaryActorTick.bCanEverTick		   = true;
@@ -105,8 +107,23 @@ void AExperimentGameMode::EndPlay(const EEndPlayReason::Type EndPlayReason) {
 
 void AExperimentGameMode::Tick(float DeltaTime) {
 	Super::Tick(DeltaTime);
-	if (!FindHabitatInLevel()) {
-		return;
+	
+	UE_LOG(LogTemp, Log, TEXT("AExperimentGameMode::Tick] NumPlayers: %i"), NumPlayers)
+	TArray<AActor*> FoundActors; 
+	UGameplayStatics::GetAllActorsOfClass(GetWorld(), DefaultPawnClass, FoundActors);
+
+	UE_LOG(LogTemp, Log, TEXT("[AExperimentGameMode::Tick] actors found (class / count): %s / %i"),
+		*DefaultPawnClass->GetName(), FoundActors.Num())
+	
+	if (NumPlayers > 0) {
+		if (AExperimentGameState* ExperimentGameState = Cast<AExperimentGameState>(GameState)) {
+			for (APlayerState* PlayerState : ExperimentGameState->PlayerArray) {
+				if (PlayerState) {
+					UE_LOG(LogTemp, Warning, TEXT("[AExperimentGameMode::Tick] PlayerState: %s, PlayerName: %s"), 
+						*PlayerState->GetName(), *PlayerState->GetPlayerName());
+				}
+			}
+		} else { UE_LOG(LogTemp, Warning, TEXT("[AExperimentGameMode::Tick] PlayerState: NULL, PlayerName: NULL")); }
 	}
 }
 
@@ -118,8 +135,8 @@ void AExperimentGameMode::PostLogin(APlayerController* NewPlayer) {
 	}
 	else {
 		UE_LOG(LogTemp, Error, TEXT("[AExperimentGameMode::PostLogin] PlayerController is NULL during PostLogin!"));
+		return;
 	}
-	
 	// if (!ensure(Habitat)) return;
 	// if (!ensure(Habitat->HasNetOwner())) return;
 	
@@ -190,13 +207,22 @@ void AExperimentGameMode::OnPostLogin(AController* NewPlayer) {
 	Super::OnPostLogin(NewPlayer);
 	UE_LOG(LogTemp, Warning, TEXT("[AExperimentGameMode::OnPostLogin] Called"));
 	
-	
 	if (!ensure(NewPlayer->IsValidLowLevelFast())) { return; }
 	UE_LOG(LogTemp, Log, TEXT("[AExperimentGameMode::OnPostLogin] NewPlayer PlayerController valid!"));
 	NewPlayer->SetReplicates(true);
 	if (NewPlayer->GetCharacter()) {
 		NewPlayer->GetCharacter()->SetReplicates(true);
 	}
+
+	AExperimentPlayerControllerVR* PlayerControllerVR = Cast<AExperimentPlayerControllerVR>(NewPlayer);
+	if (PlayerControllerVR) {
+		UE_LOG(LogTemp, Log, TEXT("[AExperimentGameMode::OnPostLogin] Cast to AExperimentPlayerControllerVR valid"));
+		PlayerControllerVR->Client_SetInputModeGameOnly();
+	}else {
+		UE_LOG(LogTemp, Error, TEXT("[AExperimentGameMode::OnPostLogin] Cast to AExperimentPlayerControllerVR NULL"));
+	}
+
+
 	// todo: move this to: handled by call UpdateNetOwnerHabitat from BP_ExperimentCharacter if Habitat has no owner
 	// if (!Habitat && !ensure((Habitat = FindHabitatInLevel()))) { return; }
 	//
@@ -227,7 +253,6 @@ void AExperimentGameMode::Logout(AController* Exiting) {
 	UE_LOG(LogTemp, Log, TEXT("[AExperimentGameMode::Logout] Player logged out: %s"), *Exiting->GetName());
 }
 
-
 TObjectPtr<AHabitat> AExperimentGameMode::FindHabitatInLevel() const {
 	TObjectPtr<AHabitat> HabitatTemp = nullptr;
 	int idx = 0; 
@@ -251,8 +276,8 @@ void AExperimentGameMode::OnUpdatePreyPosition(const FVector& InLocation, const 
 	if (!ensure(ExperimentClient->IsValidLowLevelFast())){ return; }
 	if (!ensure(ExperimentClient->TrackingClient)) { return; }
 	if (!ensure(ExperimentClient->TrackingClient->IsConnected())) { return; }
-	UE_LOG(LogTemp, Warning,
-		TEXT("[AExperimentGameMode::OnUpdatePreyPosition] Calling: ExperimentClient->UpdatePreyPosition(...,...)"))
+	// UE_LOG(LogTemp, Warning,
+	// 	TEXT("[AExperimentGameMode::OnUpdatePreyPosition] Calling: ExperimentClient->UpdatePreyPosition(...,...)"))
 	ExperimentClient->UpdatePreyPosition(InLocation, InRotation);
 }
 

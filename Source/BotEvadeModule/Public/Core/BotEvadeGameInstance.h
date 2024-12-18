@@ -10,7 +10,7 @@
 // class UMainMenu;
 
 UCLASS()
-class UBotEvadeGameInstance : public UGameInstance, public IMenuInterface {
+class BOTEVADEMODULE_API UBotEvadeGameInstance : public UGameInstance, public IMenuInterface {
 
 	GENERATED_BODY()
 	

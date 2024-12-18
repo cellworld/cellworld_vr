@@ -15,8 +15,8 @@ public class cellworld_vr : ModuleRules
 		PublicDependencyModuleNames.AddRange(new string[] { 
 			"Core", "CoreUObject", "Engine", "InputCore", "UMG","NavigationSystem", 
 			"TCPMessages", "ExperimentPlugin", "MiscUtils", "GameplayTasks", "Json", "JsonUtilities", 
-			"AsyncLoadingScreen", "AndroidPermission", 
-			"RHI", "RenderCore", "BotEvadeModule"
+			"AsyncLoadingScreen", "AndroidPermission", "OnlineSubsystem","OnlineSubsystemNull", "OnlineSubsystemUtils",
+			"RHI", "RenderCore", "BotEvadeModule","EnhancedInput"
 		});
 		
 		PrivateDependencyModuleNames.AddRange(new string[] {

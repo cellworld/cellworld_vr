@@ -4,6 +4,9 @@
 #include "Containers/Array.h" 
 #include "GameModeMain.h"
 #include "ExperimentPlugin/Public/Structs.h"
+#include "Interfaces/OnlineSessionInterface.h"
+#include "OnlineSessionSettings.h"
+#include "Subsystems/MultiplayerSubsystem.h"
 #include "GameInstanceMain.generated.h"
 
 /**
@@ -20,7 +23,6 @@ public:
 
 	UGameInstanceMain();
 
-	AGameModeMain* GameMode = nullptr;
 
 	/* store main pawn for long term acces basically */
 
@@ -29,6 +31,13 @@ public:
 	virtual void Shutdown() override;
 	virtual void StartGameInstance() override;
 	AActor* GetLevelActorFromTag(const FName& TagIn);
+
+	UPROPERTY()
+	class UMultiplayerSubsystem* MultiplayerSubsystem;
+	
+	UFUNCTION(BlueprintCallable)
+	void JoinSessionByIP();
+	
 
 	/* Experiment Parameters */
 	TSharedPtr<FExperimentParameters> ExperimentParameters; 

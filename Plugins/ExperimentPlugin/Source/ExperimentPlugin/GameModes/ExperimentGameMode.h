@@ -3,6 +3,7 @@
 #include "Engine/Engine.h"
 #include "ExperimentPlugin/Characters/ExperimentCharacter.h"
 #include "GameFramework/GameMode.h"
+#include "GameFramework/GameModeBase.h"
 #include "ExperimentPlugin/Characters/ExperimentPawn.h"
 #include "ExperimentPlugin/Client/ExperimentClient.h"
 #include "ExperimentPlugin/HabitatComponents/Habitat.h"

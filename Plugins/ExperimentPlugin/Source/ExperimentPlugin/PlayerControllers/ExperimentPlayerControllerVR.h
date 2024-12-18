@@ -1,6 +1,10 @@
 ﻿#pragma once
 
 #include "CoreMinimal.h"
+#include "Engine/LocalPlayer.h"
+#include "Engine/LocalPlayer.h"
+#include "EnhancedInputComponent.h"
+#include "EnhancedInputSubsystems.h"
 #include "ExperimentPlugin/Characters/ExperimentPawn.h"
 #include "ExperimentPlugin/Characters/ExperimentCharacter.h"
 #include "GameFramework/PlayerController.h"
@@ -21,14 +25,22 @@ public:
 	virtual void BeginPlay() override;
 	virtual void SetupInputComponent() override;
 	virtual void Tick(float DeltaTime) override;
+	virtual void OnPossess(APawn* InPawn) override;
 	//AGameModeMain* GameMode;
 
+	UPROPERTY(BlueprintReadWrite, Blueprintable,EditAnywhere,Category="Input|Enhanced Input")
+	UInputMappingContext* DefaultMappingContext;
 	/* game flow */
 	void ResetOrigin();
 	void QuitGame();
 	void MoveForward(float AxisValue);
 	void MoveRight(float AxisValue);
 	void RestartGame();
+
+	UFUNCTION(Client, Reliable, BlueprintCallable, WithValidation)
+	void Client_SetInputModeGameOnly();
+	bool Client_SetInputModeGameOnly_Validate();
+	void Client_SetInputModeGameOnly_Implementation(); 
 
 	/* pawn to control */
 	UPROPERTY(VisibleAnywhere)

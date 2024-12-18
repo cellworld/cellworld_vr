@@ -4,6 +4,8 @@
 #include "GameFramework/Character.h"
 #include "MiscUtils/Timers/EventTimer.h"
 // #include "XRDeviceVisualizationComponent.h"
+#include "InputMappingContext.h"
+#include "InputAction.h"
 #include "MotionControllerComponent.h"
 #include "OculusXRPassthroughLayerComponent.h"
 #include "EXperimentCharacter.generated.h"
@@ -12,6 +14,8 @@ UCLASS()
 class EXPERIMENTPLUGIN_API AExperimentCharacter : public ACharacter {
 	GENERATED_BODY()
 public:
+
+	virtual void OnRep_Owner() override;
 	/** Camera boom positioning the camera behind the character */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"))
 	class USpringArmComponent* CameraBoom;
@@ -63,6 +67,7 @@ public:
 	void OnOverlapEnd(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp,
 	                  int32 OtherBodyIndex);
 
+
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "SpatialComponents")
 	TObjectPtr<USceneComponent> VROrigin;
 	
@@ -82,6 +87,7 @@ public:
 	void UpdateRoomScaleLocation();
 	
 	virtual void BeginPlay() override;
+	virtual void PossessedBy(AController* NewController) override;
 
 /** Base turn rate, in deg/sec. Other scaling may affect final turn rate. */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category=Camera)
@@ -131,6 +137,9 @@ protected:
 	// End of APawn interface
 
 public:
+	UPROPERTY(BlueprintReadWrite, Blueprintable, EditAnywhere, Category="Input|Enhanced Input")
+	UInputMappingContext* DefaultMappingContext;
+	
 	/** Returns FollowCamera subobject **/
 	FORCEINLINE class UCameraComponent* GetCamera() const { return Camera; }
 

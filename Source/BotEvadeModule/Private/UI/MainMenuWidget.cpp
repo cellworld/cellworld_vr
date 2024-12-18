@@ -10,30 +10,29 @@ void UMainMenuWidget::MenuSetup(int32 NumberOfPublicConnections, FString TypeOfM
 	MatchType = TypeOfMatch;
 
 	NumPublicConnections = NumberOfPublicConnections;
-	AddToViewport();
+	/* widget focus and viewport stuff 
+	 *AddToViewport();
 	SetVisibility(ESlateVisibility::Visible);
 	SetIsFocusable(true);
-	// bIsFocusable = true;
-
+	bIsFocusable = true;
 	UWorld* World = GetWorld();
 	if (World)
 	{
 		APlayerController* PlayerController = World->GetFirstPlayerController();
 		if (PlayerController)
 		{
-			FInputModeUIOnly InputModeData;
-			InputModeData.SetWidgetToFocus(TakeWidget());
-			InputModeData.SetLockMouseToViewportBehavior(EMouseLockMode::DoNotLock);
-			PlayerController->SetInputMode(InputModeData);
-			PlayerController->SetShowMouseCursor(true);
+			// FInputModeUIOnly InputModeData;
+			// InputModeData.SetWidgetToFocus(TakeWidget());
+			// InputModeData.SetLockMouseToViewportBehavior(EMouseLockMode::DoNotLock);
+			// PlayerController->SetInputMode(InputModeData);
+			// PlayerController->SetShowMouseCursor(true);
 		}
-	}
+	}*/
 
 	UGameInstance* GameInstance = GetGameInstance();
 	if (GameInstance) {
 		MultiplayerSubsystem = GameInstance->GetSubsystem<UMultiplayerSubsystem>();
 	}
-	
 	
 	if (MultiplayerSubsystem) {
 		MultiplayerSubsystem->MultiplayerOnCreateSessionComplete.AddDynamic(this, &ThisClass::OnCreateSession);

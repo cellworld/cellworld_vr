@@ -1,6 +1,7 @@
 #include "GameInstanceMain.h"
 #include "Subsystems/GameInstanceSubsystem.h"
 #include "EngineUtils.h"
+
 #include "Kismet/GameplayStatics.h"
 
 UGameInstanceMain::UGameInstanceMain() {
@@ -9,15 +10,20 @@ UGameInstanceMain::UGameInstanceMain() {
 
 void UGameInstanceMain::Init() {
 	Super::Init();
-	UE_LOG(LogExperiment, Warning, TEXT("Initializing UGameInstanceMain"))
+	UE_LOG(LogTemp, Warning, TEXT("Initializing UGameInstanceMain"))
 
 	ExperimentParameters = MakeShared<FExperimentParameters>();
 	ExperimentParameters->bSpawnExperimentService = true;
 	
 	if (ExperimentParameters) {
-		UE_LOG(LogExperiment, Log, TEXT("[UGameInstanceMain::Init] FExperimentParameters Created."))
+		UE_LOG(LogTemp, Log, TEXT("[UGameInstanceMain::Init] FExperimentParameters Created."))
 	}else {
-		UE_LOG(LogExperiment, Error, TEXT("[UGameInstanceMain::Init] FExperimentParameters NULL!."))
+		UE_LOG(LogTemp, Error, TEXT("[UGameInstanceMain::Init] FExperimentParameters NULL!."))
+	}
+	
+	MultiplayerSubsystem = this->GetSubsystem<UMultiplayerSubsystem>();
+	if (MultiplayerSubsystem) {
+		UE_LOG(LogTemp, Log, TEXT("[UGameInstanceMain::Init] MultiplayerSubsystem found."))
 	}
 }
 
@@ -43,6 +49,17 @@ AActor* UGameInstanceMain::GetLevelActorFromTag(const FName& TagIn)
 	return nullptr;
 }
 
+void UGameInstanceMain::JoinSessionByIP() {
+	UE_LOG(LogTemp, Log, TEXT("[UGameInstanceMain::JoinSessionByIP] called"))
+	// JoinByIPAddressButton->SetIsEnabled(false);
+	if (MultiplayerSubsystem) {
+		UE_LOG(LogTemp, Log, TEXT("[UGameInstanceMain::JoinSessionByIP] Joining session via IPAddress!"))
+		MultiplayerSubsystem->JoinSessionAddress("192.168.1.199"); // todo: make this modifiable
+	}else {
+		UE_LOG(LogTemp, Error, TEXT("[UGameInstanceMain::JoinSessionByIP] Failed. MSS is NULL"))
+	}
+}
+
 FVector UGameInstanceMain::GetLevelScale(const AActor* LevelActor) {
 	
 	if (LevelActor->IsValidLowLevelFast()) { return LevelActor->GetActorScale3D(); }
@@ -64,32 +81,31 @@ void UGameInstanceMain::SetWorldScale(const float WorldScaleIn) {
 
 // todo: declare as ufunction(blueprintcallable)
 bool UGameInstanceMain::ExperimentStartEpisode() {
-	UE_LOG(LogExperiment, Log, TEXT("[UGameInstanceMain::ExperimentStartEpisode] Calling StartEpisode()"))
+	UE_LOG(LogTemp, Log, TEXT("[UGameInstanceMain::ExperimentStartEpisode] Calling StartEpisode()"))
 
 	if (!ensure(IsValid(ExperimentServiceMonitor))) { return false; }
-	UE_LOG(LogExperiment, Log, TEXT("[UGameInstanceMain::ExperimentStartEpisode] Calling StartEpisode()"))
+	UE_LOG(LogTemp, Log, TEXT("[UGameInstanceMain::ExperimentStartEpisode] Calling StartEpisode()"))
 	return ExperimentServiceMonitor->StartEpisode();
 }
 
 bool UGameInstanceMain::ExperimentStopEpisode() {
 	if (!ensure(IsValid(ExperimentServiceMonitor))) {
-		UE_LOG(LogExperiment, Warning,
+		UE_LOG(LogTemp, Warning,
 			   TEXT("[UGameInstanceMain::ExperimentStopEpisode] Failed to destroy, Already pending kill."));
 		return false;
 	}
-	UE_LOG(LogExperiment, Log, TEXT("[UGameInstanceMain::ExperimentStopEpisode] Calling StopEpisode(false)"))
+	UE_LOG(LogTemp, Log, TEXT("[UGameInstanceMain::ExperimentStopEpisode] Calling StopEpisode(false)"))
 	return ExperimentServiceMonitor->StopEpisode(false);
 }
 
 bool UGameInstanceMain::ExperimentStopExperiment(const FString ExperimentNameIn) {
-	UE_LOG(LogExperiment, Log, TEXT("[UGameInstanceMain::ExperimentStopEpisode] Calling StopEpisode(false)"))
+	UE_LOG(LogTemp, Log, TEXT("[UGameInstanceMain::ExperimentStopEpisode] Calling StopEpisode(false)"))
 
 	if (!IsValid(ExperimentServiceMonitor)) { return false; }
 	ExperimentServiceMonitor->StopExperiment(ExperimentNameIn);
 	return false;
 }
 
-// todo: declare as ufunction(blueprintcallable)
 bool UGameInstanceMain::SpawnExperimentServiceMonitor(UWorld* InWorld) {
 	UE_LOG(LogTemp, Warning, TEXT("[UGameInstanceMain::SpawnExperimentServiceMonitor] Called"));
 	

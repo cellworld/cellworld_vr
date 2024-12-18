@@ -381,7 +381,7 @@ void AExperimentClient::UpdatePreyPosition(const FVector InVector, const FRotato
 		return;
 	}
 	if (!bResetSuccessDbg) {
-		UE_LOG(LogTemp, Warning, TEXT("[AExperimentClient::UpdatePreyPosition] bResetSuccessDbg false"))
+		// UE_LOG(LogTemp, Warning, TEXT("[AExperimentClient::UpdatePreyPosition] bResetSuccessDbg false"))
 		return;
 	}
 	if (!bCanUpdatePrey) { return; }

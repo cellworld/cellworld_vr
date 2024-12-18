@@ -1,11 +1,16 @@
 ﻿#include "ExperimentCharacter.h"
+#include "EnhancedInputComponent.h"
+#include "EnhancedInputSubsystems.h"
 #include "HeadMountedDisplayFunctionLibrary.h"
+#include "KismetSystemLibrary.h"
 #include "Camera/CameraComponent.h"
 #include "Components/CapsuleComponent.h"
 #include "Components/InputComponent.h"
 #include "ExperimentPlugin/GameModes/ExperimentGameMode.h"
+#include "ExperimentPlugin/PlayerControllers/ExperimentPlayerControllerVR.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "GameFramework/Controller.h"
+#include "GameFramework/PlayerState.h"
 
 AExperimentCharacter::AExperimentCharacter() {
 	
@@ -19,6 +24,7 @@ AExperimentCharacter::AExperimentCharacter() {
 	bUseControllerRotationYaw   = false;
 	bUseControllerRotationRoll  = false;
 	bSimGravityDisabled			= true;
+	
 	
 	VROrigin = CreateDefaultSubobject<USceneComponent>(TEXT("VROrigin"));
 	// VROrigin->SetupAttachment(GetCapsuleComponent());
@@ -55,6 +61,10 @@ AExperimentCharacter::AExperimentCharacter() {
 	}else {
 		UE_LOG(LogTemp, Error, TEXT("[AExperimentCharacter::AExperimentCharacter] - XRPassthroughLayer null "));
 	}
+#if PLATFORM_WINDOWS && !UE_SERVER
+	
+#endif
+	
 
 	/*Create Motion Controllers*/
 	MotionControllerLeft = CreateDefaultSubobject<UMotionControllerComponent>(TEXT("MotionControllerLeft"));
@@ -75,7 +85,13 @@ AExperimentCharacter::AExperimentCharacter() {
 
 	// GetMovementComponent()->UpdatedComponent = RootComponent;
 	
-	ACharacter::SetReplicateMovement(true);
+
+	static ConstructorHelpers::FObjectFinder<UInputMappingContext> IMPClassObject(TEXT("InputMappingContext'/Game/SpatialAnchorsSample/Inputs/Mappings/IMC_VRPawn'"));
+	if (IMPClassObject.Succeeded()) {
+		DefaultMappingContext = IMPClassObject.Object;
+	}
+	UE_LOG(LogTemp, Warning, TEXT("[AExperimentCharacter::AExperimentCharacter] DefaultMappingContext found? %s"),
+		DefaultMappingContext ? *FString("valid") : *FString("NULL"));
 }
 
 bool AExperimentCharacter::Server_UpdateMovement_Validate(const FVector& InLocation, const FRotator& InRotation) {
@@ -174,6 +190,7 @@ bool AExperimentCharacter::Server_RegisterActorOwner_Validate(AActor* InActor, c
 
 	return true;
 }
+
 void AExperimentCharacter::Server_RegisterActorOwner_Implementation(AActor* InActor, const bool bForceUpdate) {
 	UE_LOG(LogTemp, Log, TEXT("[AExperimentCharacter::Server_RegisterActorOwner_Implementation] Called!"))
 
@@ -211,6 +228,11 @@ void AExperimentCharacter::Server_RegisterActorOwner_Implementation(AActor* InAc
 	
 }
 
+void AExperimentCharacter::OnRep_Owner() {
+	Super::OnRep_Owner();
+	UE_LOG(LogTemp, Log, TEXT("[AExperimentCharacter::OnRep_Owner] NewOwner: %s "), *GetOwner()->GetName())
+}
+
 void AExperimentCharacter::SetupSampling() {
 	UE_LOG(LogTemp, Log, TEXT("[AExperimentCharacter::SetupSampling] Running on Android"))
 	if (bUseVR){
@@ -245,7 +267,7 @@ void AExperimentCharacter::UpdateMovement() {
 	return;
 #endif
 	if (HasAuthority()) {
-		UE_LOG(LogTemp, Warning,TEXT("[AExperimentCharacter::UpdateMovement] Ran from server!"))
+		// UE_LOG(LogTemp, Warning,TEXT("[AExperimentCharacter::UpdateMovement] Ran from server!"))
 	} else {
 		UE_LOG(LogTemp, Log, TEXT("[AExperimentCharacter::UpdateMovement] Running on client."))
 		if (bUseVR) { // todo: bUseVR - Make variable 
@@ -284,20 +306,56 @@ void AExperimentCharacter::UpdateRoomScaleLocation() {
 
 void AExperimentCharacter::BeginPlay() {
 	Super::BeginPlay();
-#if !UE_SERVER
-	UE_LOG(LogTemp, Log, TEXT("[AExperimentCharacter::BeginPlay] Running on client."))
-	SetupSampling();
-	SetReplicateMovement(true);
-	if (UHeadMountedDisplayFunctionLibrary::IsHeadMountedDisplayConnected()) {
-		UHeadMountedDisplayFunctionLibrary::SetTrackingOrigin(EHMDTrackingOrigin::Floor);
+	
+	if (HasAuthority()) { /* is server */
+		UE_LOG(LogTemp, Log, TEXT("[AExperimentCharacter::BeginPlay] Running on server. Enabling replication."))
+		SetReplicateMovement(true);
+		SetReplicates(true);
+	} else { /* is client */
+		UE_LOG(LogTemp, Log, TEXT("[AExperimentCharacter::BeginPlay] Running on client."))
+		SetupSampling();
+		if (UHeadMountedDisplayFunctionLibrary::IsHeadMountedDisplayConnected()) {
+			UE_LOG(LogTemp, Log, TEXT("[AExperimentCharacter::BeginPlay] HMD is connected, setting origin and resetting HMD."))
+			UHeadMountedDisplayFunctionLibrary::SetTrackingOrigin(EHMDTrackingOrigin::Floor);
+			UHeadMountedDisplayFunctionLibrary::ResetOrientationAndPosition();
+		}
+		if (AExperimentPlayerControllerVR* CurrentPlayerController = Cast<AExperimentPlayerControllerVR>(GetController())) {
+			UE_LOG(LogTemp, Log, TEXT("[AExperimentCharacter::Tick] AExperimentPlayerController is valid. Changed input mode to GameOnly."))
+			FInputModeGameOnly InputModeData;
+			CurrentPlayerController->SetInputMode(InputModeData);
+			// CurrentPlayerController->SetShowMouseCursor(false);
+		}
 	}
-#endif
+	/* Add Input Mapping Context */
+	if (APlayerController* PlayerController = Cast<APlayerController>(Controller)) {
+		UE_LOG(LogTemp, Log, TEXT("[AExperimentCharacter::BeginPlay] PlayerController valid"))
+		if (UEnhancedInputLocalPlayerSubsystem* Subsystem =
+			ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(PlayerController->GetLocalPlayer())) {
+				Subsystem->AddMappingContext(DefaultMappingContext, 0);
+				UE_LOG(LogTemp, Log, TEXT("[AExperimentCharacter::BeginPlay] Added EnhancedInput MappingContext"))
+			}
+	}
+}
+
+void AExperimentCharacter::PossessedBy(AController* NewController) {
+	Super::PossessedBy(NewController);
+	UE_LOG(LogTemp, Log, TEXT("[AExperimentCharacter::PossessedBy] Called "))
+	UE_LOG(LogTemp, Log, TEXT("[AExperimentCharacter::PossessedBy] PossessedBy: %s"),
+		NewController ? *NewController->GetName() : TEXT("Null"))
+
+	// if (HasAuthority()) {
+	// 	// SetOwner(NewController);
+	// 	UE_LOG(LogTemp, Log, TEXT("[AExperimentCharacter::PossessedBy] Called "))
+	// }
 	
 }
 
 void AExperimentCharacter::SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) {
+	Super::SetupPlayerInputComponent(PlayerInputComponent);
 	// Set up gameplay key bindings
 	check(PlayerInputComponent);
+	SetReplicateMovement(true);
+	
 	PlayerInputComponent->BindAction("Jump", IE_Pressed, this, &ACharacter::Jump);
 	PlayerInputComponent->BindAction("Jump", IE_Released, this, &ACharacter::StopJumping);
 
@@ -318,22 +376,60 @@ void AExperimentCharacter::SetupPlayerInputComponent(class UInputComponent* Play
 
 	// VR headset functionality
 	PlayerInputComponent->BindAction("ResetVR", IE_Pressed, this, &AExperimentCharacter::OnResetVR);
+	// if (UEnhancedInputComponent* EnhancedInputComponent = CastChecked<UEnhancedInputComponent>(PlayerInputComponent)) {
+	// 	EnhancedInputComponent->BindAction(Select)
+	// }
+
 }
 
 void AExperimentCharacter::Tick(float DeltaSeconds) {
 	Super::Tick(DeltaSeconds);
-	// if (bUseVR) { // todo: bUseVR - Make variable 
-	// 	FRotator HMDRotation {};
-	// 	FVector HMDLocation {};
-	// 	UHeadMountedDisplayFunctionLibrary::GetOrientationAndPosition(HMDRotation, HMDLocation);
-	// 	CurrentLocation = HMDLocation + this->VROrigin->GetComponentLocation();
-	// 	CurrentRotation = HMDRotation;
-	// 	UpdateRoomScaleLocation();
-	// 	// Server_UpdateMovement(CurrentLocation, CurrentRotation);
-	// } else {
-	// 	CurrentLocation = RootComponent->GetComponentLocation();
-	// 	CurrentRotation = GetActorRotation();
-	// }
+	if (!HasAuthority()) {
+		UE_LOG(LogTemp, Log, TEXT("[AExperimentCharacter::Tick] Client PlayerState PlayerName: %s"),
+			GetPlayerState() ? *GetPlayerState()->GetPlayerName() : TEXT("NULL"))
+	}
+
+	if (AController* CurrentController = GetController()) {
+		if (CurrentController->IsLocalPlayerController()) {
+
+			UE_LOG(LogTemp, Log, TEXT("[AExperimentCharacter::Tick] bIsLocalPlayerController = %s"),
+				CurrentController->IsLocalPlayerController() ? TEXT("true") : TEXT("false"))
+			
+			UE_LOG(LogTemp, Log, TEXT("[AExperimentCharacter::Tick] AController NetOwner: %s"),
+				CurrentController->HasNetOwner() ? *CurrentController->GetNetOwner()->GetName() : TEXT("NULL (no owner)"))
+
+			if (GetNetOwner() != CurrentController) {
+				UE_LOG(LogTemp, Log, TEXT("[AExperimentCharacter::Tick] Character NetOwner is NOT owned by PC (%s)."),
+					*CurrentController->GetName())
+			}
+
+			UE_LOG(LogTemp, Log, TEXT("[AExperimentCharacter::Tick] IsPlayerControlled: %s"),
+				IsPlayerControlled() ? TEXT("true") : TEXT("false"))
+			
+			UE_LOG(LogTemp, Log, TEXT("[AExperimentCharacter::Tick] Character has Owner? %s"),
+				HasNetOwner() ? *GetNetOwner()->GetName() : TEXT("NULL (no owner)")) // todo: set 
+			
+			UE_LOG(LogTemp, Log, TEXT("[AExperimentCharacter::Tick] Input enabled: %s"),
+				InputEnabled() ? TEXT("true") : TEXT("false"))
+
+			UE_LOG(LogTemp, Log, TEXT("[AExperimentCharacter::Tick] bBlockInput: %s"),
+					bBlockInput ? TEXT("true") : TEXT("false"))
+
+		}
+	}
+	
+	/*if (bUseVR) { // todo: bUseVR - Make variable 
+		FRotator HMDRotation {};
+		FVector HMDLocation {};
+		UHeadMountedDisplayFunctionLibrary::GetOrientationAndPosition(HMDRotation, HMDLocation);
+		CurrentLocation = HMDLocation + this->VROrigin->GetComponentLocation();
+		CurrentRotation = HMDRotation;
+		UpdateRoomScaleLocation();
+		// Server_UpdateMovement(CurrentLocation, CurrentRotation);
+	} else {
+		CurrentLocation = RootComponent->GetComponentLocation();
+		CurrentRotation = GetActorRotation();
+	}*/
 }
 
 bool AExperimentCharacter::Multi_OnUpdateMovement_Validate(const FVector& InLocation, const FRotator& InRotation) {
@@ -352,20 +448,25 @@ void AExperimentCharacter::OnResetVR() {
 }
 
 void AExperimentCharacter::TouchStarted(ETouchIndex::Type FingerIndex, FVector Location) {
+	UE_LOG(LogTemp, Log,TEXT("AExperimentCharacter::TouchStarted"))
 	Jump();
 }
 
 void AExperimentCharacter::TouchStopped(ETouchIndex::Type FingerIndex, FVector Location) {
+	UE_LOG(LogTemp, Log,TEXT("AExperimentCharacter::TouchStopped"))
 	StopJumping();
 }
 
 void AExperimentCharacter::TurnAtRate(float Rate) {
 	// calculate delta for this frame from the rate information
+	UE_LOG(LogTemp, Log,TEXT("[AExperimentCharacter::TurnAtRate] %0.2f"), Rate)
+
 	AddControllerYawInput(Rate * BaseTurnRate * GetWorld()->GetDeltaSeconds());
 }
 
 void AExperimentCharacter::LookUpAtRate(float Rate) {
 	// calculate delta for this frame from the rate information
+	UE_LOG(LogTemp, Log,TEXT("[AExperimentCharacter::LookUpAtRate] %0.2f"), Rate)
 	AddControllerPitchInput(Rate * BaseLookUpRate * GetWorld()->GetDeltaSeconds());
 }
 

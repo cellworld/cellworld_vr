@@ -2,7 +2,7 @@
 
 UBotEvadeGameInstance::UBotEvadeGameInstance() {
 	// Log a message indicating the constructor is being called
-	UE_LOG(LogTemp, Warning, TEXT("Game Instance Constructor"));
+	UE_LOG(LogTemp, Log, TEXT("[UBotEvadeGameInstance::UBotEvadeGameInstance] Game Instance Constructor"));
 
 	// Find the main menu widget class
 	// const ConstructorHelpers::FClassFinder<UUserWidget> MenuBPClass(TEXT("/Game/MenuSystem/WBP_MainMenu"));
@@ -21,6 +21,7 @@ void UBotEvadeGameInstance::Init() {
 	Super::Init();
 	UE_LOG(LogTemp, Log, TEXT("Initialized UBotEvadeGameInstance."))
 	this->OnNotifyPreClientTravel().AddUObject(this, &ThisClass::HandleOnNotifyPreClientTravel);
+	
 }
 
 void UBotEvadeGameInstance::HandleOnNotifyPreClientTravel(const FString& IPAddress, ETravelType TravelType, bool bIsSeamlessTravel) {
