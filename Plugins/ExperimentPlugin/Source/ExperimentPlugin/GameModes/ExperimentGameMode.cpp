@@ -13,11 +13,13 @@ AExperimentGameMode::AExperimentGameMode(){
 	UE_LOG(LogTemp, Log, TEXT("[AExperimentGameMode::AExperimentGameMode] Initializing AExperimentGameMode()"))
 	PlayerStateClass      = AExperimentPlayerState::StaticClass(); 
 	GameStateClass        = AExperimentGameState::StaticClass();
-	
 	PlayerControllerClass = AExperimentPlayerControllerVR::StaticClass();
+	
 	PrimaryActorTick.bStartWithTickEnabled = true;
 	PrimaryActorTick.bCanEverTick		   = true;
 	bStartPlayersAsSpectators			   = false;
+
+	bUseSeamlessTravel = false;
 }
 
 void AExperimentGameMode::InitGame(const FString& MapName, const FString& Options, FString& ErrorMessage) {
@@ -108,14 +110,14 @@ void AExperimentGameMode::EndPlay(const EEndPlayReason::Type EndPlayReason) {
 void AExperimentGameMode::Tick(float DeltaTime) {
 	Super::Tick(DeltaTime);
 	
-	UE_LOG(LogTemp, Log, TEXT("AExperimentGameMode::Tick] NumPlayers: %i"), NumPlayers)
+	UE_LOG(LogTemp, Log, TEXT("AExperimentGameMode::Tick] NumPlayers: %i"), GetNumPlayers())
 	TArray<AActor*> FoundActors; 
 	UGameplayStatics::GetAllActorsOfClass(GetWorld(), DefaultPawnClass, FoundActors);
 
 	UE_LOG(LogTemp, Log, TEXT("[AExperimentGameMode::Tick] actors found (class / count): %s / %i"),
 		*DefaultPawnClass->GetName(), FoundActors.Num())
-	
-	if (NumPlayers > 0) {
+
+	if (GetNumPlayers() > 0) {
 		if (AExperimentGameState* ExperimentGameState = Cast<AExperimentGameState>(GameState)) {
 			for (APlayerState* PlayerState : ExperimentGameState->PlayerArray) {
 				if (PlayerState) {

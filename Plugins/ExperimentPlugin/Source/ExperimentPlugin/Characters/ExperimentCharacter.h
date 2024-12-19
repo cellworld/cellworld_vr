@@ -86,6 +86,7 @@ public:
 	UFUNCTION(BlueprintCallable)
 	void UpdateRoomScaleLocation();
 	
+	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 	virtual void BeginPlay() override;
 	virtual void PossessedBy(AController* NewController) override;
 
@@ -133,6 +134,11 @@ public:
 protected:
 	// APawn interface
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
+
+	UFUNCTION(Server, Reliable, WithValidation)
+	void Server_UpdateOwner(APlayerController* InOwnerPlayerController);
+	bool Server_UpdateOwner_Validate(APlayerController* InOwnerPlayerController);
+	void Server_UpdateOwner_Implementation(APlayerController* InOwnerPlayerController);
 	virtual void Tick(float DeltaSeconds) override;
 	// End of APawn interface
 

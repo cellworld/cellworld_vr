@@ -2,10 +2,11 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/GameState.h"
+#include "GameFramework/GameStateBase.h"
 #include "ExperimentGameState.generated.h"
 
 UCLASS()
-class EXPERIMENTPLUGIN_API AExperimentGameState : public AGameState {
+class EXPERIMENTPLUGIN_API AExperimentGameState : public AGameStateBase {
 	GENERATED_BODY()
 public:
 	AExperimentGameState();

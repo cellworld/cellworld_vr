@@ -13,11 +13,14 @@
 #include "GameFramework/PlayerState.h"
 
 AExperimentCharacter::AExperimentCharacter() {
+
+	/* network stuff */
+	bReplicates      = true;
+	bNetLoadOnClient = true;
 	
-	// set our turn rates for input
-	BaseTurnRate = 45.f;
-	BaseLookUpRate = 45.f;
-	SetReplicates(true);
+	/* set our turn rates for input */
+	BaseTurnRate	 = 45.f;
+	BaseLookUpRate	 = 45.f;
 
 	// Don't rotate when the controller rotates. Let that just affect the camera.
 	bUseControllerRotationPitch = false;
@@ -61,10 +64,6 @@ AExperimentCharacter::AExperimentCharacter() {
 	}else {
 		UE_LOG(LogTemp, Error, TEXT("[AExperimentCharacter::AExperimentCharacter] - XRPassthroughLayer null "));
 	}
-#if PLATFORM_WINDOWS && !UE_SERVER
-	
-#endif
-	
 
 	/*Create Motion Controllers*/
 	MotionControllerLeft = CreateDefaultSubobject<UMotionControllerComponent>(TEXT("MotionControllerLeft"));
@@ -231,6 +230,7 @@ void AExperimentCharacter::Server_RegisterActorOwner_Implementation(AActor* InAc
 void AExperimentCharacter::OnRep_Owner() {
 	Super::OnRep_Owner();
 	UE_LOG(LogTemp, Log, TEXT("[AExperimentCharacter::OnRep_Owner] NewOwner: %s "), *GetOwner()->GetName())
+
 }
 
 void AExperimentCharacter::SetupSampling() {
@@ -308,9 +308,9 @@ void AExperimentCharacter::BeginPlay() {
 	Super::BeginPlay();
 	
 	if (HasAuthority()) { /* is server */
-		UE_LOG(LogTemp, Log, TEXT("[AExperimentCharacter::BeginPlay] Running on server. Enabling replication."))
-		SetReplicateMovement(true);
-		SetReplicates(true);
+		// UE_LOG(LogTemp, Log, TEXT("[AExperimentCharacter::BeginPlay] Running on server. Enabling replication."))
+		// SetReplicateMovement(true);
+		// SetReplicates(true);
 	} else { /* is client */
 		UE_LOG(LogTemp, Log, TEXT("[AExperimentCharacter::BeginPlay] Running on client."))
 		SetupSampling();
@@ -319,13 +319,14 @@ void AExperimentCharacter::BeginPlay() {
 			UHeadMountedDisplayFunctionLibrary::SetTrackingOrigin(EHMDTrackingOrigin::Floor);
 			UHeadMountedDisplayFunctionLibrary::ResetOrientationAndPosition();
 		}
-		if (AExperimentPlayerControllerVR* CurrentPlayerController = Cast<AExperimentPlayerControllerVR>(GetController())) {
-			UE_LOG(LogTemp, Log, TEXT("[AExperimentCharacter::Tick] AExperimentPlayerController is valid. Changed input mode to GameOnly."))
-			FInputModeGameOnly InputModeData;
-			CurrentPlayerController->SetInputMode(InputModeData);
-			// CurrentPlayerController->SetShowMouseCursor(false);
-		}
+		// if (AExperimentPlayerControllerVR* CurrentPlayerController = Cast<AExperimentPlayerControllerVR>(GetController())) {
+		// 	UE_LOG(LogTemp, Log, TEXT("[AExperimentCharacter::Tick] AExperimentPlayerController is valid. Changed input mode to GameOnly."))
+		// 	FInputModeGameOnly InputModeData;
+		// 	CurrentPlayerController->SetInputMode(InputModeData);
+		// 	// CurrentPlayerController->SetShowMouseCursor(false);
+		// }
 	}
+	
 	/* Add Input Mapping Context */
 	if (APlayerController* PlayerController = Cast<APlayerController>(Controller)) {
 		UE_LOG(LogTemp, Log, TEXT("[AExperimentCharacter::BeginPlay] PlayerController valid"))
@@ -337,17 +338,17 @@ void AExperimentCharacter::BeginPlay() {
 	}
 }
 
+void AExperimentCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const {
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+
+	// DOREPLIFETIME(AExperimentCharacter, MotionControllerRight)
+}
+
 void AExperimentCharacter::PossessedBy(AController* NewController) {
 	Super::PossessedBy(NewController);
 	UE_LOG(LogTemp, Log, TEXT("[AExperimentCharacter::PossessedBy] Called "))
 	UE_LOG(LogTemp, Log, TEXT("[AExperimentCharacter::PossessedBy] PossessedBy: %s"),
 		NewController ? *NewController->GetName() : TEXT("Null"))
-
-	// if (HasAuthority()) {
-	// 	// SetOwner(NewController);
-	// 	UE_LOG(LogTemp, Log, TEXT("[AExperimentCharacter::PossessedBy] Called "))
-	// }
-	
 }
 
 void AExperimentCharacter::SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) {
@@ -382,13 +383,28 @@ void AExperimentCharacter::SetupPlayerInputComponent(class UInputComponent* Play
 
 }
 
+bool AExperimentCharacter::Server_UpdateOwner_Validate(APlayerController* InOwnerPlayerController) {
+	UE_LOG(LogTemp, Log, TEXT("[AExperimentCharacter::Server_UpdateOwner_Validate]"))
+	return true;
+}
+void AExperimentCharacter::Server_UpdateOwner_Implementation(APlayerController* InOwnerPlayerController) {
+	UE_LOG(LogTemp, Log, TEXT("[AExperimentCharacter::Server_UpdateOwner_Implementation]"))
+	if (InOwnerPlayerController) {
+		SetOwner(InOwnerPlayerController);
+		UE_LOG(LogTemp, Log, TEXT("[AExperimentCharacter::Server_UpdateOwner_Implementation] New owner set (%s)"),
+			*InOwnerPlayerController->GetName())
+	}else {
+		UE_LOG(LogTemp, Error, TEXT("[AExperimentCharacter::Server_UpdateOwner_Implementation] InOwnerPlayerController is NULL"))
+	}
+}
+
 void AExperimentCharacter::Tick(float DeltaSeconds) {
 	Super::Tick(DeltaSeconds);
 	if (!HasAuthority()) {
 		UE_LOG(LogTemp, Log, TEXT("[AExperimentCharacter::Tick] Client PlayerState PlayerName: %s"),
 			GetPlayerState() ? *GetPlayerState()->GetPlayerName() : TEXT("NULL"))
 	}
-
+	
 	if (AController* CurrentController = GetController()) {
 		if (CurrentController->IsLocalPlayerController()) {
 
@@ -398,10 +414,10 @@ void AExperimentCharacter::Tick(float DeltaSeconds) {
 			UE_LOG(LogTemp, Log, TEXT("[AExperimentCharacter::Tick] AController NetOwner: %s"),
 				CurrentController->HasNetOwner() ? *CurrentController->GetNetOwner()->GetName() : TEXT("NULL (no owner)"))
 
-			if (GetNetOwner() != CurrentController) {
-				UE_LOG(LogTemp, Log, TEXT("[AExperimentCharacter::Tick] Character NetOwner is NOT owned by PC (%s)."),
-					*CurrentController->GetName())
-			}
+			// if (GetNetOwner() != CurrentController) {
+			// 	UE_LOG(LogTemp, Log, TEXT("[AExperimentCharacter::Tick] Setting new owner from client; calling Server_UpdateOwner RPC."))
+			// 	// Server_UpdateOwner(Cast<APlayerController>(CurrentController->GetNetOwner()));
+			// }
 
 			UE_LOG(LogTemp, Log, TEXT("[AExperimentCharacter::Tick] IsPlayerControlled: %s"),
 				IsPlayerControlled() ? TEXT("true") : TEXT("false"))

@@ -22,6 +22,8 @@ public:
 	AExperimentPlayerControllerVR();
 
 	/* overrides */
+	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
+	virtual void PostInitializeComponents() override;
 	virtual void BeginPlay() override;
 	virtual void SetupInputComponent() override;
 	virtual void Tick(float DeltaTime) override;
@@ -43,6 +45,6 @@ public:
 	void Client_SetInputModeGameOnly_Implementation(); 
 
 	/* pawn to control */
-	UPROPERTY(VisibleAnywhere)
+	UPROPERTY(VisibleAnywhere, Replicated)
 	AExperimentCharacter* PossessedCharacter;
 };

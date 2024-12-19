@@ -2,6 +2,7 @@
 #include "InputMappingContext.h"
 #include "ExperimentPlugin/Characters/ExperimentCharacter.h"
 #include "Kismet/KismetSystemLibrary.h"
+#include "Net/UnrealNetwork.h"
 
 AExperimentPlayerControllerVR::AExperimentPlayerControllerVR() {
 	PrimaryActorTick.bStartWithTickEnabled = true;
@@ -14,6 +15,20 @@ AExperimentPlayerControllerVR::AExperimentPlayerControllerVR() {
 	}
 	UE_LOG(LogTemp, Warning, TEXT("[AExperimentPlayerControllerVR::AExperimentPlayerControllerVR] DefaultMappingContext found? %s"),
 		DefaultMappingContext ? *FString("valid") : *FString("NULL"));
+
+
+	
+}
+
+void AExperimentPlayerControllerVR::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const {
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+	DOREPLIFETIME(ThisClass, PossessedCharacter)
+}
+
+void AExperimentPlayerControllerVR::PostInitializeComponents() {
+	Super::PostInitializeComponents();
+	const FInputModeGameOnly InputModeGameOnly; 
+	// SetInputMode(InputModeGameOnly);
 }
 
 void AExperimentPlayerControllerVR::BeginPlay() {
@@ -28,12 +43,12 @@ void AExperimentPlayerControllerVR::BeginPlay() {
 		UE_LOG(LogTemp, Error, TEXT("[AExperimentPlayerControllerVR::BeginPlay] GetWorld() NULL"))
 	}
 	
-	if (UWorld* World = GetWorld()) {
-		if (UGameViewportClient* ViewportClient = World->GetGameViewport()) {
-			ViewportClient->RemoveAllViewportWidgets();
-			UE_LOG(LogTemp, Log,TEXT("[AExperimentPlayerControllerVR::BeginPlay] Removed all widgets from viewport."))
-		}
-	}
+	// if (UWorld* World = GetWorld()) {
+	// 	if (UGameViewportClient* ViewportClient = World->GetGameViewport()) {
+	// 		ViewportClient->RemoveAllViewportWidgets();
+	// 		UE_LOG(LogTemp, Log,TEXT("[AExperimentPlayerControllerVR::BeginPlay] Removed all widgets from viewport."))
+	// 	}
+	// }
 	return;
 }
 
@@ -101,21 +116,28 @@ void AExperimentPlayerControllerVR::Tick(float DeltaTime) {
 }
 
 void AExperimentPlayerControllerVR::OnPossess(APawn* InPawn) {
+	UE_LOG(LogTemp, Log, TEXT("[AExperimentPlayerControllerVR::OnPossess]"))
+	if (!HasAuthority() || !InPawn) return;
+	PossessedCharacter = Cast<AExperimentCharacter>(InPawn);
+	UE_LOG(LogTemp, Log, TEXT("[AExperimentPlayerControllerVR::OnPossess] Called. Pawn: %s"), *PossessedCharacter->GetName())
+
+	
 	Super::OnPossess(InPawn);
-	UE_LOG(LogTemp, Log, TEXT("[AExperimentPlayerControllerVR::OnPossess] Called. Pawn: %s"),*InPawn->GetName())
-	if (HasAuthority()) {
-		SetReplicates(true);
-		if (InPawn->GetNetOwner() != this) {
-			UE_LOG(LogTemp, Log, TEXT("[AExperimentPlayerControllerVR::OnPossess] Pawn's (%s) net owner is not current PC. Changing."),
-				*InPawn->GetName())
-			InPawn->SetOwner(this);  // Fix Ownership
-			UE_LOG(LogTemp, Log, TEXT("[AExperimentPlayerControllerVR::OnPossess] Pawn (%s) Owner changed to: (%s)."),
-				   *InPawn->GetName(), InPawn->HasNetOwner() ? *InPawn->GetNetOwner()->GetName() : TEXT("NULL"));
-		}else {
-			UE_LOG(LogTemp, Log, TEXT("[AExperimentPlayerControllerVR::OnPossess] Pawn (%s) already has `this` (%s) as net owner (%s)"),
-				*InPawn->GetName(), *GetName(), *InPawn->GetNetOwner()->GetName())
-		}
+	if (InPawn->GetNetOwner() != this) {
+		UE_LOG(LogTemp, Log, TEXT("[AExperimentPlayerControllerVR::OnPossess] InPawn's NetOwner is not `this`. Calling SetOwner(this)"))
+		InPawn->SetOwner(this);
+		InPawn->ForceNetUpdate();
 	}
+	
+	UE_LOG(LogTemp, Log, TEXT("[AExperimentPlayerControllerVR::OnPossess] After SetOwner() and AFTER Super::"))
+	
+	if (InPawn->GetNetOwner() != this) {
+		UE_LOG(LogTemp, Error, TEXT("[AExperimentPlayerControllerVR::OnPossess] Pawn's net owner is not current PC."))
+	}else {
+		UE_LOG(LogTemp, Log, TEXT("[AExperimentPlayerControllerVR::OnPossess] Pawn (%s) already has `this` (%s) as net owner (%s)"),
+			*InPawn->GetName(), *GetName(), *InPawn->GetNetOwner()->GetName())
+	}
+	Client_SetInputModeGameOnly();
 }
 
 void AExperimentPlayerControllerVR::ResetOrigin() {

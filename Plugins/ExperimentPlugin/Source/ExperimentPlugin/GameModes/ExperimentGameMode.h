@@ -10,7 +10,7 @@
 #include "ExperimentGameMode.generated.h"
 
 UCLASS()
-class EXPERIMENTPLUGIN_API AExperimentGameMode : public AGameMode {
+class EXPERIMENTPLUGIN_API AExperimentGameMode : public AGameModeBase {
 	GENERATED_BODY()
 public:
 	AExperimentGameMode();

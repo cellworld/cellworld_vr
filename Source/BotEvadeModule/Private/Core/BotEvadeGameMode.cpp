@@ -81,9 +81,7 @@ void ABotEvadeGameMode::EndPlay(const EEndPlayReason::Type EndPlayReason) {
 
 void ABotEvadeGameMode::Tick(float DeltaTime) {
 	Super::Tick(DeltaTime);
-	UE_LOG(LogTemp, Log, TEXT("Player Count: %i"), NumPlayers)
-	if (NumPlayers == 1) {
-	}
+	UE_LOG(LogTemp, Log, TEXT("Player Count: %i"), GetNumPlayers())
 	// UWorld* World = GetWorld(); // can be true
 }
 
