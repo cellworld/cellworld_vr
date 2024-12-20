@@ -13,7 +13,7 @@ AExperimentGameMode::AExperimentGameMode(){
 	UE_LOG(LogTemp, Log, TEXT("[AExperimentGameMode::AExperimentGameMode] Initializing AExperimentGameMode()"))
 	PlayerStateClass      = AExperimentPlayerState::StaticClass(); 
 	GameStateClass        = AExperimentGameState::StaticClass();
-	PlayerControllerClass = AExperimentPlayerControllerVR::StaticClass();
+	// PlayerControllerClass = AExperimentPlayerControllerVR::StaticClass();
 	
 	PrimaryActorTick.bStartWithTickEnabled = true;
 	PrimaryActorTick.bCanEverTick		   = true;
@@ -27,10 +27,10 @@ void AExperimentGameMode::InitGame(const FString& MapName, const FString& Option
 	UE_LOG(LogTemp, Log, TEXT("[AExperimentGameMode::InitGame] Called"))
 	
 	UE_LOG(LogTemp, Log, TEXT("[AExperimentGameMode::InitGame] Spawning ExperimentClient!"))
-	SpawnExperimentServiceMonitor();
-	if (!ensure(ExperimentClient->IsValidLowLevelFast())) {
-		UE_LOG(LogTemp, Error, TEXT("[AExperimentGameMode::InitGame] Failed to spawn ExperimentClient!"))
-	}
+	// SpawnExperimentServiceMonitor();
+	// if (!ensure(ExperimentClient->IsValidLowLevelFast())) {
+	// 	UE_LOG(LogTemp, Error, TEXT("[AExperimentGameMode::InitGame] Failed to spawn ExperimentClient!"))
+	// }
 }
 
 void AExperimentGameMode::InitGameState() {
@@ -114,11 +114,12 @@ void AExperimentGameMode::Tick(float DeltaTime) {
 	TArray<AActor*> FoundActors; 
 	UGameplayStatics::GetAllActorsOfClass(GetWorld(), DefaultPawnClass, FoundActors);
 
-	UE_LOG(LogTemp, Log, TEXT("[AExperimentGameMode::Tick] actors found (class / count): %s / %i"),
+	UE_LOG(LogTemp, Log, TEXT("[AExperimentGameMode::Tick] actors found (class:  %s): %i"),
 		*DefaultPawnClass->GetName(), FoundActors.Num())
 
 	if (GetNumPlayers() > 0) {
-		if (AExperimentGameState* ExperimentGameState = Cast<AExperimentGameState>(GameState)) {
+		// todo: change cast back to AExperimentGameState
+		if (AGameStateBase* ExperimentGameState = Cast<AGameStateBase>(GameState)) { 
 			for (APlayerState* PlayerState : ExperimentGameState->PlayerArray) {
 				if (PlayerState) {
 					UE_LOG(LogTemp, Warning, TEXT("[AExperimentGameMode::Tick] PlayerState: %s, PlayerName: %s"), 
@@ -131,14 +132,7 @@ void AExperimentGameMode::Tick(float DeltaTime) {
 
 void AExperimentGameMode::PostLogin(APlayerController* NewPlayer) {
 	Super::PostLogin(NewPlayer);
-	UE_LOG(LogTemp, Error, TEXT("[AExperimentGameMode::PostLogin] called "));
-	if (NewPlayer) {
-		UE_LOG(LogTemp, Log, TEXT("[AExperimentGameMode::PostLogin] New PlayerController: %s"), *NewPlayer->GetName());
-	}
-	else {
-		UE_LOG(LogTemp, Error, TEXT("[AExperimentGameMode::PostLogin] PlayerController is NULL during PostLogin!"));
-		return;
-	}
+	UE_LOG(LogTemp, Log, TEXT("[AExperimentGameMode::PostLogin]"));
 	// if (!ensure(Habitat)) return;
 	// if (!ensure(Habitat->HasNetOwner())) return;
 	
@@ -158,71 +152,63 @@ void AExperimentGameMode::HandleStartingNewPlayer_Implementation(APlayerControll
 	Super::HandleStartingNewPlayer_Implementation(NewPlayer);
 	UE_LOG(LogTemp, Log, TEXT("[AExperimentGameMode::HandleStartingNewPlayer_Implementation] Called"))
 
-	if (!NewPlayer->IsValidLowLevel()) {
-		UE_LOG(LogTemp, Warning, TEXT("[AExperimentGameMode::HandleStartingNewPlayer_Implementation] NewPlayer PlayerController NULL"));
-		return;
-	}
-
-	UE_LOG(LogTemp, Warning, TEXT("[AExperimentGameMode::HandleStartingNewPlayer_Implementation] NewPlayer PlayerController Valid"));
-
-	if (NewPlayer->PlayerState) {
-		UE_LOG(LogTemp, Log, TEXT("[AExperimentGameMode::HandleStartingNewPlayer_Implementation] bOnlySpectator: %i"), NewPlayer->PlayerState->IsOnlyASpectator());
-	}
-	
-	ACharacter* CharacterTemp = NewPlayer->GetCharacter();
-	if (!CharacterTemp) {
-		UE_LOG(LogTemp, Log, TEXT("[AExperimentGameMode::HandleStartingNewPlayer_Implementation] ACharacter NULL"))
-		return;
-	}
-
-	ExperimentCharacter = Cast<AExperimentCharacter>(CharacterTemp);
-	if (ExperimentCharacter) {
-		UE_LOG(LogTemp, Log, TEXT("[AExperimentGameMode::HandleStartingNewPlayer_Implementation] AExperimentCharacter valid"))
-		// ExperimentPawn->MultiDelegate_UpdateMovement.AddDynamic(this,&AExperimentGameMode::HandleUpdatePosition);
-	}else {
-		UE_LOG(LogTemp, Log, TEXT("[AExperimentGameMode::HandleStartingNewPlayer_Implementation] AExperimentCharacter NULL"))
-	}
+	// if (!NewPlayer->IsValidLowLevel()) {
+	// 	UE_LOG(LogTemp, Warning, TEXT("[AExperimentGameMode::HandleStartingNewPlayer_Implementation] NewPlayer PlayerController NULL"));
+	// 	return;
+	// }
+	//
+	// UE_LOG(LogTemp, Warning, TEXT("[AExperimentGameMode::HandleStartingNewPlayer_Implementation] NewPlayer PlayerController Valid"));
+	//
+	// if (NewPlayer->PlayerState) {
+	// 	UE_LOG(LogTemp, Log, TEXT("[AExperimentGameMode::HandleStartingNewPlayer_Implementation] bOnlySpectator: %i"), NewPlayer->PlayerState->IsOnlyASpectator());
+	// }
+	//
+	// ACharacter* CharacterTemp = NewPlayer->GetCharacter();
+	// if (!CharacterTemp) {
+	// 	UE_LOG(LogTemp, Log, TEXT("[AExperimentGameMode::HandleStartingNewPlayer_Implementation] ACharacter NULL"))
+	// 	return;
+	// }
+	//
+	// ExperimentCharacter = Cast<AExperimentCharacter>(CharacterTemp);
+	// if (ExperimentCharacter) {
+	// 	UE_LOG(LogTemp, Log, TEXT("[AExperimentGameMode::HandleStartingNewPlayer_Implementation] AExperimentCharacter valid"))
+	// 	// ExperimentPawn->MultiDelegate_UpdateMovement.AddDynamic(this,&AExperimentGameMode::HandleUpdatePosition);
+	// }else {
+	// 	UE_LOG(LogTemp, Log, TEXT("[AExperimentGameMode::HandleStartingNewPlayer_Implementation] AExperimentCharacter NULL"))
+	// }
 }
 
-void AExperimentGameMode::RestartPlayer(AController* NewPlayer)
-{
+void AExperimentGameMode::RestartPlayer(AController* NewPlayer) {
 	Super::RestartPlayer(NewPlayer);
-
-	if (!NewPlayer->GetPawn()) {
-		UE_LOG(LogTemp, Error, TEXT("[AExperimentGameMode::RestartPlayer] Pawn not spawned for PlayerController: %s"), *NewPlayer->GetName());
-	}
-	else {
-		UE_LOG(LogTemp, Log, TEXT("[AExperimentGameMode::RestartPlayer] Player pawn spawned: %s"), *NewPlayer->GetPawn()->GetName());
-	}
 }
 
-AActor* AExperimentGameMode::ChoosePlayerStart_Implementation(AController* Player) {
+/*AActor* AExperimentGameMode::ChoosePlayerStart_Implementation(AController* Player) {
 	AActor* StartSpot = Super::ChoosePlayerStart_Implementation(Player);
 	if (!StartSpot) {
 		UE_LOG(LogTemp, Warning, TEXT("[ChoosePlayerStart] No valid PlayerStart found! Using fallback."))
 		return GetWorld()->SpawnActor<APlayerStart>(APlayerStart::StaticClass(), FVector(0, 0, 300), FRotator::ZeroRotator);
 	}
 	return StartSpot;
-}
+}*/
 
 void AExperimentGameMode::OnPostLogin(AController* NewPlayer) {
 	Super::OnPostLogin(NewPlayer);
 	UE_LOG(LogTemp, Warning, TEXT("[AExperimentGameMode::OnPostLogin] Called"));
 	
-	if (!ensure(NewPlayer->IsValidLowLevelFast())) { return; }
-	UE_LOG(LogTemp, Log, TEXT("[AExperimentGameMode::OnPostLogin] NewPlayer PlayerController valid!"));
-	NewPlayer->SetReplicates(true);
-	if (NewPlayer->GetCharacter()) {
-		NewPlayer->GetCharacter()->SetReplicates(true);
-	}
-
-	AExperimentPlayerControllerVR* PlayerControllerVR = Cast<AExperimentPlayerControllerVR>(NewPlayer);
-	if (PlayerControllerVR) {
-		UE_LOG(LogTemp, Log, TEXT("[AExperimentGameMode::OnPostLogin] Cast to AExperimentPlayerControllerVR valid"));
-		PlayerControllerVR->Client_SetInputModeGameOnly();
-	}else {
-		UE_LOG(LogTemp, Error, TEXT("[AExperimentGameMode::OnPostLogin] Cast to AExperimentPlayerControllerVR NULL"));
-	}
+	// if (!ensure(NewPlayer->IsValidLowLevelFast())) { return; }
+	// UE_LOG(LogTemp, Log, TEXT("[AExperimentGameMode::OnPostLogin] NewPlayer PlayerController valid!"));
+	// NewPlayer->SetReplicates(true);
+	// if (NewPlayer->GetCharacter()) {
+	// 	NewPlayer->GetCharacter()->SetReplicates(true);
+	// }
+	//
+	// AExperimentPlayerControllerVR* PlayerControllerVR = Cast<AExperimentPlayerControllerVR>(NewPlayer);
+	// if (PlayerControllerVR) {
+	// 	UE_LOG(LogTemp, Log, TEXT("[AExperimentGameMode::OnPostLogin] Cast to AExperimentPlayerControllerVR valid"));
+	// 	PlayerControllerVR->Client_SetInputModeGameOnly();
+	// }else {
+	// 	UE_LOG(LogTemp, Error, TEXT("[AExperimentGameMode::OnPostLogin] Cast to AExperimentPlayerControllerVR NULL"));
+	// }
 
 
 	// todo: move this to: handled by call UpdateNetOwnerHabitat from BP_ExperimentCharacter if Habitat has no owner
@@ -253,6 +239,12 @@ void AExperimentGameMode::OnPostLogin(AController* NewPlayer) {
 void AExperimentGameMode::Logout(AController* Exiting) {
 	Super::Logout(Exiting);
 	UE_LOG(LogTemp, Log, TEXT("[AExperimentGameMode::Logout] Player logged out: %s"), *Exiting->GetName());
+	bool DestroyResult = false;
+	if (APawn* PawnExiting = Exiting->GetPawn()) {
+		DestroyResult = PawnExiting->Destroy();
+	}
+	UE_LOG(LogTemp, Log, TEXT("[AExperimentGameMode::Logout] Destroying Pawn: %s"),
+		DestroyResult ? TEXT("true") : TEXT("false"));
 }
 
 TObjectPtr<AHabitat> AExperimentGameMode::FindHabitatInLevel() const {
@@ -310,11 +302,11 @@ bool AExperimentGameMode::StartPositionSamplingTimer(const float InRateHz) {
 	return true;
 }
 
-FString AExperimentGameMode::InitNewPlayer(APlayerController* NewPlayerController, const FUniqueNetIdRepl& UniqueId,
+/*FString AExperimentGameMode::InitNewPlayer(APlayerController* NewPlayerController, const FUniqueNetIdRepl& UniqueId,
 	const FString& Options, const FString& Portal) {
-	UE_LOG(LogTemp, Log, TEXT("[AExperimentGameMode::InitNewPlayer] Called"));
+	UE_LOG(LogTemp, Log, TEXT("[AExperimentGameMode::InitNewPlayer]"));
 	return Super::InitNewPlayer(NewPlayerController, UniqueId, Options, Portal);;
-}
+}*/
 
 bool AExperimentGameMode::ExperimentStartEpisode() {
 	if (!ensure(IsValid(ExperimentClient))) { return false; }

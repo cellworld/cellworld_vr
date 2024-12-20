@@ -1,6 +1,7 @@
 #include "ExperimentPlayerControllerVR.h"
 #include "InputMappingContext.h"
 #include "ExperimentPlugin/Characters/ExperimentCharacter.h"
+#include "ExperimentPlugin/PlayerStates/ExperimentPlayerState.h"
 #include "Kismet/KismetSystemLibrary.h"
 #include "Net/UnrealNetwork.h"
 
@@ -15,8 +16,6 @@ AExperimentPlayerControllerVR::AExperimentPlayerControllerVR() {
 	}
 	UE_LOG(LogTemp, Warning, TEXT("[AExperimentPlayerControllerVR::AExperimentPlayerControllerVR] DefaultMappingContext found? %s"),
 		DefaultMappingContext ? *FString("valid") : *FString("NULL"));
-
-
 	
 }
 
@@ -36,7 +35,7 @@ void AExperimentPlayerControllerVR::BeginPlay() {
 	UE_LOG(LogTemp, Warning, TEXT("[AExperimentPlayerControllerVR::BeginPlay]"));
 	UE_LOG(LogTemp, Warning, TEXT("[AExperimentPlayerControllerVR::BeginPlay] bReplicates: %s"),
 			bReplicates ? *FString("valid") : *FString("NULL"));
-
+	
 	if (GetWorld()) {
 		PossessedCharacter = Cast<AExperimentCharacter>(GetCharacter());
 	}else {
@@ -57,15 +56,12 @@ void AExperimentPlayerControllerVR::SetupInputComponent() {
 	Super::SetupInputComponent();
 	UE_LOG(LogTemp, Log, TEXT("[AExperimentPlayerControllerVR::SetupInputComponent] Called"))
 
-	InputComponent->BindAction("ResetOrigin", EInputEvent::IE_Pressed, this, &AExperimentPlayerControllerVR::ResetOrigin);
-	InputComponent->BindAction("QuitGame", EInputEvent::IE_Pressed, this, &AExperimentPlayerControllerVR::QuitGame);
-	InputComponent->BindAction("RestartGame", EInputEvent::IE_Pressed, this, &AExperimentPlayerControllerVR::RestartGame);
-
-	InputComponent->BindAxis("MoveForward",this, &AExperimentPlayerControllerVR::MoveForward);
-	InputComponent->BindAxis("MoveRight",this, &AExperimentPlayerControllerVR::MoveRight);
-
+	// InputComponent->BindAction("ResetOrigin", EInputEvent::IE_Pressed, this, &AExperimentPlayerControllerVR::ResetOrigin);
+	// InputComponent->BindAction("QuitGame", EInputEvent::IE_Pressed, this, &AExperimentPlayerControllerVR::QuitGame);
+	// InputComponent->BindAction("RestartGame", EInputEvent::IE_Pressed, this, &AExperimentPlayerControllerVR::RestartGame);
+	// InputComponent->BindAxis("MoveForward",this, &AExperimentPlayerControllerVR::MoveForward);
+	// InputComponent->BindAxis("MoveRight",this, &AExperimentPlayerControllerVR::MoveRight);
 	SetReplicateMovement(true);
-
 }
 
 void AExperimentPlayerControllerVR::RestartGame() {
@@ -100,27 +96,24 @@ void AExperimentPlayerControllerVR::Tick(float DeltaTime) {
 		UE_LOG(LogTemp, Error, TEXT("[AExperimentPlayerControllerVR::Tick] PossessedPawn NULL. Recasting."))
 	}
 
-	if (IsLocalPlayerController()) {
-		UE_LOG(LogTemp, Log, TEXT("[AExperimentPlayerControllerVR::Tick] bIsLocalPlayerController = %s"),
+	// AExperimentPlayerState* PlayerStateTemp = GetPlayerState<AExperimentPlayerState>(); 
+	// UE_LOG(LogTemp, Log, TEXT("[AExperimentPlayerControllerVR::Tick] IsSpectator? %s"),
+	// 	PlayerStateTemp ? PlayerStateTemp->IsSpectator() : TEXT("PlayerState NULL"))
+	
+	UE_LOG(LogTemp, Log, TEXT("[AExperimentPlayerControllerVR::Tick] bIsLocalPlayerController = %s"),
 			IsLocalPlayerController() ? TEXT("true") : TEXT("false"))
 
-		UE_LOG(LogTemp, Log, TEXT("[AExperimentPlayerControllerVR::Tick] PC (%s) controlling pawn (%s)"),
+	UE_LOG(LogTemp, Log, TEXT("[AExperimentPlayerControllerVR::Tick] PC (%s) controlling pawn (%s)"),
 			*GetName(), GetPawn() ? *GetPawn()->GetName() : TEXT("NULL"))
 
-		UE_LOG(LogTemp, Log, TEXT("[AExperimentPlayerControllerVR::Tick] Input enabled: %s"),
-			InputEnabled() ? TEXT("true") : TEXT("false"))
-
-		UE_LOG(LogTemp, Log, TEXT("[AExperimentPlayerControllerVR::Tick] bBlockInput: %s"),
-				bBlockInput ? TEXT("true") : TEXT("false"))
-	}
 }
 
 void AExperimentPlayerControllerVR::OnPossess(APawn* InPawn) {
 	UE_LOG(LogTemp, Log, TEXT("[AExperimentPlayerControllerVR::OnPossess]"))
 	if (!HasAuthority() || !InPawn) return;
+	
 	PossessedCharacter = Cast<AExperimentCharacter>(InPawn);
 	UE_LOG(LogTemp, Log, TEXT("[AExperimentPlayerControllerVR::OnPossess] Called. Pawn: %s"), *PossessedCharacter->GetName())
-
 	
 	Super::OnPossess(InPawn);
 	if (InPawn->GetNetOwner() != this) {

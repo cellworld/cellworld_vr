@@ -230,7 +230,7 @@ void AExperimentCharacter::Server_RegisterActorOwner_Implementation(AActor* InAc
 void AExperimentCharacter::OnRep_Owner() {
 	Super::OnRep_Owner();
 	UE_LOG(LogTemp, Log, TEXT("[AExperimentCharacter::OnRep_Owner] NewOwner: %s "), *GetOwner()->GetName())
-
+	UE_LOG(LogTemp, Log, TEXT("[AExperimentCharacter::OnRep_Owner] NewOwner (Net): %s "), *GetNetOwner()->GetName())
 }
 
 void AExperimentCharacter::SetupSampling() {
@@ -414,16 +414,11 @@ void AExperimentCharacter::Tick(float DeltaSeconds) {
 			UE_LOG(LogTemp, Log, TEXT("[AExperimentCharacter::Tick] AController NetOwner: %s"),
 				CurrentController->HasNetOwner() ? *CurrentController->GetNetOwner()->GetName() : TEXT("NULL (no owner)"))
 
-			// if (GetNetOwner() != CurrentController) {
-			// 	UE_LOG(LogTemp, Log, TEXT("[AExperimentCharacter::Tick] Setting new owner from client; calling Server_UpdateOwner RPC."))
-			// 	// Server_UpdateOwner(Cast<APlayerController>(CurrentController->GetNetOwner()));
-			// }
-
 			UE_LOG(LogTemp, Log, TEXT("[AExperimentCharacter::Tick] IsPlayerControlled: %s"),
 				IsPlayerControlled() ? TEXT("true") : TEXT("false"))
 			
 			UE_LOG(LogTemp, Log, TEXT("[AExperimentCharacter::Tick] Character has Owner? %s"),
-				HasNetOwner() ? *GetNetOwner()->GetName() : TEXT("NULL (no owner)")) // todo: set 
+				HasNetOwner() ? *GetNetOwner()->GetName() : TEXT("NULL")) // todo: set 
 			
 			UE_LOG(LogTemp, Log, TEXT("[AExperimentCharacter::Tick] Input enabled: %s"),
 				InputEnabled() ? TEXT("true") : TEXT("false"))

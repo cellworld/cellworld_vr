@@ -25,7 +25,7 @@ public:
 	virtual void PostLogin(APlayerController* NewPlayer) override;
 
 	virtual void HandleStartingNewPlayer_Implementation(APlayerController* NewPlayer) override;
-	virtual AActor* ChoosePlayerStart_Implementation(AController* Player) override;
+	// virtual AActor* ChoosePlayerStart_Implementation(AController* Player) override;
 	virtual void RestartPlayer(AController* NewPlayer) override;
 	virtual void OnPostLogin(AController* NewPlayer) override;
 	virtual void Logout(AController* Exiting) override;
@@ -61,7 +61,7 @@ public:
 	virtual void HandleUpdatePosition(FVector InLocation, FRotator InRotation);
 
 	virtual bool StartPositionSamplingTimer(float InRateHz);
-	virtual FString InitNewPlayer(APlayerController* NewPlayerController, const FUniqueNetIdRepl& UniqueId, const FString& Options, const FString& Portal) override;
+	// virtual FString InitNewPlayer(APlayerController* NewPlayerController, const FUniqueNetIdRepl& UniqueId, const FString& Options, const FString& Portal) override;
 	UFUNCTION(BlueprintCallable)
 	bool ExperimentStartEpisode();
 	UFUNCTION(BlueprintCallable)
