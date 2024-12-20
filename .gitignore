@@ -1,6 +1,9 @@
 # Visual Studio 2015 user specific files
 .vs/
 .idea/*
+*.vsconfig
+*.user
+CppProperties.json
 
 # HP Keys
 source/EyeTrackingVR/public/Keys.h
