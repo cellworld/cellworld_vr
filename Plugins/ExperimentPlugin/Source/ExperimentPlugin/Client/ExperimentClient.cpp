@@ -1,6 +1,7 @@
 ﻿#include "ExperimentClient.h"
 // ReSharper disable CppTooWideScopeInitStatement
 // #include "GameInstanceMain.h"
+#include "Engine/CoreSettings.h"
 #include "Net/UnrealNetwork.h"
 #include "ExperimentPlugin/DataManagers/ExperimentManager.h"
 
@@ -63,7 +64,7 @@ bool AExperimentClient::SpawnAndPossessPredator() {
 	SpawnLocation.y = 0.5;
 
 	UE_LOG(LogTemp, Error, TEXT("[AExperimentClient::SpawnAndPossessPredator] WorldScale: %0.2f"),
-		this->WorldScale);
+		OffsetOriginTransform.GetScale3D().X);
 
 	const FVector SpawnVector = UExperimentUtils::CanonicalToVr(SpawnLocation, this->MapLength, this->WorldScale);
 	const FVector SpawnVectorAdjusted = SpawnVector + FVector(3.0f,117.0f,0.0f); // mesh offset
@@ -84,7 +85,8 @@ bool AExperimentClient::SpawnAndPossessPredator() {
 		return false;
 	}
 
-	this->PredatorBasic->SetActorScale3D(FVector(1.0f, 1.0f, 1.0f)*this->PredatorScaleFactor*this->WorldScale);
+	this->PredatorBasic->SetActorScale3D(
+		FVector(1.0f, 1.0f, 1.0f)*this->PredatorScaleFactor*this->OffsetOriginTransform.GetScale3D().X);
 	this->SetPredatorIsVisible(false);
 	return true;
 }
@@ -266,6 +268,8 @@ void AExperimentClient::HandleResetRequestResponse(const FString InResponse) {
 	}
 
 	UE_LOG(LogTemp, Log, TEXT("[AExperimentClient::HandleResetRequestResponse] Exiting OK"))
+	if (this->SpawnAndPossessPredator()) { UE_LOG(LogTemp, Log, TEXT("Spawned predator: OK")); }
+	else { UE_LOG(LogTemp, Error, TEXT("Spawned predator: FAILED")); }
 	bResetSuccessDbg = true;
 	
 }
@@ -367,9 +371,17 @@ void AExperimentClient::UpdatePredator(const FMessage& InMessage) {
 	if (PredatorBasic->IsValidLowLevelFast()) {
 		// ReSharper disable once CppUseStructuredBinding
 		const FStep StepOut = UExperimentUtils::JsonStringToStep(InMessage.body);
-		FVector NewLocation = UExperimentUtils::CanonicalToVr(StepOut.location, MapLength, WorldScale);
+		FVector NewLocation = UExperimentUtils::CanonicalToVr(StepOut.location, MapLength, WorldScale)
+			+ FVector(3.0f,117.0f,0.0f);
+
 		NewLocation.Z = 182.0f * 2; // 6ft
-		PredatorBasic->SetActorLocation(NewLocation);
+
+		FTransform UpdateTransform;
+		UpdateTransform.SetLocation(OffsetOriginTransform.TransformPosition(NewLocation));
+		UpdateTransform.SetScale3D(OffsetOriginTransform.GetScale3D()*3);
+		PredatorBasic->SetActorTransform(UpdateTransform);
+
+		// PredatorBasic->SetActorLocation(UpdateTransform.GetLocation());
 		FrameCountPredator++;
 	}
 	else {
@@ -403,7 +415,15 @@ void AExperimentClient::UpdatePreyPosition(const FVector InVector, const FRotato
 	Step.data = "VR";
 	Step.agent_name = "prey";
 	Step.frame = FrameCountPrey;
-	Step.location = UExperimentUtils::VrToCanonical(InVector, MapLength, this->WorldScale);
+
+	// const FVector LocationRaw =
+	const FVector MeshOffset = FVector(3.0f,117.0f,0.0f);
+	const FVector WorldLocationAdjusted = InVector - MeshOffset;   // apply mesh offset
+
+	const FTransform InverseOriginOffset = OffsetOriginTransform.Inverse();
+	const FVector WorldLocationAdjustedInverse = InverseOriginOffset.TransformPosition(WorldLocationAdjusted);
+	
+	Step.location = UExperimentUtils::VrToCanonical(WorldLocationAdjustedInverse, MapLength, OffsetOriginTransform.GetScale3D().X);
 	Step.rotation = InRotation.Yaw;
 
 	if (ensure(ExperimentManager->IsValidLowLevelFast() && ExperimentManager->Stopwatch->IsValidLowLevelFast())) {
@@ -815,7 +835,6 @@ bool AExperimentClient::SetupConnections() {
 	UE_LOG(LogTemp, Error, TEXT("[AExperimentClient::SetupConnections] Exiting OK"));
 	return true;
 }
-
 
 bool AExperimentClient::Test() {
 	TrackingClient = this->CreateNewClient();

@@ -302,6 +302,7 @@ void USpatialAnchorManager::Server_FinishSpawn_Implementation() {
 			ExperimentGameMode->ExperimentClient->OffsetOriginTransform = SpawnTransformFinal;
 			ExperimentGameMode->ExperimentClient->WorldScale		    = NewActorScaleFactor;
 			ExperimentGameMode->ExperimentClient->Habitat			    = Habitat;
+			ExperimentGameMode->ExperimentStartEpisode();
 			if (!ExperimentGameMode->ExperimentClient->SendGetOcclusionLocationsRequest()) {
 				UE_LOG(LogTemp, Error, TEXT("[[USpatialAnchorManager::Server_FinishSpawn_Implementation]] Failed to SendGetOcclusionLocationsRequest"))
 			}else {
