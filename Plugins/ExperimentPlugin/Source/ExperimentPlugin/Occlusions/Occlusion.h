@@ -13,11 +13,14 @@ class EXPERIMENTPLUGIN_API AOcclusion : public AActor
 public:	
 	// Sets default values for this actor's properties
 	AOcclusion();
-	UStaticMeshComponent* StaticMeshComponent;
+	
+	UPROPERTY(EditDefaultsOnly)
+	TObjectPtr<UStaticMeshComponent> StaticMeshComponent;
 
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
+	virtual void PostInitializeComponents() override;
 
 public:	
 	// Called every frame

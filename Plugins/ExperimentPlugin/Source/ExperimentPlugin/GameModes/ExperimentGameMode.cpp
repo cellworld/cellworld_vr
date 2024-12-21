@@ -27,10 +27,10 @@ void AExperimentGameMode::InitGame(const FString& MapName, const FString& Option
 	UE_LOG(LogTemp, Log, TEXT("[AExperimentGameMode::InitGame] Called"))
 	
 	UE_LOG(LogTemp, Log, TEXT("[AExperimentGameMode::InitGame] Spawning ExperimentClient!"))
-	// SpawnExperimentServiceMonitor();
-	// if (!ensure(ExperimentClient->IsValidLowLevelFast())) {
-	// 	UE_LOG(LogTemp, Error, TEXT("[AExperimentGameMode::InitGame] Failed to spawn ExperimentClient!"))
-	// }
+	SpawnExperimentServiceMonitor();
+	if (!ensure(ExperimentClient->IsValidLowLevelFast())) {
+		UE_LOG(LogTemp, Error, TEXT("[AExperimentGameMode::InitGame] Failed to spawn ExperimentClient!"))
+	}
 }
 
 void AExperimentGameMode::InitGameState() {
@@ -116,7 +116,12 @@ void AExperimentGameMode::Tick(float DeltaTime) {
 
 	UE_LOG(LogTemp, Log, TEXT("[AExperimentGameMode::Tick] actors found (class:  %s): %i"),
 		*DefaultPawnClass->GetName(), FoundActors.Num())
+	
+	TArray<AActor*> FoundHabitats; 
+	UGameplayStatics::GetAllActorsOfClass(GetWorld(), AHabitat::StaticClass(), FoundHabitats);
 
+	UE_LOG(LogTemp, Log, TEXT("[AExperimentGameMode::Tick] Habitats found: %i"), FoundHabitats.Num())
+	
 	if (GetNumPlayers() > 0) {
 		// todo: change cast back to AExperimentGameState
 		if (AGameStateBase* ExperimentGameState = Cast<AGameStateBase>(GameState)) { 

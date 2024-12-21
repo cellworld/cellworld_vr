@@ -183,7 +183,7 @@ void USpatialAnchorManager::Server_AnchorCreate_Implementation(const FVector InL
 	// if we reached maximum anchor count: destroy and empty anchor array
 	if (SpawnedAnchors.Num() == MAX_ANCHOR_COUNT) {
 		UE_LOG(LogTemp, Warning,
-			TEXT("[USpatialAnchorManager::Server_AnchorCreate_Implementation] Already have 2 spawened anchors. Destroying prior to further spawning"))
+			TEXT("[USpatialAnchorManager::Server_AnchorCreate_Implementation] Already have 2 spawned anchors. Destroying prior to further spawning"))
 		for (auto* Anchor : SpawnedAnchors) {
 			Anchor->Destroy();
 			UE_LOG(LogTemp, Warning, TEXT("[USpatialAnchorManager::Server_AnchorCreate_Implementation] Destroying anchors"))
@@ -254,12 +254,9 @@ void USpatialAnchorManager::Server_FinishSpawn_Implementation() {
 	check(Habitat)
 	if (!ensure(Habitat)) { return; }
 	//  actor's entry and exit door locations (todo: rename once it works)
-	const FVector ActorRootLocation = Habitat->GetActorLocation(); 
 	const FVector ActorLocationA    = Habitat->MRMesh_Anchor_Entry->GetComponentLocation();
 	const FVector ActorLocationB    = Habitat->MRMesh_Anchor_Exit->GetComponentLocation();
 	
-	UE_LOG(LogTemp, Log, TEXT("[USpatialAnchorManager::Server_FinishSpawn_Implementation] ActorRootLocation: %s!"),
-		*ActorRootLocation.ToString())
 	UE_LOG(LogTemp, Log, TEXT("[USpatialAnchorManager::Server_FinishSpawn_Implementation] ActorLocationA: %s!"),
 		*ActorLocationA.ToString())
 	UE_LOG(LogTemp, Log, TEXT("[USpatialAnchorManager::Server_FinishSpawn_Implementation] ActorLocationB: %s!"),
@@ -279,35 +276,13 @@ void USpatialAnchorManager::Server_FinishSpawn_Implementation() {
 	UE_LOG(LogTemp, Log, TEXT("[USpatialAnchorManager::Server_FinishSpawn_Implementation] NewActorScaleFactor: %0.3f!"),
 			NewActorScaleFactor)
 
-	/* ===== ISSUE IS BELOW ======== */
-	
-	// get offset between spawned actor's root scene (real origin) and "our" new "origin"
-	const FVector SpawnedActorOffset = ActorLocationA - ActorRootLocation; // broken
-	const FVector FinalLocation = AnchorLocationA; // broken - closest thing to working; very close to entry but not quite
-	
-	/* previous failed tests
-	 *FinalLocation = (AnchorLocationA + SpawnedActorOffset); // broken 
-	FinalLocation = SpawnedAnchors[0]->GetActorTransform().GetLocation() - Habitat->MRMesh_Anchor_Entry->GetRelativeTransform().GetLocation(); // broken
-	FinalLocation = SpawnedAnchors[0]->GetActorTransform().GetLocation() + Habitat->MRMesh_Anchor_Entry->GetRelativeTransform().GetLocation(); // broken
-	const FVector FinalLocation = (AnchorLocationA - SpawnedActorOffset); // broken 
-	const FVector FinalLocation = (AnchorLocationA + SpawnedActorOffset*NewActorScaleFactor); // broken 
-	const FVector FinalLocation = (AnchorLocationA - SpawnedActorOffset*NewActorScaleFactor); // broken
-	FinalLocation = (SpawnedActorOffset - AnchorLocationA); // broken
-	FinalLocation = (SpawnedActorOffset - AnchorLocationA); // broken
-	*/
-	/* ===== ISSUE IS ABOVE ======== */
-
-	const FRotator FinalRotation = UKismetMathLibrary::FindLookAtRotation(AnchorLocationA,AnchorLocationB);
-	// FinalRotation.Yaw = FinalRotation.Yaw - 90.0f;
-	UE_LOG(LogTemp, Log, TEXT("[USpatialAnchorManager::Server_FinishSpawn_Implementation] SpawnedActorOffset: %s!"),
-				*SpawnedActorOffset.ToString())
+	FRotator FinalRotation = UKismetMathLibrary::FindLookAtRotation(AnchorLocationA,AnchorLocationB);
 	
 	FTransform SpawnTransformFinal;
-	SpawnTransformFinal.SetLocation(FinalLocation);
+	SpawnTransformFinal.SetLocation(AnchorLocationA);
 	SpawnTransformFinal.SetScale3D(FVector(1.0f,1.0f,1.0f)*NewActorScaleFactor);
 	SpawnTransformFinal.SetRotation(FinalRotation.Quaternion());
 	
-	// SpawnTransformFinal.SetRotation() // todo
 	UE_LOG(LogTemp, Log, TEXT("[USpatialAnchorManager::Server_FinishSpawn_Implementation] Calling Habitat->FinishSpawning()!"))
 	UE_LOG(LogTemp, Log, TEXT("[USpatialAnchorManager::Server_FinishSpawn_Implementation] FinalLocation: %s"),
 		*SpawnTransformFinal.GetLocation().ToString())
@@ -316,6 +291,25 @@ void USpatialAnchorManager::Server_FinishSpawn_Implementation() {
 	
 	Habitat->FinishSpawning(SpawnTransformFinal);
 	bSpawnInProgress = false;
+
+	// todo: tell gamemode or experiment service to update world origin to Habitats's entry door location
+	AGameModeBase* GameModeBase = GetWorld()->GetAuthGameMode();
+	if (AExperimentGameMode* ExperimentGameMode = Cast<AExperimentGameMode>(GameModeBase)) {
+		UE_LOG(LogTemp, Log, TEXT("[USpatialAnchorManager::Server_FinishSpawn_Implementation] ExperimentGameMode found"))
+
+		if (ExperimentGameMode->ExperimentClient) {
+			UE_LOG(LogTemp, Log, TEXT("[USpatialAnchorManager::Server_FinishSpawn_Implementation] ExperimentGameMode found"))
+			ExperimentGameMode->ExperimentClient->OffsetOriginTransform = SpawnTransformFinal;
+			ExperimentGameMode->ExperimentClient->WorldScale		    = NewActorScaleFactor;
+			ExperimentGameMode->ExperimentClient->Habitat			    = Habitat;
+			if (!ExperimentGameMode->ExperimentClient->SendGetOcclusionLocationsRequest()) {
+				UE_LOG(LogTemp, Error, TEXT("[[USpatialAnchorManager::Server_FinishSpawn_Implementation]] Failed to SendGetOcclusionLocationsRequest"))
+			}else {
+				UE_LOG(LogTemp, Error, TEXT("[[USpatialAnchorManager::Server_FinishSpawn_Implementation]] Sent SendGetOcclusionLocationsRequest OK"))
+			}
+		}
+	}
+	
 }
 
 bool USpatialAnchorManager::Server_HandleSpawnHabitat_Validate(USceneComponent* InModelSpawnPositioner) { return true; }
@@ -338,10 +332,12 @@ void USpatialAnchorManager::Server_HandleSpawnHabitat_Implementation(USceneCompo
 			FActorSpawnParameters SpawnParams;
 			SpawnParams.Owner = GetOwner(); // Optional: Set the owner
 			// SpawnParams.Instigator = Cast<ACharacter>(GetOwner()); // Optional: Set the instigator
-	
 			FTransform SpawnTransform;
 			SpawnTransform.SetLocation(FVector::ZeroVector);
 
+			UE_LOG(LogTemp, Error, TEXT("[USpatialAnchorManager::Server_HandleSpawnHabitat_Implementation] Set Habitat Owner: %s"),
+				 GetOwner() ? *GetOwner()->GetName() : TEXT("NULL"));
+			
 			Habitat = GetWorld()->SpawnActorDeferred<AHabitat>(HabitatBPClass,  SpawnTransform);
 			if (!Habitat) {
 				UE_LOG(LogTemp, Error, TEXT("[USpatialAnchorManager::Server_HandleSpawnHabitat_Implementation] Spawn Failed!"));

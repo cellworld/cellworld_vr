@@ -51,7 +51,6 @@ AExperimentCharacter::AExperimentCharacter() {
 	Camera = CreateDefaultSubobject<UCameraComponent>(TEXT("Camera"));
 	Camera->SetupAttachment(RootComponent); // Attach the camera to the end of the boom and let the boom adjust to match the controller orientation
 	Camera->bUsePawnControlRotation = false; // Camera does not rotate relative to arm
-	bReplicates = true;
 
 	XRPassthroughLayer = CreateDefaultSubobject<UOculusXRPassthroughLayerComponent>(TEXT("OculusXRPassthroughLayer"));
 	if (XRPassthroughLayer) {
@@ -83,8 +82,6 @@ AExperimentCharacter::AExperimentCharacter() {
 	MotionControllerRight->SetupAttachment(RootComponent);
 
 	// GetMovementComponent()->UpdatedComponent = RootComponent;
-	
-
 	static ConstructorHelpers::FObjectFinder<UInputMappingContext> IMPClassObject(TEXT("InputMappingContext'/Game/SpatialAnchorsSample/Inputs/Mappings/IMC_VRPawn'"));
 	if (IMPClassObject.Succeeded()) {
 		DefaultMappingContext = IMPClassObject.Object;
@@ -200,7 +197,7 @@ void AExperimentCharacter::Server_RegisterActorOwner_Implementation(AActor* InAc
 		return;
 	}
 
-	APlayerController* PlayerController = Cast<APlayerController>(GetController());
+	APlayerController* PlayerController = Cast<APlayerController>(GetOwner());
 	if (!ensure(PlayerController)) { return; }
 
 	if (!InActor->HasNetOwner() || bForceUpdate) {
@@ -221,10 +218,11 @@ void AExperimentCharacter::Server_RegisterActorOwner_Implementation(AActor* InAc
 					*PlayerController->GetName(),
 					ChildActor->HasNetOwner());
 			}
+			if(GEngine)
+				GEngine->AddOnScreenDebugMessage(-1, 3.0f, FColor::Yellow,
+					TEXT("FINISHED SETTING HABITAT OWNER"));
 		}
 	}
-
-	
 }
 
 void AExperimentCharacter::OnRep_Owner() {

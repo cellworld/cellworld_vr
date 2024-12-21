@@ -636,8 +636,9 @@ void AExperimentServiceMonitor::HandleGetOcclusionLocationsResponse(const FStrin
 		UE_LOG(LogExperiment, Log,
 		       TEXT("[AExperimentServiceMonitor::HandleGetOcclusionLocationsResponse] Spawning all!"));
 		constexpr int HeightScaleFactor = 3;
-		OcclusionsStruct.SpawnAll(GetWorld(), true, false,
-		                          FVector(WorldScale, WorldScale, WorldScale * HeightScaleFactor));
+		// OcclusionsStruct.SpawnAll(GetWorld(), true, false,
+		//                           FVector(WorldScale, WorldScale, WorldScale * HeightScaleFactor),
+		//                           FVector(), FRotator());
 	}
 	else {
 		UE_LOG(LogExperiment, Log,

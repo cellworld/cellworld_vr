@@ -5,6 +5,7 @@
 #include "CoreMinimal.h"
 #include "Net/UnrealNetwork.h"
 #include "MRMeshComponent.h"
+#include "ExperimentPlugin/Occlusions/Occlusion.h"
 #include "GameFramework/Actor.h"
 #include "Habitat.generated.h"
 
@@ -19,6 +20,10 @@ public:
 	
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 	virtual void PostInitializeComponents() override;
+
+	UPROPERTY(Replicated, EditAnywhere)
+	TArray<AOcclusion*> Occlusions;
+	
 	UPROPERTY(Replicated, BlueprintReadWrite, VisibleAnywhere)
 	TObjectPtr<USceneComponent> DefaultSceneRoot; 
 	

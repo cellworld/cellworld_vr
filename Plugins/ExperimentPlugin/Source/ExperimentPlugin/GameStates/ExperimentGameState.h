@@ -1,5 +1,4 @@
 ﻿#pragma once
-
 #include "CoreMinimal.h"
 #include "GameFramework/GameState.h"
 #include "GameFramework/GameStateBase.h"

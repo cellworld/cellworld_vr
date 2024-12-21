@@ -7,6 +7,7 @@
 #include "ExperimentUtils.h"
 #include "DrawDebugHelpers.h"
 
+#include "ExperimentPlugin/HabitatComponents/Habitat.h"
 #include "ExperimentPlugin/DataManagers/ExperimentManager.h"
 #include "ExperimentPlugin/Public/Structs.h"
 #include "ExperimentPlugin/Characters/ExperimentPredator.h"
@@ -60,23 +61,33 @@ public:
 		bCurrentLocationsLoaded = true;
 	}
 
-	bool SpawnAll(UWorld* WorldRefIn, const bool bHiddenInGameIn, const bool bEnableCollisonIn, const FVector WorldScaleVecIn) {
+	bool SpawnAll(UWorld* WorldRefIn, const bool bHiddenInGameIn, const bool bEnableCollisonIn, const FTransform OriginTransform) {
 
-		if (AllLocations.Num() < 1) { UE_LOG(LogTemp, Error, TEXT("FOcclusions.SpawnAll() Failed. OcclusionAllLocationsArr is empty."));  return false; }
-		if (!WorldRefIn) { UE_LOG(LogTemp, Error, TEXT("[FOcclusions.SpawnAll()] Failed due to invalid UWorld object.")); return false; }
-
-		const FRotator Rotation(0.0f, 0.0f, 0.0f); // Desired spawn rotation
-		const float ScaleOffset = 0.99157164105; 
-		const float MapLength = 235.185290;
+		if (AllLocations.Num() < 1) { UE_LOG(LogTemp, Error, TEXT("[FOcclusions::SpawnAll] Failed. OcclusionAllLocationsArr is empty."));  return false; }
+		if (!WorldRefIn) { UE_LOG(LogTemp, Error, TEXT("[FOcclusions::SpawnAll] Failed due to invalid UWorld object.")); return false; }
 		
 		FActorSpawnParameters SpawnParams;
+		SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
 		for (int i = 0; i < AllLocations.Num(); i++) {
+			constexpr float ScaleOffset       = 0.99157164105; // give a little wiggle room between walls and occlusions
+			constexpr float MapLength         = 235.185290;    // base length of habitat 
+			constexpr float HeightScaleFactor = 3;             // make occlusions a bit taller; we aren't mice
+
+			const FVector SpawnWorldLocation    = UExperimentUtils::CanonicalToVr(AllLocations[i], MapLength, ScaleOffset);
+			const FVector SpawnRelativeLocation = SpawnWorldLocation + FVector(3.0f,117.0f,0.0f); // mesh offset
+			FVector Scale3DAdjustedHeight       = OriginTransform.GetScale3D();
+			Scale3DAdjustedHeight.Z			   *= HeightScaleFactor;
+			
+			FTransform SpawnTransform;
+			SpawnTransform.SetLocation(OriginTransform.TransformPosition(SpawnRelativeLocation));
+			SpawnTransform.SetRotation(OriginTransform.GetRotation());
+			SpawnTransform.SetScale3D(Scale3DAdjustedHeight);
+			
 			AOcclusion* SpawnOcclusion = WorldRefIn->SpawnActor<AOcclusion>(
 				AOcclusion::StaticClass(),
-				UExperimentUtils::CanonicalToVr(AllLocations[i], MapLength, WorldScaleVecIn.X*ScaleOffset), // todo: make scale dynamic
-				Rotation,
+				SpawnTransform,
 				SpawnParams);
-			SpawnOcclusion->SetActorScale3D(WorldScaleVecIn*ScaleOffset); 
+			
 			SpawnOcclusion->SetActorHiddenInGame(bHiddenInGameIn);
 			SpawnOcclusion->SetActorEnableCollision(bEnableCollisonIn);
 			OcclusionAllArr.Add(SpawnOcclusion);
@@ -209,6 +220,9 @@ public:
 	UPROPERTY(EditAnywhere)
 	TObjectPtr<UStopwatch> Stopwatch;
 
+	UPROPERTY(EditAnywhere)
+	TObjectPtr<AHabitat> Habitat; 
+
 	UPROPERTY()
 	TObjectPtr<UExperimentManager> ExperimentManager;
 
@@ -271,10 +285,10 @@ public:
 	const float MapLength = 235.185;
 	const float PredatorScaleFactor = 0.5f; 
 	float WorldScale      = 15.0f;
-	
-	/* experiment params */
-	const float PositionSamplingRate = 90.0f; 
-		
+
+	UPROPERTY(EditAnywhere)
+	FTransform OffsetOriginTransform; 
+
 	/* ==== setup ==== */
 	bool SpawnAndPossessPredator();
 	UPROPERTY(Replicated)

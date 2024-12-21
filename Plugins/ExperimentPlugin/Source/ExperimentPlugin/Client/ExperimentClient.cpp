@@ -66,10 +66,17 @@ bool AExperimentClient::SpawnAndPossessPredator() {
 		this->WorldScale);
 
 	const FVector SpawnVector = UExperimentUtils::CanonicalToVr(SpawnLocation, this->MapLength, this->WorldScale);
+	const FVector SpawnVectorAdjusted = SpawnVector + FVector(3.0f,117.0f,0.0f); // mesh offset
 
+	FTransform SpawnTransform;
+	SpawnTransform.SetLocation(	OffsetOriginTransform.TransformPosition(SpawnVectorAdjusted));
+	SpawnTransform.SetRotation(OffsetOriginTransform.GetRotation());
+	SpawnTransform.SetScale3D(OffsetOriginTransform.GetScale3D());
+
+	// todo: add WorldOffset
 	this->PredatorBasic = GetWorld()->SpawnActor<AExperimentPredator>(
 		AExperimentPredator::StaticClass(),
-		SpawnVector, Rotation, SpawnParams);
+		SpawnVectorAdjusted, Rotation, SpawnParams);
 
 	if (!ensure(this->PredatorBasic)) {
 		UE_LOG(LogTemp, Error,
@@ -625,7 +632,7 @@ void AExperimentClient::HandleGetOcclusionsTimedOut() {
 
 bool AExperimentClient::SendGetOcclusionLocationsRequest() {
 	UE_LOG(LogTemp, Log,
-	       TEXT("[AExperimentClient::SendGetOcclusionLocationsRequest()] Starting request."));
+	       TEXT("[AExperimentClient::SendGetOcclusionLocationsRequest] Starting request."));
 	if (!ensure(ValidateClient(TrackingClient))) {
 		UE_LOG(LogTemp, Error,
 		       TEXT(
@@ -648,22 +655,15 @@ bool AExperimentClient::SendGetOcclusionLocationsRequest() {
 
 /* gets location of all possible occlusions in our given experiment/world configuration */
 void AExperimentClient::HandleGetOcclusionLocationsResponse(const FString ResponseIn) {
-	UE_LOG(LogTemp, Log,
-	       TEXT("[AExperimentClient::HandleGetOcclusionLocationsResponse] Response:%s"),
-	       *ResponseIn);
+	UE_LOG(LogTemp, Log, TEXT("[AExperimentClient::HandleGetOcclusionLocationsResponse] Response:%s"), *ResponseIn);
 	if (!OcclusionsStruct.bAllLocationsLoaded) { OcclusionsStruct.SetAllLocations(ResponseIn); }
 	if (!OcclusionsStruct.bSpawnedAll) {
-		UE_LOG(LogTemp, Log,
-		       TEXT("[AExperimentClient::HandleGetOcclusionLocationsResponse] Spawning all!"));
-		constexpr int HeightScaleFactor = 3;
-		OcclusionsStruct.SpawnAll(GetWorld(), true, false,
-		                          FVector(WorldScale, WorldScale, WorldScale * HeightScaleFactor));
-	}
-	else {
-		UE_LOG(LogTemp, Log,
-		       TEXT(
-			       "[AExperimentClient::HandleGetOcclusionLocationsResponse] All locations already spawned. Skipping spawn!"
-		       ));
+
+		UE_LOG(LogTemp, Log, TEXT("[AExperimentClient::HandleGetOcclusionLocationsResponse] Spawning all!"));
+		OcclusionsStruct.SpawnAll(GetWorld(), true, false, OffsetOriginTransform);
+
+	} else { UE_LOG(LogTemp, Log,
+		TEXT("[AExperimentClient::HandleGetOcclusionLocationsResponse] All locations already spawned. Skipping spawn!" ));
 	}
 
 	if (GetOcclusionLocationRequest) {
@@ -671,20 +671,14 @@ void AExperimentClient::HandleGetOcclusionLocationsResponse(const FString Respon
 		GetOcclusionLocationRequest->RemoveFromRoot();
 	}
 
-	UE_LOG(LogTemp, Log,
-	       TEXT("[AExperimentClient::HandleGetOcclusionLocationsResponse] Exited OK"))
-
 	if (!this->SendGetOcclusionsRequest()) {
 		UE_LOG(LogTemp, Error,
-		       TEXT(
-			       "[AExperimentClient::HandleGetOcclusionLocationsResponse] Failed to SendGetOcclusionsRequest"
-		       ))
-	}
-	else {
+		       TEXT("[AExperimentClient::HandleGetOcclusionLocationsResponse] Failed to SendGetOcclusionsRequest" ))
+	} else {
 		UE_LOG(LogTemp, Log,
-		       TEXT("[AExperimentClient::HandleGetOcclusionLocationsResponse] Sent SendGetOcclusionsRequest OK!"
-		       ))
+			TEXT("[AExperimentClient::HandleGetOcclusionLocationsResponse] Sent SendGetOcclusionsRequest OK!" ))
 	}
+	UE_LOG(LogTemp, Log,TEXT("[AExperimentClient::HandleGetOcclusionLocationsResponse] Exited OK"))
 }
 
 void AExperimentClient::HandleGetOcclusionLocationsTimedOut() {
@@ -845,26 +839,12 @@ bool AExperimentClient::Test() {
 	if (!ensure(this->RouteOnCapture())) { return false; }
 	if (!ensure(this->SubscribeToTracking())) { return false; }
 
-	// if (ExperimentManager) {
-	// 	if (PlayerPawn) {
-	// 		PlayerIndex = ExperimentManager->RegisterNewPlayer(PlayerPawn);
-	// 	}else {
-	// 		UE_LOG(LogTemp, Log, TEXT("Cannot register new player, pawn is NULL"))
-	// 	}
-	// 	ExperimentManager->SetActivePlayerIndex(PlayerIndex);
-	// }
-	// else {
+	/* moved to SpatialAnchorManager::Server_FinishSpawn_Implementation()  */
+	// if (!this->SendGetOcclusionLocationsRequest()) {
 	// 	UE_LOG(LogTemp, Error,
-	// 	       TEXT("[AExperimentClient::Test] Failed to Register new player. ExperimentManager not valid!"))
+	// 	       TEXT("[AExperimentClient::Test] Failed to SendGetOcclusionLocationsRequest"))
 	// }
 
-	/* get cell locations */
-	if (!this->SendGetOcclusionLocationsRequest()) {
-		UE_LOG(LogTemp, Error,
-		       TEXT("[AExperimentClient::Test] Failed to SendGetOcclusionLocationsRequest"))
-	}
-
-	/* start experiment  */
 	return true;
 }
 

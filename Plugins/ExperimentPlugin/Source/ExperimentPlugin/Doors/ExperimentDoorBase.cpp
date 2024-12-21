@@ -43,6 +43,7 @@ AExperimentDoorBase::AExperimentDoorBase() {
 	DoorMesh->SetCollisionEnabled(ECollisionEnabled::Type::NoCollision);
 	DoorMesh->SetWorldScale3D(FVector(1.0f,2.0f,1.0f));
 	DoorMesh->SetMobility(EComponentMobility::Type::Movable);
+	DoorMesh->CastShadow = false;
 	DoorMesh->SetupAttachment(RootComponent);
 	
 	InitialDoorLocation = DoorMesh->GetRelativeLocation();
@@ -119,6 +120,10 @@ void AExperimentDoorBase::SetCanCallEventTrigger(bool bNewCanCallEventTrigger) {
 	UE_LOG(LogTemp, Warning,
 		TEXT("[AExperimentDoorBase::SetCanCallEventTrigger] bCanCallEventTrigger NEW state: %i (bCanCallEventTrigger: %i)"),
 		bNewCanCallEventTrigger, bCanCallEventTrigger)
+	if(GEngine)
+		GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Red,
+			TEXT("SetCanCallEventTrigger: %i"), bNewCanCallEventTrigger);
+	
 	bCanCallEventTrigger = bNewCanCallEventTrigger;
 }
 
@@ -135,6 +140,8 @@ void AExperimentDoorBase::RPCTest() {
 }
 
 void AExperimentDoorBase::OnValidEventTrigger() {
+	if(GEngine)
+		GEngine->AddOnScreenDebugMessage(-1, 3.0f, FColor::Green, TEXT("OnValidEventTriggered!"));
 	
 	UE_LOG(LogTemp, Warning, TEXT("[AExperimentDoorBase::OnValidEventTrigger] Called"))
 	if (!ensure(TriggerCooldownTimer)) { return; }
@@ -147,10 +154,10 @@ void AExperimentDoorBase::OnValidEventTrigger() {
 		return;
 	}
 
-	if (HasAuthority()) { // do nothing - running in server
-		UE_LOG(LogTemp, Warning, TEXT("[AExperimentDoorBase::OnValidEventTrigger] Running from server, not calling Server_OnEventTrigger!"));
-		return;
-	}
+	// if (HasAuthority()) { // do nothing - running in server
+	// 	UE_LOG(LogTemp, Warning, TEXT("[AExperimentDoorBase::OnValidEventTrigger] Running from server, not calling Server_OnEventTrigger!"));
+	// 	return;
+	// }
 	// check(HasNetOwner())
 	if (!ensure(HasNetOwner())) { return; }
 	UE_LOG(LogTemp, Warning,
@@ -175,6 +182,8 @@ bool AExperimentDoorBase::Server_OnEventTrigger_Validate() {
 }
 
 void AExperimentDoorBase::Server_OnEventTrigger_Implementation() {
+	if(GEngine)
+		GEngine->AddOnScreenDebugMessage(-1, 3.0f, FColor::Yellow, TEXT("Server_OnEventTrigger_Implementation"));
 }
 
 void AExperimentDoorBase::NotifyActorBeginOverlap(AActor* OtherActor) {
@@ -218,6 +227,8 @@ void AExperimentDoorBase::NotifyActorEndOverlap(AActor* OtherActor) {
 }
 
 void AExperimentDoorBase::AnimationDoorUpdate(const FVector InVector) {
+	if(GEngine)
+		GEngine->AddOnScreenDebugMessage(0, 0.5f, FColor::Blue, TEXT("AnimationDoorUpdate"));
 	UE_LOG(LogTemp, Warning, TEXT("[AExperimentDoorBase::AnimationDoorUpdate] InVector: %s"),
 		*InVector.ToString())
 	if (!ensure(DoorMesh)) { return; }
@@ -295,6 +306,8 @@ void AExperimentDoorBase::OnAnimationOverlapEnd(UPrimitiveComponent* OverlappedC
 void AExperimentDoorBase::OnEventOverlapBegin(UPrimitiveComponent* OverlappedComp, AActor* OtherActor,
 	UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult) {
 
+	UE_LOG(LogTemp, Log, TEXT("Event: END! (OtherActor: %s)"), *OtherActor->GetName())
+	
 	if (!ensure(EventBoxCollision)) return;
 	if (!ensure(OtherActor->IsValidLowLevelFast())) { return; }
 	ACharacter* CharacterCast = Cast<ACharacter>(OtherActor);
@@ -317,7 +330,7 @@ void AExperimentDoorBase::OnEventOverlapBegin(UPrimitiveComponent* OverlappedCom
 		if (!ensure(EventBoxCollision)) { return; }
 		if (HasAuthority()) {
 			UE_LOG(LogTemp, Warning, TEXT("[AExperimentDoorBase::OnEventOverlapBegin] Has authority true! Setting new owner!"))
-			SetOwner(CharacterCast->GetController());
+			SetOwner(CharacterCast->GetOwner());
 		}else {
 			UE_LOG(LogTemp, Warning, TEXT("[AExperimentDoorBase::OnEventOverlapBegin] Has authority false! Cannot set owner"))
 		}
@@ -331,8 +344,6 @@ void AExperimentDoorBase::OnEventOverlapBegin(UPrimitiveComponent* OverlappedCom
 
 void AExperimentDoorBase::OnEventOverlapEnd(UPrimitiveComponent* OverlappedComp, AActor* OtherActor,
                                             UPrimitiveComponent* OtherComp, int32 OtherBodyIndex) {
-	if(GEngine)
-		GEngine->AddOnScreenDebugMessage(-1, 3.0f, FColor::Yellow, TEXT("Event: END!"));
-	
+	UE_LOG(LogTemp, Log, TEXT("[AExperimentDoorBase::OnEventOverlapEnd] OtherActor: %s"), *OtherActor->GetName())
 }
 

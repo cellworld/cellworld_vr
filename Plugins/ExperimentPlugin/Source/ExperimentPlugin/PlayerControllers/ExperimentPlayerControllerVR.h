@@ -28,7 +28,6 @@ public:
 	virtual void SetupInputComponent() override;
 	virtual void Tick(float DeltaTime) override;
 	virtual void OnPossess(APawn* InPawn) override;
-	//AGameModeMain* GameMode;
 
 	UPROPERTY(BlueprintReadWrite, Blueprintable,EditAnywhere,Category="Input|Enhanced Input")
 	UInputMappingContext* DefaultMappingContext;

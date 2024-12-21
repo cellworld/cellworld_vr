@@ -4,7 +4,6 @@ AOcclusion::AOcclusion() {
 	PrimaryActorTick.bCanEverTick		   = true;
 	PrimaryActorTick.bStartWithTickEnabled = false;
 
-	SetReplicates(true);
 	
 	StaticMeshComponent = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Mesh"));
 	RootComponent = StaticMeshComponent; 
@@ -21,6 +20,11 @@ AOcclusion::AOcclusion() {
 void AOcclusion::BeginPlay() {
 	Super::BeginPlay();
 	SetReplicateMovement(true);
+}
+
+void AOcclusion::PostInitializeComponents() {
+	Super::PostInitializeComponents();
+	bReplicates = true;
 }
 
 // Called every frame

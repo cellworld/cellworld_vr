@@ -88,7 +88,8 @@ public:
 	/* ======================================= */
 
 	UPROPERTY(BlueprintReadWrite, Replicated, Blueprintable, EditAnywhere)
-	TObjectPtr<USceneComponent> SceneRootComponent; 
+	TObjectPtr<USceneComponent> SceneRootComponent;
+	
 	UPROPERTY(BlueprintReadWrite, Replicated, Blueprintable, EditAnywhere)
 	TObjectPtr<UBoxComponent> AnimationBoxCollision;
 
