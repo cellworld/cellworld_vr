@@ -9,28 +9,27 @@ AExperimentPredator::AExperimentPredator() : Super() {
 	SetReplicateMovement(true);
 	SetActorRotation(FRotator::ZeroRotator);
 	
-	// Create a sphere component
-	SphereMeshComponent = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("RootComponent"));
-	SphereMeshComponent->SetCollisionEnabled(ECollisionEnabled::Type::NoCollision);
-	SphereMeshComponent->SetRelativeLocation(FVector(0.0f,0.0f, 182.0f)); // 182cm-> ~6ft
-	SphereMeshComponent->SetRelativeScale3D(FVector(3.0f, 3.0f,3.0f));
-	RootComponent = SphereMeshComponent;
-
-	UStaticMesh* StaticMesh = CreateDefaultSubobject<UStaticMesh>(TEXT("StaticMesh"));
-	static ConstructorHelpers::FObjectFinder<UStaticMesh> SphereMeshAsset(TEXT("StaticMesh'/Engine/BasicShapes/Sphere.Sphere'"));
-	if (SphereMeshAsset.Succeeded()) {
+	SkeletalMeshComponent = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("SkeletalMeshComponent"));
+	SkeletalMeshComponent->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	SkeletalMeshComponent->SetRelativeLocation(FVector(0, 0, 182.0f));
+	SkeletalMeshComponent->SetRelativeScale3D(FVector(1, 1, 1)*3);
+	SkeletalMeshComponent->SetRelativeRotation(FRotator(0, 90, 0));
+	RootComponent = SkeletalMeshComponent;
+	
+	USkeletalMesh* SkeletalMesh = CreateDefaultSubobject<USkeletalMesh>(TEXT("USkeletalMesh"));
+	static ConstructorHelpers::FObjectFinder<USkeletalMesh> SkeletalMeshAsset(TEXT("SkeletalMesh'/Game/AIPredator/Spooky_Ghost/Ghost_face_Killa3_Skeletal_Mesh.Ghost_face_Killa3_Skeletal_Mesh'"));
+	if (SkeletalMeshAsset.Succeeded()) {
 		UE_LOG(LogTemp, Log,TEXT("[APredatorBasic::APredatorBasic()] Set Skeletal mesh: OK"))
-		SphereMeshComponent->SetStaticMesh(SphereMeshAsset.Object);
+		SkeletalMeshComponent->SetSkeletalMesh(SkeletalMeshAsset.Object);
 	} else {
 		UE_LOG(LogTemp,Error,TEXT("[APredatorBasic::APredatorBasic()] Set Skeletal mesh: Failed"));
 	}
-
-	static ConstructorHelpers::FObjectFinder<UMaterial> SphereMaterialAsset(TEXT("/Script/Engine.Material'/Engine/BasicShapes/BasicShapeMaterial.BasicShapeMaterial'"));
-	if (SphereMaterialAsset.Succeeded()) {
+	
+	static ConstructorHelpers::FObjectFinder<UMaterial> SkeletalMeshMaterial(TEXT("/Script/Engine.Material'/Game/AIPredator/Spooky_Ghost/Ghost_face_Killa3_Material.Ghost_face_Killa3_Material'"));
+	if (SkeletalMeshMaterial.Succeeded()) {
 		UE_LOG(LogTemp,Log,TEXT("[APredatorBasic::APredatorBasic()] Set Material: OK"))
-		SphereMeshComponent->SetMaterial(0, SphereMaterialAsset.Object);
+		SkeletalMeshComponent->SetMaterial(0, SkeletalMeshMaterial.Object);
 	}else {
 		UE_LOG(LogTemp, Error,TEXT("[APredatorBasic::APredatorBasic()] Set Material: Failed"));
 	}
-
 }

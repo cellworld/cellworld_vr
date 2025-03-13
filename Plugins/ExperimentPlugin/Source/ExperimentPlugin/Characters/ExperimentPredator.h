@@ -10,6 +10,6 @@ class EXPERIMENTPLUGIN_API AExperimentPredator : public APawn {
 public:
 	// Sets default values for this actor's properties
 	AExperimentPredator();
-	TObjectPtr<UStaticMeshComponent> SphereMeshComponent;
-	class USkeletalMeshComponent* SkeletalMeshComponent;
+	TObjectPtr<UStaticMeshComponent> StaticMeshComponent;
+	TObjectPtr<USkeletalMeshComponent> SkeletalMeshComponent;
 };

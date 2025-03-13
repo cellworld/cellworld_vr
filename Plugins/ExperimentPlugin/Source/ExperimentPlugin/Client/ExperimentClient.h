@@ -143,7 +143,7 @@ public:
 			UE_LOG(LogTemp, Log, TEXT("[FOcclusions::SetCurrentVisibility] (%i)"), i);
 		}
 	}
-
+	
 };
 
 USTRUCT(Blueprintable)
@@ -162,8 +162,7 @@ struct FExperimentHeaders {
 };
 
 USTRUCT(Blueprintable)
-struct FExperimentInfo
-{
+struct FExperimentInfo {
 	GENERATED_BODY()
 public:
 	
@@ -200,8 +199,8 @@ struct FServerInfo {
 public:
 	FServerInfo() :
 		Port(4791),
-		IP(TEXT("192.168.1.5")) // main machine 
-		// IP(TEXT("192.168.1.3")) // alberto machine 
+		// IP(TEXT("192.168.1.5")) // main machine machine
+		IP(TEXT("192.168.1.3")) // alberto machine 
 		{}
 	
 	int Port;

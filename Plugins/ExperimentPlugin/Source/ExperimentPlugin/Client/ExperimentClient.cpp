@@ -283,7 +283,7 @@ void AExperimentClient::HandleResetRequestResponse(const FString InResponse) {
 // ReSharper disable once CppMemberFunctionMayBeStatic
 // ReSharper disable once CppPassValueParameterByConstReference
 void AExperimentClient::OnTimedOut(const FString InMessage) {
-	UE_LOG(LogTemp, Fatal, TEXT("[AExperimentClient::OnTimedOutDelegate] %s"), *InMessage);
+	UE_LOG(LogTemp, Fatal, TEXT("[AExperimentClient::OnTimedOut] %s"), *InMessage);
 	ResetWorldState();
 	// todo: start process restart connection and game 	
 }
@@ -295,6 +295,7 @@ void AExperimentClient::HandleResetRequestTimedOut() {
 		this->RequestRemoveDelegates(ResetRequest, "ResetRequest");
 		ResetRequest->RemoveFromRoot();
 	}
+	
 	UE_LOG(LogTemp, Error, TEXT("[HandleResetRequestTimedOut] Reset request timed out!"))
 	UE_LOG(LogTemp, Log, TEXT("[HandleResetRequestTimedOut] Broadcasting OnTimedOutDelegate"))
 	ExperimentManager->OnTimedOutDelegate.Broadcast("ResetRequest timed out!");
@@ -387,8 +388,13 @@ void AExperimentClient::UpdatePredator(const FMessage& InMessage) {
 		FinalLocation.Z += 25.0f*OffsetOriginTransform.GetScale3D().X;
 
 		FTransform UpdateTransform = OffsetOriginTransform;
+
+		/* rotation */
+		const FRotator FinalRotation = FRotator(0,OffsetOriginTransform.GetRotation().Z + StepOut.rotation,0);
+		
 		UpdateTransform.SetScale3D(FVector(1.0f, 1.0f, 1.0f)*OffsetOriginTransform.GetScale3D().X / 5);
 		UpdateTransform.SetLocation(FinalLocation);
+		UpdateTransform.SetRotation(FinalRotation.Quaternion());
 		PredatorBasic->SetActorTransform(UpdateTransform);
 		FrameCountPredator++;
 
