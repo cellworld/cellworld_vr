@@ -11,8 +11,8 @@ AExperimentPredator::AExperimentPredator() : Super() {
 	
 	SkeletalMeshComponent = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("SkeletalMeshComponent"));
 	SkeletalMeshComponent->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-	SkeletalMeshComponent->SetRelativeLocation(FVector(0, 0, 182.0f));
-	SkeletalMeshComponent->SetRelativeScale3D(FVector(1, 1, 1)*3);
+	SkeletalMeshComponent->SetRelativeLocation(FVector(0, 0, 5));
+	SkeletalMeshComponent->SetRelativeScale3D(FVector(1, 1, 1));
 	SkeletalMeshComponent->SetRelativeRotation(FRotator(0, 90, 0));
 	RootComponent = SkeletalMeshComponent;
 	

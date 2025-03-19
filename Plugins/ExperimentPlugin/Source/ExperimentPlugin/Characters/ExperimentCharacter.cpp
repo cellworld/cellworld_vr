@@ -367,18 +367,18 @@ void AExperimentCharacter::Server_UpdateRoomScaleLocation_Implementation() {
 	UpdateCollisionLocation.Z = CamRelative.Z - GetCapsuleComponent()->GetScaledCapsuleHalfHeight();
 	GetCapsuleComponent()->SetWorldLocation(UpdateCollisionLocation);
 
-	UE_LOG(LogTemp, Log, TEXT("[AExperimentCharacter::Server_UpdateRoomScaleLocation_Implementation] Actor: %s"),
-		   *GetActorLocation().ToString())
-	
-	UE_LOG(LogTemp, Log, TEXT("[AExperimentCharacter::Server_UpdateRoomScaleLocation_Implementation] Camera: %s"),
-	       *CameraLocation.ToString())
-
-	UE_LOG(LogTemp, Log,
-	       TEXT("[AExperimentCharacter::Server_UpdateRoomScaleLocation_Implementation] Camera relative: %s"),
-	       *CamRelative.ToString())
-
-	UE_LOG(LogTemp, Log, TEXT("[AExperimentCharacter::Server_UpdateRoomScaleLocation_Implementation] Capsule: %s"),
-	       *CapsuleLocation.ToString())
+	// UE_LOG(LogTemp, Log, TEXT("[AExperimentCharacter::Server_UpdateRoomScaleLocation_Implementation] Actor: %s"),
+	// 	   *GetActorLocation().ToString())
+	//
+	// UE_LOG(LogTemp, Log, TEXT("[AExperimentCharacter::Server_UpdateRoomScaleLocation_Implementation] Camera: %s"),
+	//        *CameraLocation.ToString())
+	//
+	// UE_LOG(LogTemp, Log,
+	//        TEXT("[AExperimentCharacter::Server_UpdateRoomScaleLocation_Implementation] Camera relative: %s"),
+	//        *CamRelative.ToString())
+	//
+	// UE_LOG(LogTemp, Log, TEXT("[AExperimentCharacter::Server_UpdateRoomScaleLocation_Implementation] Capsule: %s"),
+	//        *CapsuleLocation.ToString())
 }
 
 bool AExperimentCharacter::Server_UpdateCameraLocation_Validate(FVector InCameraLocation) { return true; }

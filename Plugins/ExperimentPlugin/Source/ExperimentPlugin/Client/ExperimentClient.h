@@ -1,20 +1,22 @@
 ﻿#pragma once
 
 #include "CoreMinimal.h"
+#include "Components/AudioComponent.h"
 #include "GameFramework/Actor.h"
 #include "UObject/ObjectPtr.h"
 #include "MessageClient.h"
 #include "ExperimentUtils.h"
 #include "DrawDebugHelpers.h"
 #include "Net/UnrealNetwork.h"
-
+#include "Sound/SoundCue.h"
+#include "SoundDefinitions.h"
 #include "ExperimentPlugin/HabitatComponents/Habitat.h"
 #include "ExperimentPlugin/DataManagers/ExperimentManager.h"
 #include "ExperimentPlugin/Public/Structs.h"
 #include "ExperimentPlugin/Characters/ExperimentPredator.h"
 #include "ExperimentPlugin/Characters/ExperimentPawn.h"
 #include "ExperimentPlugin/Occlusions/Occlusion.h"
-
+#include "Kismet/GameplayStatics.h"
 #include "MiscUtils/Timers/Stopwatch.h"
 #include "MiscUtils/Timers/EventTimer.h"
 #include "ExperimentClient.generated.h"
@@ -199,8 +201,9 @@ struct FServerInfo {
 public:
 	FServerInfo() :
 		Port(4791),
-		// IP(TEXT("192.168.1.5")) // main machine machine
-		IP(TEXT("192.168.1.3")) // alberto machine 
+		// IP(TEXT("192.168.1.5")) // main machine mazenet-2 WIFI
+		IP(TEXT("192.168.1.2")) // main machine mazenet-2 ETH
+		// IP(TEXT("192.168.1.3")) // alberto machine 
 		{}
 	
 	int Port;
@@ -213,7 +216,7 @@ class EXPERIMENTPLUGIN_API AExperimentClient : public AActor {
 	
 public:	
 	AExperimentClient();
-
+	
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
 	UPROPERTY(EditAnywhere, Blueprintable)
@@ -267,6 +270,20 @@ public:
 	bool Server_SpawnOcclusions_Validate();
 	void Server_SpawnOcclusions_Implementation();
 
+	UPROPERTY()
+	TObjectPtr<UAudioComponent> OnCaptureSoundComponent; 
+	UPROPERTY(Replicated)
+	TObjectPtr<USoundBase> OnCaptureSoundCue; 
+	
+	UFUNCTION(Server, Reliable, WithValidation, BlueprintCallable)
+	void Server_PlayCaptureSound();
+	bool Server_PlayCaptureSound_Validate();
+	void Server_PlayCaptureSound_Implementation();
+	
+	UFUNCTION(NetMulticast, Reliable, WithValidation, BlueprintCallable)
+	void Multicast_PlayCaptureSound(const FVector Location);
+	bool Multicast_PlayCaptureSound_Validate(const FVector Location);
+	void Multicast_PlayCaptureSound_Implementation(const FVector Location);
 	/* Requests */
 	UPROPERTY()
 		TObjectPtr<URequest> StartExperimentRequest;

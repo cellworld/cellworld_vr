@@ -234,6 +234,12 @@ FLocation UExperimentUtils::VrToCanonical(const FVector VectorIn, const float Ma
 	return LocationOut;
 }
 
+FLocation UExperimentUtils::VRtoCanonicalMinimal(const FLocation LocationIn, const float MapLengthIn, const float WorldScaleIn) {
+	FLocation LocationOut = FLocation();
+	constexpr float HabitatOffset = 0.5;
+	return LocationOut;
+}
+
 FVector UExperimentUtils::CanonicalToVrV2(const FLocation LocationIn, const float MapLengthIn, const float WorldScaleIn) {
 
 	const float ScaledDiameter    = MapLengthIn * WorldScaleIn; 

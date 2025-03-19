@@ -1,23 +1,36 @@
 ﻿#include "ExperimentClient.h"
 // ReSharper disable CppTooWideScopeInitStatement
-// #include "GameInstanceMain.h"
 #include "Engine/CoreSettings.h"
 #include "Net/UnrealNetwork.h"
 #include "ExperimentPlugin/DataManagers/ExperimentManager.h"
+#include "Sound/SoundCue.h"
 
-// Sets default values
 AExperimentClient::AExperimentClient() {
-	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
 	PrimaryActorTick.bStartWithTickEnabled = true;
 
-	// ServerInfo.IP = "12";
+	static ConstructorHelpers::FObjectFinder<USoundBase> OnCaptureCueLoad(
+			 TEXT("SoundCue'/Game/SoundFX/fail_sound_cue.fail_sound_cue'")
+		 );
+
+	if (OnCaptureCueLoad.Object != nullptr) {
+		OnCaptureSoundCue = OnCaptureCueLoad.Object;
+	}
+
+	// OnCaptureSoundComponent = CreateDefaultSubobject<UAudioComponent>(TEXT("OnCaptureSoundComponent"));
+	// OnCaptureSoundComponent->SetAutoActivate(false);
+	//
+	// if (OnCaptureSoundCue->IsValidLowLevelFast() && OnCaptureSoundComponent->IsValidLowLevel()) {
+	// 	OnCaptureSoundComponent->SetSound(OnCaptureSoundCue);
+	// 	OnCaptureSoundComponent->SetVolumeMultiplier(3.0f);
+	// }
 }
 
 void AExperimentClient::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 	DOREPLIFETIME(AExperimentClient, PredatorBasic);
 	DOREPLIFETIME(AExperimentClient, OcclusionsStruct);
+	DOREPLIFETIME(AExperimentClient, OnCaptureSoundCue);
 }
 
 void AExperimentClient::OnExperimentFinished(const int InPlayerIndex) {
@@ -32,6 +45,35 @@ bool AExperimentClient::Server_SpawnOcclusions_Validate() {
 void AExperimentClient::Server_SpawnOcclusions_Implementation() {
 	UE_LOG(LogTemp, Log, TEXT("[AExperimentClient::Server_SpawnOcclusions_Implementation]"))
 	OcclusionsStruct.SpawnAll(GetWorld(), true, false, OffsetOriginTransform);
+}
+
+
+bool AExperimentClient::Server_PlayCaptureSound_Validate() {
+	return true; 
+}
+
+void AExperimentClient::Server_PlayCaptureSound_Implementation() {
+	if (OnCaptureSoundCue->IsValidLowLevelFast() && PredatorBasic->IsValidLowLevelFast()) {
+		UE_LOG(LogTemp, Log, TEXT("[Server_PlayCaptureSound_Implementation] Playing sound!"))
+		const FVector OnCaptureSoundLocation = PredatorBasic->GetActorLocation();
+		Multicast_PlayCaptureSound(OnCaptureSoundLocation);
+		return;
+	}
+	UE_LOG(LogTemp, Error, TEXT("[Server_PlayCaptureSound_Implementation] Sound not valid!"))
+}
+
+bool AExperimentClient::Multicast_PlayCaptureSound_Validate(const FVector Location) {
+	UE_LOG(LogTemp, Log, TEXT("[Multicast_PlayCaptureSound_Validate]"))
+	return true;
+}
+
+void AExperimentClient::Multicast_PlayCaptureSound_Implementation(const FVector Location) {
+	if (OnCaptureSoundCue->IsValidLowLevelFast()) {
+		UE_LOG(LogTemp, Error, TEXT("[Multicast_PlayCaptureSound_Implementation] Playing sound!"))
+		UGameplayStatics::PlaySoundAtLocation(this,OnCaptureSoundCue, Location);
+		return;
+	}
+	UE_LOG(LogTemp, Error, TEXT("[Multicast_PlayCaptureSound_Implementation] Sound not valid!"))
 }
 
 //TODO - add argument to include MessageType (Log, Warning, Error, Fatal)
@@ -444,8 +486,13 @@ void AExperimentClient::UpdatePreyPosition(const FVector InVector, const FRotato
 	
 	const FVector InVectorRelative = InVectorFlipped - OffsetFlipped; // relative location
 	const FVector RotatedVector = UKismetMathLibrary::GreaterGreater_VectorRotator(InVectorRelative,OffsetOriginTransform.GetRotation().Rotator());
-	const FLocation Location = UExperimentUtils::VrToCanonical(RotatedVector, MapLength, OffsetOriginTransform.GetScale3D().X);
+	// const FLocation Location = UExperimentUtils::VrToCanonical(RotatedVector, MapLength, OffsetOriginTransform.GetScale3D().X);
+	UE_LOG(LogTemp, Log, TEXT("[UpdatePreyPosition] ==== USING NEW LOCATION"))
 
+	FLocation Location;
+	Location.x = RotatedVector.X;
+	Location.y = RotatedVector.Y;
+	
 	Step.location    = Location;
 	Step.rotation    = InRotation.Yaw;
 
@@ -963,16 +1010,16 @@ void AExperimentClient::HandleUpdatePredator(const FMessage MessageIn) {
 
 void AExperimentClient::HandleOnCapture(const FMessage MessageIn) {
 	UE_LOG(LogTemp, Log, TEXT("[AExperimentClient::HandleOnCapture]"));
-	UE_LOG(LogTemp, Log,
-	       TEXT("[AExperimentClient::HandleOnCapture] Broadcasting OnEpisodeFinishedSuccessDelegate"));
 
 	if (!ensure(ExperimentManager->IsValidLowLevelFast())) { return; }
 	if (!ensure(ExperimentManager->IsInEpisode())) { return; }
 
 	// ExperimentManager->OnEpisodeFinishedSuccessDelegate.Broadcast();
-	
 	// ExperimentManager->ProcessStopEpisodeResponse();
 	ExperimentManager->OnEpisodeFinished();
+	/* todo: play sound! */
+	UE_LOG(LogTemp, Log, TEXT("[AExperimentClient::HandleOnCapture]"));
+	Server_PlayCaptureSound();
 }
 
 float AExperimentClient::GetTimeRemaining() const {
@@ -980,7 +1027,6 @@ float AExperimentClient::GetTimeRemaining() const {
 	if (!GetWorld()->GetTimerManager().IsTimerActive(*TimerHandlePtr)) { return -1.0f; }
 	return GetWorld()->GetTimerManager().GetTimerRemaining(*TimerHandlePtr);
 }
-
 
 void TestConversions(const FLocation InputLocation) {
 	constexpr float TestScale = 1.0f;

@@ -33,7 +33,8 @@ public class ExperimentPlugin : ModuleRules
 				"OculusXRAnchors",
 				"OculusXRPassthrough",
 				"MRMesh",
-				"EnhancedInput"
+				"EnhancedInput", 
+				"AudioMixer"
 				// ... add other public dependencies that you statically link with here ...
 			}
 			);
