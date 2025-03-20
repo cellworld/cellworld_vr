@@ -319,7 +319,7 @@ public:
 	/* ==== world stuff ==== */
 	int FrameCount        = 0; // todo: will probably delete 
 	const float MapLength = 235.185;
-	const float PredatorScaleFactor = 0.25f; 
+	const float PredatorScaleFactor = 0.1f; 
 	float WorldScale      = 15.0f;
 
 	UPROPERTY(EditAnywhere)
