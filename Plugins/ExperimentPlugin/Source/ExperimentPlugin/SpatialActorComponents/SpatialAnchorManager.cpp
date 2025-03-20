@@ -576,6 +576,22 @@ void USpatialAnchorManager::Server_HandleSpawnHabitat_Implementation(USceneCompo
 	UE_LOG(LogTemp, Log, TEXT("[USpatialAnchorManager::Server_HandleSpawnHabitat_Implementation] Exiting OK"))
 }
 
+bool USpatialAnchorManager::Server_HabitatAddDeltaZ_Validate(const float InDeltaZ) {
+	return true;
+}
+
+void USpatialAnchorManager::Server_HabitatAddDeltaZ_Implementation(const float InDeltaZ) {
+	UE_LOG(LogTemp, Log, TEXT("[USpatialAnchorManager::Server_HabitatAddDeltaZ_Implementation]"))
+	if (!Habitat->IsValidLowLevelFast()) {
+		UE_LOG(LogTemp, Log, TEXT("[USpatialAnchorManager::Server_HabitatAddDeltaZ_Implementation] Habitat not valid!"))
+		return; 
+	}
+
+	Habitat->AddActorWorldOffset(FVector(0.0f,0.0f,InDeltaZ));
+	UE_LOG(LogTemp, Log, TEXT("[USpatialAnchorManager::Server_HabitatAddDeltaZ_Implementation] Added deltaZ: %0.2f!"),
+		InDeltaZ)
+}
+
 bool USpatialAnchorManager::Server_AttachHabitatToAnchor_Validate() {
 	UE_LOG(LogTemp, Log, TEXT("[USpatialAnchorManager::Server_AttachHabitatToAnchor_Validate] Called"))
 	return true;
