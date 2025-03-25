@@ -74,36 +74,45 @@ public:
 		for (int i = 0; i < AllLocations.Num(); i++) {
 			constexpr float ScaleOffset       = 0.99157164105; // give a little wiggle room between walls and occlusions
 			constexpr float MapLength         = 235.185290;    // base length of habitat 
-			constexpr float HeightScaleFactor = 5;             // make occlusions a bit taller; we aren't mice
+			constexpr float HeightScaleFactor = 3;             // make occlusions a bit taller; we aren't mice
 			
 			const FVector SpawnLocationConverted = UExperimentUtils::CanonicalToVrV2(
 				AllLocations[i],
 				MapLength,
 				OriginTransform.GetScale3D().X);
-
+			
 			FVector ForwardVector = OriginTransform.GetRotation().GetForwardVector(); ForwardVector.Normalize();
 			FVector RightVector   = OriginTransform.GetRotation().GetRightVector(); RightVector.Normalize();
 			
 			const FVector NewRelativeLocation = (ForwardVector * SpawnLocationConverted.X) + (-RightVector * SpawnLocationConverted.Y);
 			FVector FinalLocation = OriginTransform.GetLocation() + NewRelativeLocation;
-
+			
 			FTransform SpawnTransform;
 			FVector OcclusionScale = OriginTransform.GetScale3D()*ScaleOffset;
 			OcclusionScale.Z *= HeightScaleFactor;
-			SpawnTransform.SetScale3D(OcclusionScale);
-			SpawnTransform.SetLocation(FinalLocation);
-			SpawnTransform.SetRotation(OriginTransform.GetRotation());
-			
+			FVector LocationFinal = FVector(AllLocations[i].x, AllLocations[i].y, OriginTransform.GetLocation().Z);
+			// SpawnTransform.SetScale3D(OcclusionScale);
+			// SpawnTransform.SetLocation(FinalLocation);
+			// SpawnTransform.SetLocation(LocationFinal);
+			// SpawnTransform.SetRotation(OriginTransform.GetRotation());
+			UE_LOG(LogTemp, Log, TEXT("[Spawning occlusion] %s"), *LocationFinal.ToString())
+			// AOcclusion* SpawnOcclusion = WorldRefIn->SpawnActor<AOcclusion>(
+			// 	AOcclusion::StaticClass(),
+			// 	SpawnTransform,
+			// 	SpawnParams);
+
 			AOcclusion* SpawnOcclusion = WorldRefIn->SpawnActor<AOcclusion>(
 				AOcclusion::StaticClass(),
-				SpawnTransform,
+				FinalLocation,
+				FRotator(),
 				SpawnParams);
-
+			
 			if (ensure(SpawnOcclusion)) {
 				SpawnOcclusion->SetReplicates(true);
-				SpawnOcclusion->SetActorHiddenInGame(false);
-				SpawnOcclusion->SetActorEnableCollision(bEnableCollisonIn);
 				SpawnOcclusion->SetActorHiddenInGame(bHiddenInGameIn);
+				SpawnOcclusion->SetActorEnableCollision(bEnableCollisonIn);
+				SpawnOcclusion->SetActorHiddenInGame(false);
+				SpawnOcclusion->SetActorScale3D(FVector(1,1,OriginTransform.GetScale3D().X*HeightScaleFactor));
 				OcclusionAllArr.Add(SpawnOcclusion);
 			}else {
 				UE_LOG(LogTemp, Error, TEXT("[SpawnAll] Spawn occlusion failed! %i"), i)
@@ -269,7 +278,15 @@ public:
 	void Server_SpawnOcclusions();
 	bool Server_SpawnOcclusions_Validate();
 	void Server_SpawnOcclusions_Implementation();
-
+	
+	UFUNCTION(BlueprintCallable)
+	void SetWorldOrigin(const FVector& InWorldOriginA, const FVector& InWorldOriginB);
+	
+	UFUNCTION(Server, Reliable, WithValidation, BlueprintCallable)
+	void Server_AttachOcclusionsToArena();
+	bool Server_AttachOcclusionsToArena_Validate();
+	void Server_AttachOcclusionsToArena_Implementation();
+	
 	UPROPERTY()
 	TObjectPtr<UAudioComponent> OnCaptureSoundComponent; 
 	UPROPERTY(Replicated)
@@ -284,6 +301,7 @@ public:
 	void Multicast_PlayCaptureSound(const FVector Location);
 	bool Multicast_PlayCaptureSound_Validate(const FVector Location);
 	void Multicast_PlayCaptureSound_Implementation(const FVector Location);
+	
 	/* Requests */
 	UPROPERTY()
 		TObjectPtr<URequest> StartExperimentRequest;

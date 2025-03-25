@@ -126,6 +126,10 @@
 				"IOS",
 				"TVOS"
 			]
+		},
+		{
+			"Name": "ModelingToolsEditorMode",
+			"Enabled": true
 		}
 	]
 }

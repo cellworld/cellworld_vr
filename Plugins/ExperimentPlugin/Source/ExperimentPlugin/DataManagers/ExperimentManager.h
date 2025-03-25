@@ -184,7 +184,6 @@ public:
 	void OnCapture() {
 		UE_LOG(LogTemp, Log, TEXT("[UExperimentManager::OnCapture] Called"))
 
-		
 		// if done:
 		if (!IsInEpisode()) {
 			UE_LOG(LogTemp, Error,TEXT("[UExperimentManager::OnCapture] Failed. not in episode"))

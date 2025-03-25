@@ -51,6 +51,7 @@ public:
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
 	TObjectPtr<AExperimentClient> ExperimentClient = nullptr; 
+
 	
 	UFUNCTION()
 	virtual void SpawnExperimentServiceMonitor();

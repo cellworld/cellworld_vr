@@ -468,7 +468,6 @@ void USpatialAnchorManager::Server_FinishSpawn_Implementation() {
 		*ActorLocationB.ToString())
 	
 	// hab length = door entry - door exit (should be ~235) 
-	// const float BaseDistance = UKismetMathLibrary::Vector_Distance(ActorLocationB, ActorLocationA);
 	const float BaseDistance = 235.185;
 	UE_LOG(LogTemp, Log, TEXT("[USpatialAnchorManager::Server_FinishSpawn_Implementation] BaseDistance: %0.3f!"), BaseDistance)
 	
@@ -515,6 +514,7 @@ void USpatialAnchorManager::Server_FinishSpawn_Implementation() {
 		if (ExperimentGameMode->ExperimentClient) {
 			UE_LOG(LogTemp, Log, TEXT("[USpatialAnchorManager::Server_FinishSpawn_Implementation] ExperimentGameMode found"))
 			ExperimentGameMode->ExperimentClient->OffsetOriginTransform = SpawnTransformFinal;
+			ExperimentGameMode->ExperimentClient->SetWorldOrigin(AnchorLocationA, AnchorLocationB);
 			ExperimentGameMode->ExperimentClient->WorldScale		    = NewActorScaleFactor;
 			ExperimentGameMode->ExperimentClient->Habitat			    = Habitat;
 			if (!ExperimentGameMode->ExperimentClient->SendGetOcclusionLocationsRequest()) {

@@ -47,6 +47,42 @@ void AExperimentClient::Server_SpawnOcclusions_Implementation() {
 	OcclusionsStruct.SpawnAll(GetWorld(), true, false, OffsetOriginTransform);
 }
 
+void AExperimentClient::SetWorldOrigin(const FVector& InWorldOriginA, const FVector& InWorldOriginB) {
+	UE_LOG(LogTemp, Log, TEXT("[AExperimentClient::SetWorldOrigin] OriginA: %s | OriginB: %s"),
+		*InWorldOriginA.ToString(),
+		*InWorldOriginB.ToString())
+
+	if (!TrackingClient) {
+		UE_LOG(LogTemp, Error, TEXT("[AExperimentClient::SetWorldOrigin] TrackingClient is NULL"));
+		return;
+	}
+
+	if (!TrackingClient->IsConnected()) {
+		UE_LOG(LogTemp, Error, TEXT("[AExperimentClient::SetWorldOrigin] TrackingClient not connected!"));
+		return;
+	}
+
+	FString OriginInfo = FString::Printf(TEXT("%0.4f,%0.4f,%0.4f,%0.4f"),
+		InWorldOriginA.X, InWorldOriginA.Y,
+		InWorldOriginB.X, InWorldOriginB.Y);
+
+	const FMessage MessageOrigin = UMessageClient::NewMessage("set_vr_origin",OriginInfo);
+	// Message.header = "set_vr_origin";
+	// Message.body = OriginInfo;
+	// const FMessage MessageOut = UMessageClient::NewMessage("prey_step", UExperimentUtils::StepToJsonString(Step));
+
+	if (!TrackingClient->SendMessage(MessageOrigin)) {
+		UE_LOG(LogTemp, Error, TEXT("[AExperimentClient::SetWorldOrigin] Failed to send."))
+	}else { UE_LOG(LogTemp, Error, TEXT("[AExperimentClient::SetWorldOrigin] Send origin OK!")) }
+}
+
+bool AExperimentClient::Server_AttachOcclusionsToArena_Validate() {
+	return true; 
+}
+
+void AExperimentClient::Server_AttachOcclusionsToArena_Implementation() {
+	UE_LOG(LogTemp, Log, TEXT("[AExperimentClient::Server_AttachOcclusionsToArena_Implementation]"))
+}
 
 bool AExperimentClient::Server_PlayCaptureSound_Validate() {
 	return true; 
@@ -54,8 +90,9 @@ bool AExperimentClient::Server_PlayCaptureSound_Validate() {
 
 void AExperimentClient::Server_PlayCaptureSound_Implementation() {
 	if (OnCaptureSoundCue->IsValidLowLevelFast() && PredatorBasic->IsValidLowLevelFast()) {
-		UE_LOG(LogTemp, Log, TEXT("[Server_PlayCaptureSound_Implementation] Playing sound!"))
 		const FVector OnCaptureSoundLocation = PredatorBasic->GetActorLocation();
+		UE_LOG(LogTemp, Log, TEXT("[Server_PlayCaptureSound_Implementation] Playing sound at location: %s!"),
+			*OnCaptureSoundLocation.ToString())
 		Multicast_PlayCaptureSound(OnCaptureSoundLocation);
 		return;
 	}
@@ -69,7 +106,7 @@ bool AExperimentClient::Multicast_PlayCaptureSound_Validate(const FVector Locati
 
 void AExperimentClient::Multicast_PlayCaptureSound_Implementation(const FVector Location) {
 	if (OnCaptureSoundCue->IsValidLowLevelFast()) {
-		UE_LOG(LogTemp, Error, TEXT("[Multicast_PlayCaptureSound_Implementation] Playing sound!"))
+		UE_LOG(LogTemp, Log, TEXT("[Multicast_PlayCaptureSound_Implementation] Playing sound!"))
 		UGameplayStatics::PlaySoundAtLocation(this,OnCaptureSoundCue, Location);
 		return;
 	}
@@ -319,6 +356,7 @@ void AExperimentClient::HandleResetRequestResponse(const FString InResponse) {
 	UE_LOG(LogTemp, Log, TEXT("[AExperimentClient::HandleResetRequestResponse] Exiting OK"))
 	// if (this->SpawnAndPossessPredator()) { UE_LOG(LogTemp, Log, TEXT("Spawned predator: OK")); }
 	// else { UE_LOG(LogTemp, Error, TEXT("Spawned predator: FAILED")); }
+	Server_PlayCaptureSound();
 	bResetSuccessDbg = true;
 }
 
@@ -417,23 +455,24 @@ void AExperimentClient::UpdatePredator(const FMessage& InMessage) {
 	if (PredatorBasic->IsValidLowLevelFast()) {
 		// ReSharper disable once CppUseStructuredBinding
 		const FStep StepOut = UExperimentUtils::JsonStringToStep(InMessage.body);
-		const FVector VectorConverted = UExperimentUtils::CanonicalToVrV2(StepOut.location, MapLength,
-			OffsetOriginTransform.GetScale3D().X);
-		
-		FVector ForwardVector = OffsetOriginTransform.GetRotation().GetForwardVector();
-		ForwardVector.Normalize();
-		FVector RightVector   = OffsetOriginTransform.GetRotation().GetRightVector();
-		RightVector.Normalize();
-		const FVector NewRelativeLocation	= (ForwardVector * VectorConverted.X) + (-RightVector * VectorConverted.Y);
+		// const FVector VectorConverted = UExperimentUtils::CanonicalToVrV2(StepOut.location, MapLength,
+		// 	OffsetOriginTransform.GetScale3D().X);
+		//
+		// FVector ForwardVector = OffsetOriginTransform.GetRotation().GetForwardVector();
+		// ForwardVector.Normalize();
+		// FVector RightVector   = OffsetOriginTransform.GetRotation().GetRightVector();
+		// RightVector.Normalize();
+		// const FVector NewRelativeLocation	= (ForwardVector * VectorConverted.X) + (-RightVector * VectorConverted.Y);
 
-		FVector FinalLocation = OffsetOriginTransform.GetLocation() + NewRelativeLocation;
+		FVector FinalLocation;
+		FinalLocation.X = StepOut.location.x;
+		FinalLocation.Y = StepOut.location.y;
 		FinalLocation.Z += 25.0f*OffsetOriginTransform.GetScale3D().X;
-
-		FTransform UpdateTransform = OffsetOriginTransform;
-
+		UE_LOG(LogTemp, Log, TEXT("[UpdatePredator] Location: %s"), *FinalLocation.ToString())
 		/* rotation */
 		const FRotator FinalRotation = FRotator(0,OffsetOriginTransform.GetRotation().Z + StepOut.rotation,0);
 		
+		FTransform UpdateTransform;
 		UpdateTransform.SetScale3D(FVector(1.0f, 1.0f, 1.0f)*OffsetOriginTransform.GetScale3D().X / 5);
 		UpdateTransform.SetLocation(FinalLocation);
 		UpdateTransform.SetRotation(FinalRotation.Quaternion());
@@ -472,44 +511,63 @@ void AExperimentClient::UpdatePreyPosition(const FVector InVector, const FRotato
 	}
 
 	/* prepare Step */
+
+	const FVector OriginVector = OffsetOriginTransform.GetLocation();
+	const FRotator OriginRotation = OffsetOriginTransform.GetRotation().Rotator();
+	const FString InLocationString = FString::Printf(TEXT("%0.2f,%0.2f,%0.2f"), InVector.X, InVector.Y, InVector.Z);
+	const FString InRotationString = FString::Printf(TEXT("%0.2f,%0.2f,%0.2f"), InRotation.Roll, InRotation.Pitch, InRotation.Yaw);
+	const FString InOriginLocation = FString::Printf(TEXT("%0.2f,%0.2f,%0.2f"), OriginVector.X, OriginVector.Y, OriginVector.Z);
+	const FString InOriginRotation = FString::Printf(TEXT("%0.2f,%0.2f,%0.2f"), OriginRotation.Roll, OriginRotation.Pitch, OriginRotation.Yaw);
+	const FString InOriginScale    = FString::Printf(TEXT("%0.2f"), OffsetOriginTransform.GetScale3D().X);
+	// invec, inrot, originvec, originrot, originscale
+	FString DataString = FString::Printf(TEXT("%s,%s,%s,%s,%s"),
+		*InLocationString,
+		*InRotationString,
+		*InOriginLocation,
+		*InOriginRotation,
+		*InOriginScale);
+	
+	// UE_LOG(LogTemp, Log, TEXT("[AExperimentClient::UpdatePreyPosition] Data: %s"), *DataString)
+	// UE_LOG(LogTemp, Log, TEXT("[AExperimentClient::UpdatePreyPosition] Data: %s"), *Step.data)
+	// // flip y-axis 
+	// FVector InVectorFlipped = InVector;
+	// InVectorFlipped.Y *= -1;
+	//
+	// FVector OffsetFlipped = OffsetOriginTransform.GetLocation();
+	// OffsetFlipped.Y *= -1; 
+	
+	// const FVector InVectorRelative = InVectorFlipped - OffsetFlipped; // relative location
+	// const FVector RotatedVector = UKismetMathLibrary::GreaterGreater_VectorRotator(InVectorRelative,OffsetOriginTransform.GetRotation().Rotator());
+	// const FLocation Location = UExperimentUtils::VrToCanonical(RotatedVector, MapLength, OffsetOriginTransform.GetScale3D().X);
+	// UE_LOG(LogTemp, Log, TEXT("[UpdatePreyPosition] ==== USING NEW LOCATION"))
+	// FLocation Location;
+	// Location.x = RotatedVector.X;
+	// Location.y = RotatedVector.Y;
+
 	FStep Step;
-	Step.data = "VR";
 	Step.agent_name = "prey";
 	Step.frame = FrameCountPrey;
-
-	// flip y-axis 
-	FVector InVectorFlipped = InVector;
-	InVectorFlipped.Y *= -1;
-
-	FVector OffsetFlipped = OffsetOriginTransform.GetLocation();
-	OffsetFlipped.Y *= -1; 
-	
-	const FVector InVectorRelative = InVectorFlipped - OffsetFlipped; // relative location
-	const FVector RotatedVector = UKismetMathLibrary::GreaterGreater_VectorRotator(InVectorRelative,OffsetOriginTransform.GetRotation().Rotator());
-	// const FLocation Location = UExperimentUtils::VrToCanonical(RotatedVector, MapLength, OffsetOriginTransform.GetScale3D().X);
-	UE_LOG(LogTemp, Log, TEXT("[UpdatePreyPosition] ==== USING NEW LOCATION"))
-
-	FLocation Location;
-	Location.x = RotatedVector.X;
-	Location.y = RotatedVector.Y;
-	
-	Step.location    = Location;
+	Step.location.x    = InVector.X;
+	Step.location.y    = InVector.Y;
 	Step.rotation    = InRotation.Yaw;
+	Step.data = "VR";
 
-	UE_LOG(LogTemp, Log, TEXT("[UpdatePreyPosition] ==== RotatedVector: %s"), *RotatedVector.ToString())
-	UE_LOG(LogTemp, Log, TEXT("[UpdatePreyPosition] Step: %s ==== "), *UExperimentUtils::StepToJsonString(Step))
+	// UE_LOG(LogTemp, Log, TEXT("[UpdatePreyPosition] ==== RotatedVector: %s"), *RotatedVector.ToString())
+	// UE_LOG(LogTemp, Log, TEXT("[UpdatePreyPosition] Step: %s ==== "), *UExperimentUtils::StepToJsonString(Step))
 	
 	if (ensure(ExperimentManager->IsValidLowLevelFast() && ExperimentManager->Stopwatch->IsValidLowLevelFast())) {
 		Step.time_stamp = ExperimentManager->Stopwatch->GetElapsedTime();
 	} else { Step.time_stamp = -1.0f; }
-
+	
 	const FMessage MessageOut = UMessageClient::NewMessage("prey_step", UExperimentUtils::StepToJsonString(Step));
 	if (!ensure(TrackingClient->SendMessage(MessageOut))) {
 		UE_LOG(LogTemp, Error, TEXT("[AExperimentClient::UpdatePreyPosition] Failed: Send prey step!"))
 		// todo: notifyondisconnect
 		return;
-	}
-	UE_LOG(LogTemp, Log, TEXT("[AExperimentClient::UpdatePreyPosition] Sent frame: %i"), FrameCountPrey)
+	}	
+	UE_LOG(LogTemp, Log, TEXT("[AExperimentClient::UpdatePreyPosition] Sent frame: %i | location: %s"),
+		FrameCountPrey,
+		*InVector.ToString())
 	FrameCountPrey += 1;
 }
 
@@ -931,7 +989,7 @@ bool AExperimentClient::Test() {
 	if (!ensure(this->RoutePredatorMessages())) { return false; }
 	if (!ensure(this->RouteOnCapture())) { return false; }
 	if (!ensure(this->SubscribeToTracking())) { return false; }
-
+		
 	/* moved to SpatialAnchorManager::Server_FinishSpawn_Implementation()  */
 	/* TODO: MOVE THIS SHIT
 	 *
@@ -1011,8 +1069,8 @@ void AExperimentClient::HandleUpdatePredator(const FMessage MessageIn) {
 void AExperimentClient::HandleOnCapture(const FMessage MessageIn) {
 	UE_LOG(LogTemp, Log, TEXT("[AExperimentClient::HandleOnCapture]"));
 
-	if (!ensure(ExperimentManager->IsValidLowLevelFast())) { return; }
-	if (!ensure(ExperimentManager->IsInEpisode())) { return; }
+	// if (!ensure(ExperimentManager->IsValidLowLevelFast())) { return; }
+	// if (!ensure(ExperimentManager->IsInEpisode())) { return; }
 
 	// ExperimentManager->OnEpisodeFinishedSuccessDelegate.Broadcast();
 	// ExperimentManager->ProcessStopEpisodeResponse();
@@ -1055,12 +1113,6 @@ void TestConversions(const FLocation InputLocation) {
 void AExperimentClient::BeginPlay() {
 	Super::BeginPlay();
 
-	constexpr FLocation TopHabitatLocation = {0.5, 1.0f};
-	TestConversions(TopHabitatLocation);
-
-	constexpr FLocation BottomHabitatLocation = {0.5, 0.0f};
-	TestConversions(BottomHabitatLocation);
-	
 	UE_LOG(LogTemp, Log, TEXT("[AExperimentClient::BeginPlay] Called"));
 	
 	ExperimentInfo.OnExperimentStatusChangedEvent.AddDynamic(this, &ThisClass::OnStatusChanged);
@@ -1085,22 +1137,13 @@ void AExperimentClient::BeginPlay() {
 
 		UE_LOG(LogTemp, Log, TEXT("[AExperimentClient::Test] Bound delegates: ExperimentManager"))
 	}
-	
 	Test();
-
-	// StartEpisode();	
 }
 
 
 /* run a (light!) command every frame */
 void AExperimentClient::Tick(float DeltaTime) {
 	Super::Tick(DeltaTime);
-	
-
-	
-	// if (bConnectedToServer && bResetSuccessDbg) {
-	// 	UpdatePreyPosition(FVector{0.5f,0.5f,0.5f}, FRotator::ZeroRotator);
-	// }
 }
 
 void AExperimentClient::EndPlay(const EEndPlayReason::Type EndPlayReason) {
@@ -1108,6 +1151,5 @@ void AExperimentClient::EndPlay(const EEndPlayReason::Type EndPlayReason) {
 
 	if (Stopwatch && Stopwatch->IsRunning()) { Stopwatch->Reset(); };
 	if (TrackingClient->IsValidLowLevelFast()) { TrackingClient->Disconnect(); }
-
 	/* todo: clear delegates */
 }
