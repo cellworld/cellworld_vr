@@ -5,7 +5,6 @@
 #include "GameStateMain.h"
 #include "GameInstanceMain.h"
 #include "PredatorController/AIControllerPredator.h"
-#include "AsyncLoadingScreenLibrary.h"
 #include "MouseKeyboardPlayerController.h"
 #include "PlayerControllerVR.h"
 #include "cellworld_vr/cellworld_vr.h"
@@ -133,11 +132,9 @@ void AGameModeMain::InitGameState()
 }
 
 void AGameModeMain::StartLoadingScreen() {
-	UAsyncLoadingScreenLibrary::SetEnableLoadingScreen(true);
 }
 
 void AGameModeMain::StopLoadingScreen() {
-	UAsyncLoadingScreenLibrary::StopLoadingScreen();
 }
 
 // todo: bug - either playerpawn or enum as string is not valid

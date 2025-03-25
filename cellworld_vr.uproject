@@ -80,18 +80,6 @@
 			"Enabled": false
 		},
 		{
-			"Name": "ControlRig",
-			"Enabled": false
-		},
-		{
-			"Name": "ControlRigSpline",
-			"Enabled": false
-		},
-		{
-			"Name": "SequencerAnimTools",
-			"Enabled": false
-		},
-		{
 			"Name": "GeometryCache",
 			"Enabled": false
 		},
@@ -129,6 +117,14 @@
 		},
 		{
 			"Name": "ModelingToolsEditorMode",
+			"Enabled": true
+		},
+		{
+			"Name": "ControlRigSpline",
+			"Enabled": false
+		},
+		{
+			"Name": "FullBodyIK",
 			"Enabled": true
 		}
 	]

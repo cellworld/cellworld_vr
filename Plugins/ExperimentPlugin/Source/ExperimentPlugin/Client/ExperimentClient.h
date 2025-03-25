@@ -231,10 +231,6 @@ public:
 	UPROPERTY(EditAnywhere, Blueprintable)
 	FServerInfo ServerInfo = FServerInfo();
 	
-	/* ==== server stuff ==== */
-	// const FString ServerIP         = "192.168.1.199";  // static vr backpack win11 PACKAGED ONLY
-	// const int TrackingPort	           = 4791;
-	
 	/* DEBUG */
 	bool bTimerRunning = false;
 	Stopwatch::FStopWatch StopWatch;
@@ -349,8 +345,14 @@ public:
 	/* ==== setup ==== */
 	bool SpawnAndPossessPredator();
 	UPROPERTY(Replicated)
-		TObjectPtr<AExperimentPredator> PredatorBasic = nullptr;
-		
+	TObjectPtr<AExperimentPredator> PredatorBasic = nullptr;
+
+	UPROPERTY(EditDefaultsOnly, Category="Spawning|Predator")
+	TSubclassOf<ACharacter> PredatorBPClass;
+	
+	UPROPERTY(Replicated)
+	TObjectPtr<ACharacter> PredatorCharacter = nullptr;
+			
 	/* functions called by GameMode and Blueprints */
 	static UMessageClient* CreateNewClient();
 	static bool ValidateClient(UMessageClient* ClientIn);

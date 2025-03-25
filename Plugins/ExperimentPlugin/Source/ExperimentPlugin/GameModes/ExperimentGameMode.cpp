@@ -55,6 +55,9 @@ void AExperimentGameMode::SpawnExperimentServiceMonitor() {
 		ExperimentClient->WorldScale = this->WorldScale;
 		ExperimentClient->FinishSpawning(SpawnTransformExperimentClient);
 		ExperimentClient->AddToRoot();
+		if (ExperimentClient->IsValidLowLevel() && PredatorBPClass != nullptr) {
+			ExperimentClient->
+		}
 	}
 }
 
