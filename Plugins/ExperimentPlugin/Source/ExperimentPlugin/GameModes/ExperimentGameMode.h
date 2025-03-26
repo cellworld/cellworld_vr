@@ -1,5 +1,6 @@
 ﻿#pragma once
 #include "CoreMinimal.h"
+#include "Animation/SkeletalMeshActor.h"
 #include "Engine/Engine.h"
 #include "ExperimentPlugin/Characters/ExperimentCharacter.h"
 #include "GameFramework/GameMode.h"
@@ -42,7 +43,7 @@ public:
 	TSubclassOf<AHabitat> HabitatBPClass;
 
 	UPROPERTY(EditDefaultsOnly, Category="Spawning|Predator")
-	TSubclassOf<ACharacter> PredatorBPClass;
+	TSubclassOf<AActor> PredatorBPClass;
 	
 	TObjectPtr<AHabitat> FindHabitatInLevel() const;
 

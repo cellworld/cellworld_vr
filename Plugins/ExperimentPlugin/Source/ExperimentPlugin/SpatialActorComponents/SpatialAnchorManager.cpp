@@ -451,22 +451,13 @@ void USpatialAnchorManager::Server_FinishSpawn_Implementation() {
 	const FVector AnchorLocationA = SpawnedAnchors[0]->GetActorLocation();
 	const FVector AnchorLocationB = SpawnedAnchors[1]->GetActorLocation();
 	
-	UE_LOG(LogTemp, Log, TEXT("[USpatialAnchorManager::Server_FinishSpawn_Implementation] AnchorLocationA: %s!"),
+	UE_LOG(LogTemp, Log, TEXT("[USpatialAnchorManager::Server_FinishSpawn_Implementation] AnchorLocationA: %s"),
 		*AnchorLocationA.ToString())
-	UE_LOG(LogTemp, Log, TEXT("[USpatialAnchorManager::Server_FinishSpawn_Implementation] AnchorLocationB: %s!"),
+	UE_LOG(LogTemp, Log, TEXT("[USpatialAnchorManager::Server_FinishSpawn_Implementation] AnchorLocationB: %s"),
 		*AnchorLocationB.ToString())
-	
 	check(Habitat)
 	if (!ensure(Habitat)) { return; }
-	//  actor's entry and exit door locations (todo: rename once it works)
-	const FVector ActorLocationA    = Habitat->MRMesh_Anchor_Entry->GetComponentLocation();
-	const FVector ActorLocationB    = Habitat->MRMesh_Anchor_Exit->GetComponentLocation();
-	
-	UE_LOG(LogTemp, Log, TEXT("[USpatialAnchorManager::Server_FinishSpawn_Implementation] ActorLocationA: %s!"),
-		*ActorLocationA.ToString())
-	UE_LOG(LogTemp, Log, TEXT("[USpatialAnchorManager::Server_FinishSpawn_Implementation] ActorLocationB: %s!"),
-		*ActorLocationB.ToString())
-	
+
 	// hab length = door entry - door exit (should be ~235) 
 	const float BaseDistance = 235.185;
 	UE_LOG(LogTemp, Log, TEXT("[USpatialAnchorManager::Server_FinishSpawn_Implementation] BaseDistance: %0.3f!"), BaseDistance)
@@ -487,30 +478,53 @@ void USpatialAnchorManager::Server_FinishSpawn_Implementation() {
 	SpawnTransformFinal.SetLocation(AnchorLocationA);
 	SpawnTransformFinal.SetScale3D(FVector(1.0f,1.0f,1.0f)*NewActorScaleFactor);
 	SpawnTransformFinal.SetRotation(FinalRotation.Quaternion());
-	
-	UE_LOG(LogTemp, Log, TEXT("[USpatialAnchorManager::Server_FinishSpawn_Implementation] Calling Habitat->FinishSpawning()!"))
 
-	UE_LOG(LogTemp, Log, TEXT("[USpatialAnchorManager::Server_FinishSpawn_Implementation] FinalLocation: %s"),
-		*SpawnTransformFinal.GetLocation().ToString())
-
-	UE_LOG(LogTemp, Log, TEXT("[USpatialAnchorManager::Server_FinishSpawn_Implementation] FinalRotation: %s"),
-		*SpawnTransformFinal.GetRotation().ToString())
-
-	UE_LOG(LogTemp, Log, TEXT("[USpatialAnchorManager::Server_FinishSpawn_Implementation] FinalScale: %s"),
+	UE_LOG(LogTemp, Log,
+		TEXT("[USpatialAnchorManager::Server_FinishSpawn_Implementation] FinalLocation: %s | FinalRotation: %s | FinalScale: %s"),
+		*SpawnTransformFinal.GetLocation().ToString(),
+		*SpawnTransformFinal.GetRotation().ToString(),
 		*SpawnTransformFinal.GetScale3D().ToString())
 	
 	Habitat->FinishSpawning(SpawnTransformFinal);
-	Habitat->SetActorEnableCollision(true);
-	// if (!ensure(Habitat->DoorEntry)) return; 
-	// if (!ensure(Habitat->DoorExit)) return;
+	Habitat->SetActorEnableCollision(false);
 	
-	bSpawnInProgress = false;
+	/* ==== start - spawn floor for AI predator to walk on ==== */
+	// Floor dimensions and offset
+	const FVector ArenaLocation = SpawnTransformFinal.GetLocation();
+	const float ArenaZ = ArenaLocation.Z; // apply small offset
+	
+	// small -z offset so predator lands on it
+	const FVector FloorLocation(ArenaLocation.X, ArenaLocation.Y, ArenaZ - 5.f);
+	
+	// Spawn params
+	FActorSpawnParameters SpawnParams;
+	SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+	
+	// Create transform for the floor
+	FTransform FloorTransform;
+	FloorTransform.SetLocation(FloorLocation);
+	FloorTransform.SetRotation(FQuat::Identity);
+	FloorTransform.SetScale3D(FVector(1000.0f, 1000.0f, 0.1f));
+	
+	// spawn floor (todo: make invisible after confirming it works) 
+	UStaticMesh* FloorMesh = LoadObject<UStaticMesh>(nullptr, TEXT("StaticMesh'/Engine/BasicShapes/Cube.Cube'"));
+	AStaticMeshActor* Floor = GetWorld()->SpawnActor<AStaticMeshActor>(AStaticMeshActor::StaticClass(), FloorTransform, SpawnParams);
+	if (Floor) {
+		UStaticMeshComponent* MeshComp = Floor->GetStaticMeshComponent();
+		MeshComp->SetStaticMesh(FloorMesh);
+		MeshComp->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
+		MeshComp->SetCollisionProfileName("BlockAll");
+		MeshComp->SetVisibility(true); // Optional
+		Floor->SetActorEnableCollision(true);
+		Floor->SetMobility(EComponentMobility::Static);
+		Floor->SetReplicates(true); // If in multiplayer
+	}
 
-	// todo: tell gamemode or experiment service to update world origin to Habitats's entry door location
+	/* finish - spawn floor for AI predator to walk on */
+	bSpawnInProgress = false;
+	
 	AGameModeBase* GameModeBase = GetWorld()->GetAuthGameMode();
 	if (AExperimentGameMode* ExperimentGameMode = Cast<AExperimentGameMode>(GameModeBase)) {
-		UE_LOG(LogTemp, Log, TEXT("[USpatialAnchorManager::Server_FinishSpawn_Implementation] ExperimentGameMode found"))
-
 		if (ExperimentGameMode->ExperimentClient) {
 			UE_LOG(LogTemp, Log, TEXT("[USpatialAnchorManager::Server_FinishSpawn_Implementation] ExperimentGameMode found"))
 			ExperimentGameMode->ExperimentClient->OffsetOriginTransform = SpawnTransformFinal;
@@ -523,11 +537,9 @@ void USpatialAnchorManager::Server_FinishSpawn_Implementation() {
 				UE_LOG(LogTemp, Log, TEXT("[[USpatialAnchorManager::Server_FinishSpawn_Implementation]] Sent SendGetOcclusionLocationsRequest OK"))
 			}
 		}
+	} else {
+		UE_LOG(LogTemp, Log, TEXT("[USpatialAnchorManager::Server_FinishSpawn_Implementation] Failed to get GameMode"))	
 	}
-	
-	UE_LOG(LogTemp, Warning,
-		TEXT("[USpatialAnchorManager::Server_FinishSpawn_Implementation] Set dbgbSpawnAnchorsComplete DELETE AFTER"))
-
 }
 
 bool USpatialAnchorManager::Server_HandleSpawnHabitat_Validate(USceneComponent* InModelSpawnPositioner) { return true; }
@@ -565,6 +577,7 @@ void USpatialAnchorManager::Server_HandleSpawnHabitat_Implementation(USceneCompo
 			UE_LOG(LogTemp, Warning, TEXT("[USpatialAnchorManager::Server_HandleSpawnHabitat_Implementation] Spawned Habitat"));
 			Habitat->RegisterAllComponents();
 			Habitat->SetActorEnableCollision(ECollisionEnabled::NoCollision);
+			// Habitat->MeshHabitat->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 			bSpawnInProgress = true;
 			UE_LOG(LogTemp, Warning, TEXT("[USpatialAnchorManager::Server_HandleSpawnHabitat_Implementation] bSpawnInProgress: %s"),
 				bSpawnInProgress ? TEXT("true") : TEXT("false"));

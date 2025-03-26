@@ -34,7 +34,8 @@ public class ExperimentPlugin : ModuleRules
 				"OculusXRPassthrough",
 				"MRMesh",
 				"EnhancedInput", 
-				"AudioMixer"
+				"AudioMixer", 
+				"AIModule"
 				// ... add other public dependencies that you statically link with here ...
 			}
 			);
@@ -55,6 +56,7 @@ public class ExperimentPlugin : ModuleRules
 				"TCPMessages",
 				"UMG",
 				"HeadMountedDisplay", 
+				
 				// "OculusXRAnchors",
 				// "OculusXRHMD",
 				// "OculusXRPassthrough",

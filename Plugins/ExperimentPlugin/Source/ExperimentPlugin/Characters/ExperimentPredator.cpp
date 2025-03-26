@@ -2,34 +2,31 @@
 
 AExperimentPredator::AExperimentPredator() : Super() {
 	UE_LOG(LogTemp, Log, TEXT("[APredatorBasic::APredatorBasic()]"));
-	// Set this actor to call Tick() every frame. You can turn this off to improve performance if you don't need it.
-	PrimaryActorTick.bCanEverTick = false;
-	bReplicates = true;
 	SetActorEnableCollision(false);
-	SetReplicateMovement(true);
-	SetActorRotation(FRotator::ZeroRotator);
-	
-	SkeletalMeshComponent = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("SkeletalMeshComponent"));
-	SkeletalMeshComponent->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-	SkeletalMeshComponent->SetRelativeLocation(FVector(0, 0, 5));
-	SkeletalMeshComponent->SetRelativeScale3D(FVector(1, 1, 1));
-	SkeletalMeshComponent->SetRelativeRotation(FRotator(0, 90, 0));
-	RootComponent = SkeletalMeshComponent;
-	
-	USkeletalMesh* SkeletalMesh = CreateDefaultSubobject<USkeletalMesh>(TEXT("USkeletalMesh"));
-	static ConstructorHelpers::FObjectFinder<USkeletalMesh> SkeletalMeshAsset(TEXT("SkeletalMesh'/Game/AIPredator/Spooky_Ghost/Ghost_face_Killa3_Skeletal_Mesh.Ghost_face_Killa3_Skeletal_Mesh'"));
-	if (SkeletalMeshAsset.Succeeded()) {
-		UE_LOG(LogTemp, Log,TEXT("[APredatorBasic::APredatorBasic()] Set Skeletal mesh: OK"))
-		SkeletalMeshComponent->SetSkeletalMesh(SkeletalMeshAsset.Object);
-	} else {
-		UE_LOG(LogTemp,Error,TEXT("[APredatorBasic::APredatorBasic()] Set Skeletal mesh: Failed"));
-	}
-	
-	static ConstructorHelpers::FObjectFinder<UMaterial> SkeletalMeshMaterial(TEXT("/Script/Engine.Material'/Game/AIPredator/Spooky_Ghost/Ghost_face_Killa3_Material.Ghost_face_Killa3_Material'"));
-	if (SkeletalMeshMaterial.Succeeded()) {
-		UE_LOG(LogTemp,Log,TEXT("[APredatorBasic::APredatorBasic()] Set Material: OK"))
-		SkeletalMeshComponent->SetMaterial(0, SkeletalMeshMaterial.Object);
-	}else {
-		UE_LOG(LogTemp, Error,TEXT("[APredatorBasic::APredatorBasic()] Set Material: Failed"));
-	}
+	SetReplicates(true);
+	SetNetDormancy(ENetDormancy::DORM_Never);
+	bNetLoadOnClient		 = true;
+	NetUpdateFrequency	 = 100.0f;
+	MinNetUpdateFrequency = 60.0f;
 }
+
+void AExperimentPredator::PostInitializeComponents() {
+	Super::PostInitializeComponents();
+	SetReplicateMovement(true);
+}
+
+void AExperimentPredator::BeginPlay() {
+	Super::BeginPlay();
+}
+
+void AExperimentPredator::Tick(float DeltaTime) {
+	Super::Tick(DeltaTime);
+}
+
+void AExperimentPredator::RevertMaterial() {
+}
+
+void AExperimentPredator::OnCapture() {
+	
+}
+

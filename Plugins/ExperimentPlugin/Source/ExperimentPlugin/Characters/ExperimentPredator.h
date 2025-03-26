@@ -1,15 +1,24 @@
 ﻿#pragma once
 #include "CoreMinimal.h"
-#include "Components/SphereComponent.h"
-#include "GameFramework/Pawn.h"
+#include "GameFramework/Actor.h"
 #include "ExperimentPredator.generated.h"
 
 UCLASS()
-class EXPERIMENTPLUGIN_API AExperimentPredator : public APawn {
+class EXPERIMENTPLUGIN_API AExperimentPredator : public AActor {
 	GENERATED_BODY()
 public:
 	// Sets default values for this actor's properties
 	AExperimentPredator();
-	TObjectPtr<UStaticMeshComponent> StaticMeshComponent;
-	TObjectPtr<USkeletalMeshComponent> SkeletalMeshComponent;
+
+	void PostInitializeComponents() override;
+	void BeginPlay() override;
+	void Tick(float DeltaTime) override;
+
+	UFUNCTION(BlueprintCallable, Category = "Predator")
+	void OnCapture();
+
+	UFUNCTION(BlueprintCallable, Category = "Predator")
+	void RevertMaterial();
 };
+
+

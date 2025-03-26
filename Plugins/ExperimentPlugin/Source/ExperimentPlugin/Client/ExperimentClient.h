@@ -7,13 +7,16 @@
 #include "MessageClient.h"
 #include "ExperimentUtils.h"
 #include "DrawDebugHelpers.h"
+#include "GameFramework/Character.h"
+#include "AIController.h"
+#include "NavigationSystem.h"
 #include "Net/UnrealNetwork.h"
 #include "Sound/SoundCue.h"
 #include "SoundDefinitions.h"
+#include "Animation/SkeletalMeshActor.h"
 #include "ExperimentPlugin/HabitatComponents/Habitat.h"
 #include "ExperimentPlugin/DataManagers/ExperimentManager.h"
 #include "ExperimentPlugin/Public/Structs.h"
-#include "ExperimentPlugin/Characters/ExperimentPredator.h"
 #include "ExperimentPlugin/Characters/ExperimentPawn.h"
 #include "ExperimentPlugin/Occlusions/Occlusion.h"
 #include "Kismet/GameplayStatics.h"
@@ -74,45 +77,36 @@ public:
 		for (int i = 0; i < AllLocations.Num(); i++) {
 			constexpr float ScaleOffset       = 0.99157164105; // give a little wiggle room between walls and occlusions
 			constexpr float MapLength         = 235.185290;    // base length of habitat 
-			constexpr float HeightScaleFactor = 3;             // make occlusions a bit taller; we aren't mice
+			constexpr float HeightScaleFactor = 5;             // make occlusions a bit taller; we aren't mice
 			
 			const FVector SpawnLocationConverted = UExperimentUtils::CanonicalToVrV2(
 				AllLocations[i],
 				MapLength,
 				OriginTransform.GetScale3D().X);
-			
+
 			FVector ForwardVector = OriginTransform.GetRotation().GetForwardVector(); ForwardVector.Normalize();
 			FVector RightVector   = OriginTransform.GetRotation().GetRightVector(); RightVector.Normalize();
 			
 			const FVector NewRelativeLocation = (ForwardVector * SpawnLocationConverted.X) + (-RightVector * SpawnLocationConverted.Y);
 			FVector FinalLocation = OriginTransform.GetLocation() + NewRelativeLocation;
-			
+
 			FTransform SpawnTransform;
 			FVector OcclusionScale = OriginTransform.GetScale3D()*ScaleOffset;
 			OcclusionScale.Z *= HeightScaleFactor;
-			FVector LocationFinal = FVector(AllLocations[i].x, AllLocations[i].y, OriginTransform.GetLocation().Z);
-			// SpawnTransform.SetScale3D(OcclusionScale);
-			// SpawnTransform.SetLocation(FinalLocation);
-			// SpawnTransform.SetLocation(LocationFinal);
-			// SpawnTransform.SetRotation(OriginTransform.GetRotation());
-			UE_LOG(LogTemp, Log, TEXT("[Spawning occlusion] %s"), *LocationFinal.ToString())
-			// AOcclusion* SpawnOcclusion = WorldRefIn->SpawnActor<AOcclusion>(
-			// 	AOcclusion::StaticClass(),
-			// 	SpawnTransform,
-			// 	SpawnParams);
-
+			SpawnTransform.SetScale3D(OcclusionScale);
+			SpawnTransform.SetLocation(FinalLocation);
+			SpawnTransform.SetRotation(OriginTransform.GetRotation());
+			
 			AOcclusion* SpawnOcclusion = WorldRefIn->SpawnActor<AOcclusion>(
 				AOcclusion::StaticClass(),
-				FinalLocation,
-				FRotator(),
+				SpawnTransform,
 				SpawnParams);
-			
+
 			if (ensure(SpawnOcclusion)) {
 				SpawnOcclusion->SetReplicates(true);
-				SpawnOcclusion->SetActorHiddenInGame(bHiddenInGameIn);
-				SpawnOcclusion->SetActorEnableCollision(bEnableCollisonIn);
 				SpawnOcclusion->SetActorHiddenInGame(false);
-				SpawnOcclusion->SetActorScale3D(FVector(1,1,OriginTransform.GetScale3D().X*HeightScaleFactor));
+				SpawnOcclusion->SetActorEnableCollision(bEnableCollisonIn);
+				SpawnOcclusion->SetActorHiddenInGame(bHiddenInGameIn);
 				OcclusionAllArr.Add(SpawnOcclusion);
 			}else {
 				UE_LOG(LogTemp, Error, TEXT("[SpawnAll] Spawn occlusion failed! %i"), i)
@@ -333,7 +327,7 @@ public:
 	/* ==== world stuff ==== */
 	int FrameCount        = 0; // todo: will probably delete 
 	const float MapLength = 235.185;
-	const float PredatorScaleFactor = 0.1f; 
+	const float PredatorScaleFactor = 0.25f; 
 	float WorldScale      = 15.0f;
 
 	UPROPERTY(EditAnywhere)
@@ -345,10 +339,10 @@ public:
 	/* ==== setup ==== */
 	bool SpawnAndPossessPredator();
 	UPROPERTY(Replicated)
-	TObjectPtr<AExperimentPredator> PredatorBasic = nullptr;
+	TObjectPtr<AActor> PredatorBasic = nullptr;
 
-	UPROPERTY(EditDefaultsOnly, Category="Spawning|Predator")
-	TSubclassOf<ACharacter> PredatorBPClass;
+	UPROPERTY()
+	TSubclassOf<AActor> PredatorBPClass;
 	
 	UPROPERTY(Replicated)
 	TObjectPtr<ACharacter> PredatorCharacter = nullptr;

@@ -141,39 +141,42 @@ bool AExperimentClient::ValidateLevel(UWorld* InWorld, const FString InLevelName
 /* todo: make this take input ACharacter and spawn that one*/
 bool AExperimentClient::SpawnAndPossessPredator() {
 	if (!GetWorld()) {
-		UE_LOG(LogTemp, Error, TEXT("[AExperimentClient::SpawnAndPossessPredator] GetWorld() failed!"));
+		UE_LOG(LogTemp, Fatal, TEXT("[AExperimentClient::SpawnAndPossessPredator] GetWorld() failed!"));
 		return false;
 	}
 	
-	// Define spawn parameters
+	if (PredatorBPClass == nullptr) {
+		UE_LOG(LogTemp, Fatal, TEXT("[AExperimentClient::SpawnAndPossessPredator] PredatorBPClass NULL"));
+		return false;
+	}
+
+	// predator spawn information
 	FActorSpawnParameters SpawnParams;
 	SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButAlwaysSpawn;
-
-	// Specify the location and rotation for the new actor
-	const FRotator Rotation(0.0f, 0.0f, 0.0f); // Change to desired spawn rotation
-	FLocation SpawnLocation;
-	SpawnLocation.x = 0.9;
-	SpawnLocation.y = 0.5;
-
-	const FVector SpawnVector = UExperimentUtils::CanonicalToVrV2(SpawnLocation, this->MapLength, this->WorldScale);
-	const FVector SpawnVectorAdjusted = SpawnVector;
-
-	this->PredatorBasic = GetWorld()->SpawnActor<AExperimentPredator>(
-		AExperimentPredator::StaticClass(),
-		SpawnVectorAdjusted, Rotation, SpawnParams);
-
-	if (!ensure(this->PredatorBasic)) {
-		UE_LOG(LogTemp, Error,
-		       TEXT("[AExperimentClient::SpawnAndPossessPredator()] Spawn APredatorBasic Failed!"));
-		return false;
-	}
 	
-	UE_LOG(LogTemp, Error, TEXT("[AExperimentClient::SpawnAndPossessPredator] Predator Scale (WS*SF): %0.2f"),
-		OffsetOriginTransform.GetScale3D().X * PredatorScaleFactor);
+	const FRotator Rotation(0.0f, 0.0f, 0.0f);
+	constexpr FLocation SpawnLocation = {0.9, 0.5};
+	const float SpawnScale = OffsetOriginTransform.GetScale3D().X * PredatorScaleFactor; 
+	const FVector SpawnVector = UExperimentUtils::CanonicalToVrV2(SpawnLocation, MapLength, SpawnScale);
+	const FVector SpawnVectorAdjusted = FVector(SpawnVector.X, SpawnVector.Y, OffsetOriginTransform.GetLocation().Z + 10.0f);
+
+	// actual spawning 
+	PredatorBasic = GetWorld()->SpawnActor<AActor>(PredatorBPClass, SpawnVectorAdjusted, Rotation, SpawnParams);
+	check(PredatorBasic); // force a crash if not valid
 	
-	this->PredatorBasic->SetActorScale3D(
-		FVector(1.0f, 1.0f, 1.0f) * PredatorScaleFactor * OffsetOriginTransform.GetScale3D().X);
-	this->SetPredatorIsVisible(false);
+	PredatorBasic->SetActorEnableCollision(false);
+	PredatorBasic->SetReplicates(true);
+	PredatorBasic->SetReplicateMovement(true);
+	PredatorBasic->SetNetDormancy(ENetDormancy::DORM_Never);
+	PredatorBasic->bNetLoadOnClient		 = true;
+	PredatorBasic->NetUpdateFrequency	 = 100.0f;
+	PredatorBasic->MinNetUpdateFrequency = 60.0f;
+	PredatorBasic->AddToRoot();
+	SetPredatorIsVisible(true);
+	UE_LOG(LogTemp, Log, TEXT("[AExperimentClient::SpawnAndPossessPredator] SpawnVectorAdjusted: %s"),
+		*SpawnVectorAdjusted.ToString());
+	
+	UE_LOG(LogTemp, Log, TEXT("[AExperimentClient::SpawnAndPossessPredator] Returning true"));
 	return true;
 }
 
@@ -392,12 +395,12 @@ void AExperimentClient::OnResetResult(const bool bResetResult) {
 }
 
 void AExperimentClient::SetPredatorIsVisible(const bool bNewVisibility) {
-	if (this->PredatorBasic->IsValidLowLevelFast()) {
-		this->PredatorBasic->SetActorHiddenInGame(!bNewVisibility);
-		UE_LOG(LogTemp, Log, TEXT("[AExperimentClient::SetPredatorIsVisible] IsActorHiddenInGame(%i)"),
-		       !bNewVisibility);
-	}
-	else {
+	if (PredatorBasic->IsValidLowLevelFast()) {
+		PredatorBasic->SetActorHiddenInGame(!bNewVisibility);
+		UE_LOG(LogTemp, Log,
+			TEXT("[AExperimentClient::SetPredatorIsVisible] IsActorHiddenInGame(%i)"),
+			!bNewVisibility);
+	} else {
 		UE_LOG(LogTemp, Error, TEXT("[AExperimentClient::SetActorHiddenInGame] PredatorBasic NULL"));
 	}
 }
@@ -455,25 +458,21 @@ void AExperimentClient::UpdatePredator(const FMessage& InMessage) {
 	if (PredatorBasic->IsValidLowLevelFast()) {
 		// ReSharper disable once CppUseStructuredBinding
 		const FStep StepOut = UExperimentUtils::JsonStringToStep(InMessage.body);
-		// const FVector VectorConverted = UExperimentUtils::CanonicalToVrV2(StepOut.location, MapLength,
-		// 	OffsetOriginTransform.GetScale3D().X);
-		//
-		// FVector ForwardVector = OffsetOriginTransform.GetRotation().GetForwardVector();
-		// ForwardVector.Normalize();
-		// FVector RightVector   = OffsetOriginTransform.GetRotation().GetRightVector();
-		// RightVector.Normalize();
-		// const FVector NewRelativeLocation	= (ForwardVector * VectorConverted.X) + (-RightVector * VectorConverted.Y);
-
-		FVector FinalLocation;
-		FinalLocation.X = StepOut.location.x;
-		FinalLocation.Y = StepOut.location.y;
-		FinalLocation.Z += 25.0f*OffsetOriginTransform.GetScale3D().X;
-		UE_LOG(LogTemp, Log, TEXT("[UpdatePredator] Location: %s"), *FinalLocation.ToString())
-		/* rotation */
+		const FVector VectorConverted = UExperimentUtils::CanonicalToVrV2(StepOut.location, MapLength,
+			OffsetOriginTransform.GetScale3D().X);
+		
+		FVector ForwardVector = OffsetOriginTransform.GetRotation().GetForwardVector();
+		ForwardVector.Normalize();
+		FVector RightVector   = OffsetOriginTransform.GetRotation().GetRightVector();
+		RightVector.Normalize();
+		const FVector NewRelativeLocation	= (ForwardVector * VectorConverted.X) + (-RightVector * VectorConverted.Y);
+		const FVector FinalLocation = OffsetOriginTransform.GetLocation() + NewRelativeLocation + FVector(0, 0, 25.0f * OffsetOriginTransform.GetScale3D().X);
 		const FRotator FinalRotation = FRotator(0,OffsetOriginTransform.GetRotation().Z + StepOut.rotation,0);
+
+		UE_LOG(LogTemp, Log, TEXT("[AExperimentClient::UpdatePredator] Location: %s"), *FinalLocation.ToString())
 		
 		FTransform UpdateTransform;
-		UpdateTransform.SetScale3D(FVector(1.0f, 1.0f, 1.0f)*OffsetOriginTransform.GetScale3D().X / 5);
+		UpdateTransform.SetScale3D(FVector(1.0f, 1.0f, 1.0f)*OffsetOriginTransform.GetScale3D().X * PredatorScaleFactor);
 		UpdateTransform.SetLocation(FinalLocation);
 		UpdateTransform.SetRotation(FinalRotation.Quaternion());
 		PredatorBasic->SetActorTransform(UpdateTransform);
@@ -511,7 +510,11 @@ void AExperimentClient::UpdatePreyPosition(const FVector InVector, const FRotato
 	}
 
 	/* prepare Step */
-
+	/*
+	 * ==== NEW IMPLEMENTATION ====
+	 * in the new implementation, coordinate conversion is done in python server-side, so just take the player's position
+	 * and send it over as-is. Similar to UpdatePredator (but reverse)
+	 * 
 	const FVector OriginVector = OffsetOriginTransform.GetLocation();
 	const FRotator OriginRotation = OffsetOriginTransform.GetRotation().Rotator();
 	const FString InLocationString = FString::Printf(TEXT("%0.2f,%0.2f,%0.2f"), InVector.X, InVector.Y, InVector.Z);
@@ -526,20 +529,21 @@ void AExperimentClient::UpdatePreyPosition(const FVector InVector, const FRotato
 		*InOriginLocation,
 		*InOriginRotation,
 		*InOriginScale);
+		* ==== NEW IMPLEMENTATION ====
+		*/
 	
 	// UE_LOG(LogTemp, Log, TEXT("[AExperimentClient::UpdatePreyPosition] Data: %s"), *DataString)
 	// UE_LOG(LogTemp, Log, TEXT("[AExperimentClient::UpdatePreyPosition] Data: %s"), *Step.data)
-	// // flip y-axis 
-	// FVector InVectorFlipped = InVector;
-	// InVectorFlipped.Y *= -1;
-	//
-	// FVector OffsetFlipped = OffsetOriginTransform.GetLocation();
-	// OffsetFlipped.Y *= -1; 
+	// flip y-axis 
+	FVector InVectorFlipped = InVector;
+	InVectorFlipped.Y *= -1;
+	FVector OffsetFlipped = OffsetOriginTransform.GetLocation();
+	OffsetFlipped.Y *= -1; 
 	
-	// const FVector InVectorRelative = InVectorFlipped - OffsetFlipped; // relative location
-	// const FVector RotatedVector = UKismetMathLibrary::GreaterGreater_VectorRotator(InVectorRelative,OffsetOriginTransform.GetRotation().Rotator());
-	// const FLocation Location = UExperimentUtils::VrToCanonical(RotatedVector, MapLength, OffsetOriginTransform.GetScale3D().X);
-	// UE_LOG(LogTemp, Log, TEXT("[UpdatePreyPosition] ==== USING NEW LOCATION"))
+	const FVector InVectorRelative = InVectorFlipped - OffsetFlipped; // relative location
+	const FVector RotatedVector = UKismetMathLibrary::GreaterGreater_VectorRotator(InVectorRelative,OffsetOriginTransform.GetRotation().Rotator());
+	const FLocation Location = UExperimentUtils::VrToCanonical(RotatedVector, MapLength, OffsetOriginTransform.GetScale3D().X);
+	UE_LOG(LogTemp, Log, TEXT("[UpdatePreyPosition] ==== USING NEW LOCATION"))
 	// FLocation Location;
 	// Location.x = RotatedVector.X;
 	// Location.y = RotatedVector.Y;
@@ -547,13 +551,12 @@ void AExperimentClient::UpdatePreyPosition(const FVector InVector, const FRotato
 	FStep Step;
 	Step.agent_name = "prey";
 	Step.frame = FrameCountPrey;
-	Step.location.x    = InVector.X;
-	Step.location.y    = InVector.Y;
+	Step.location.x    = Location.x;
+	Step.location.y    = Location.x;
 	Step.rotation    = InRotation.Yaw;
 	Step.data = "VR";
 
-	// UE_LOG(LogTemp, Log, TEXT("[UpdatePreyPosition] ==== RotatedVector: %s"), *RotatedVector.ToString())
-	// UE_LOG(LogTemp, Log, TEXT("[UpdatePreyPosition] Step: %s ==== "), *UExperimentUtils::StepToJsonString(Step))
+	UE_LOG(LogTemp, Log, TEXT("[UpdatePreyPosition] Step: %s "), *UExperimentUtils::StepToJsonString(Step))
 	
 	if (ensure(ExperimentManager->IsValidLowLevelFast() && ExperimentManager->Stopwatch->IsValidLowLevelFast())) {
 		Step.time_stamp = ExperimentManager->Stopwatch->GetElapsedTime();
@@ -978,7 +981,7 @@ bool AExperimentClient::Test() {
 	constexpr int AttemptsMax = 3;
 	bConnectedToServer = this->ConnectToServer(TrackingClient, AttemptsMax, *ServerInfo.IP, ServerInfo.Port);
 	if (!ensure(bConnectedToServer)) {
-		UE_LOG(LogTemp, Fatal,
+		UE_LOG(LogTemp, Error,
 		       TEXT("[AExperimentClient::Test] Connect to Tracking: Failed! (IP: %s)"), *ServerInfo.IP);
 		return false;
 	}
@@ -1053,7 +1056,7 @@ void AExperimentClient::ResetWorldState() {
 	ExperimentInfo.SetStatus(EExperimentStatus::WaitingEpisode);
 	OcclusionsStruct.SetAllHidden();
 	// keep Predator visible to acclimate player to predator's capture radius
-	this->SetPredatorIsVisible(true); 
+	SetPredatorIsVisible(true); 
 }
 
 void AExperimentClient::OnEpisodeFinished() {
