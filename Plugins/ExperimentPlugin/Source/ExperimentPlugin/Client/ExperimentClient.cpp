@@ -158,12 +158,12 @@ bool AExperimentClient::SpawnAndPossessPredator() {
 	constexpr FLocation SpawnLocation = {0.9, 0.5};
 	const float SpawnScale = OffsetOriginTransform.GetScale3D().X * PredatorScaleFactor; 
 	const FVector SpawnVector = UExperimentUtils::CanonicalToVrV2(SpawnLocation, MapLength, SpawnScale);
-	const FVector SpawnVectorAdjusted = FVector(SpawnVector.X, SpawnVector.Y, OffsetOriginTransform.GetLocation().Z + 10.0f);
+	const FVector SpawnVectorAdjusted = FVector(SpawnVector.X, SpawnVector.Y, OffsetOriginTransform.GetLocation().Z + 5.0f);
 
 	// actual spawning 
-	PredatorBasic = GetWorld()->SpawnActor<AActor>(PredatorBPClass, SpawnVectorAdjusted, Rotation, SpawnParams);
+	PredatorBasic = GetWorld()->SpawnActor<AExperimentPredator>(PredatorBPClass, SpawnVectorAdjusted, Rotation, SpawnParams);
+
 	check(PredatorBasic); // force a crash if not valid
-	
 	PredatorBasic->SetActorEnableCollision(false);
 	PredatorBasic->SetReplicates(true);
 	PredatorBasic->SetReplicateMovement(true);
@@ -466,7 +466,7 @@ void AExperimentClient::UpdatePredator(const FMessage& InMessage) {
 		FVector RightVector   = OffsetOriginTransform.GetRotation().GetRightVector();
 		RightVector.Normalize();
 		const FVector NewRelativeLocation	= (ForwardVector * VectorConverted.X) + (-RightVector * VectorConverted.Y);
-		const FVector FinalLocation = OffsetOriginTransform.GetLocation() + NewRelativeLocation + FVector(0, 0, 25.0f * OffsetOriginTransform.GetScale3D().X);
+		const FVector FinalLocation = OffsetOriginTransform.GetLocation() + NewRelativeLocation + FVector(0, 0, 10.0f * OffsetOriginTransform.GetScale3D().X);
 		const FRotator FinalRotation = FRotator(0,OffsetOriginTransform.GetRotation().Z + StepOut.rotation,0);
 
 		UE_LOG(LogTemp, Log, TEXT("[AExperimentClient::UpdatePredator] Location: %s"), *FinalLocation.ToString())
@@ -1077,7 +1077,13 @@ void AExperimentClient::HandleOnCapture(const FMessage MessageIn) {
 
 	// ExperimentManager->OnEpisodeFinishedSuccessDelegate.Broadcast();
 	// ExperimentManager->ProcessStopEpisodeResponse();
+	if (!ExperimentManager->bInEpisode) return;
 	ExperimentManager->OnEpisodeFinished();
+
+	if (PredatorBasic->IsValidLowLevelFast()) {
+		PredatorBasic->OnCapture();
+	}
+	
 	/* todo: play sound! */
 	UE_LOG(LogTemp, Log, TEXT("[AExperimentClient::HandleOnCapture]"));
 	Server_PlayCaptureSound();
