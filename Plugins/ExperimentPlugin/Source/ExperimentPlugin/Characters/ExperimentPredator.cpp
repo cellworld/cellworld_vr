@@ -14,8 +14,8 @@ AExperimentPredator::AExperimentPredator() : Super() {
 	bReplicates = true;
 
 	SkeletalMeshComponent = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("SkeletalMeshComponent"));
-	SkeletalMeshComponent->SetOverlayMaterialMaxDrawDistance(-1.0f); // hide the overlay material (show OnCapture->0.0f)  
 	SetRootComponent(SkeletalMeshComponent);
+	SkeletalMeshComponent->SetRelativeRotation(FRotator(0.0f, 90.0f, 0.0f));
 }
 
 void AExperimentPredator::PostInitializeComponents() {
@@ -33,9 +33,6 @@ void AExperimentPredator::Tick(float DeltaTime) {
 
 void AExperimentPredator::OnCapture() {
 	if (!HasAuthority()) return;
-	if (!OriginalMaterial && SkeletalMeshComponent) {
-		OriginalMaterial = SkeletalMeshComponent->GetMaterial(0);
-	}
 	
 	bIsCaptured = true;
 	OnRep_IsCaptured(); // Apply material immediately on server
@@ -65,7 +62,7 @@ void AExperimentPredator::ApplyCaptureMaterial() {
 
 	if (!SkeletalMeshComponent) { return; }
 	SkeletalMeshComponent->SetOverlayMaterialMaxDrawDistance(0.0f); // cheat code (oopsie..): hides the material 
-	UE_LOG(LogTemp, Log, TEXT("[AExperimentPredator::ApplyOriginalMaterial] OverlayMaterial changed"))
+	UE_LOG(LogTemp, Log, TEXT("[AExperimentPredator::ApplyCaptureMaterial] OverlayMaterial changed"))
 }
 
 void AExperimentPredator::ApplyOriginalMaterial() {
@@ -89,6 +86,5 @@ void AExperimentPredator::StartRevertTimer() {
 void AExperimentPredator::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 	DOREPLIFETIME(AExperimentPredator, bIsCaptured);
-	DOREPLIFETIME(AExperimentPredator, OriginalMaterial);
 }
 

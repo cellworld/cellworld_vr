@@ -23,9 +23,6 @@ public:
 	USkeletalMeshComponent* SkeletalMeshComponent;
 
 	UPROPERTY(Replicated, BlueprintReadWrite, Category = "Predator")
-	UMaterialInterface* OriginalMaterial;
-
-	UPROPERTY(Replicated, BlueprintReadWrite, Category = "Predator")
 	UMaterialInterface* OverlayMaterial;
 	
 	// essentially toggles overlay material on/off (off = 0 opacity)
