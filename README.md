@@ -3,7 +3,7 @@
 
 ### Cellworld Server
 
-Make sure to use the [`CellworldServer-dev` branch](https://github.com/felixmaldonadoos/CellworldServer/tree/dev).
+Make sure to use the [CellworldServer-dev branch](https://github.com/felixmaldonadoos/CellworldServer/tree/dev).
 
 ### System 
 
