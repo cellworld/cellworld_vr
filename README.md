@@ -10,7 +10,7 @@
 
 - [🖥️ System Compatibility](#️-system-compatibility)
 - [🌐 Cellworld Server](#-cellworld-server)
-- [⚙️ Setup](#setup)
+- [⚙️ Setup](#-setup)
   - [📁 Cloning This Repository](#-cloning-this-repository-git-lfs-required)
   - [✅ Install Git LFS](#-step-1-install-git-lfs-windows-only)
   - [✅ Clone the Repository](#-step-2-clone-the-repository)
