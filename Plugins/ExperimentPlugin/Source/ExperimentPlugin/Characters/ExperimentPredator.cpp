@@ -9,7 +9,7 @@ AExperimentPredator::AExperimentPredator() : Super() {
 	bNetLoadOnClient		 = true;
 	NetUpdateFrequency	 = 100.0f;
 	MinNetUpdateFrequency = 60.0f;
-
+ 
 	PrimaryActorTick.bCanEverTick = false;
 	bReplicates = true;
 
