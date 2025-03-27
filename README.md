@@ -8,14 +8,14 @@
 
 ## 📚 Glossary
 
-- [🖥️ System Compatibility](#️-system-compatibility)
-- [🌐 Cellworld Server](#-cellworld-server)
+- [🖥️ System Compatibility](#system-compatibility)
+- [🌐 Cellworld Server](#cellworld-server)
 - [⚙️ Setup](#setup)
-  - [📁 Cloning This Repository](#-cloning-this-repository-git-lfs-required)
-  - [✅ Install Git LFS](#-step-1-install-git-lfs-windows-only)
-  - [✅ Clone the Repository](#-step-2-clone-the-repository)
-  - [🧪 Verify LFS Setup](#-verify-lfs-setup)
-- [📦 Other (Temporary)](#-other-temporary)
+  - [📁 Cloning This Repository](#cloning-this-repository-git-lfs-required)
+  - [✅ Install Git LFS](#step-1-install-git-lfs-windows-only)
+  - [✅ Clone the Repository](#step-2-clone-the-repository)
+  - [🧪 Verify LFS Setup](#verify-lfs-setup)
+- [📦 Other (Temporary)](#other-temporary)
 
 ---
 
