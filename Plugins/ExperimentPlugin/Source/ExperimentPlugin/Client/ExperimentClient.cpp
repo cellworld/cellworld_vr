@@ -495,26 +495,24 @@ void AExperimentClient::UpdatePreyPosition(const FVector InVector, const FRotato
 		UE_LOG(LogTemp, Warning, TEXT("[AExperimentClient::UpdatePreyPosition] bResetSuccessDbg false"))
 		return;
 	}
-	
 	if (!bCanUpdatePrey) { return; }
-		
 	if (!ensure(this->ValidateClient(TrackingClient))) {
 		UE_LOG(LogTemp, Warning, TEXT("[AExperimentClient::UpdatePreyPosition] TrackingClient NULL"))
 		return;
 	}
-
 	if (FrameCountPrey == 0) {
 		FirstLocationDebug = InVector;
-		UE_LOG(LogTemp, Warning, TEXT("[AExperimentClient::UpdatePreyPosition] FirstLocationDebug: %s"),
+		UE_LOG(LogTemp, Log, TEXT("[AExperimentClient::UpdatePreyPosition] FirstLocationDebug: %s"),
 			*FirstLocationDebug.ToString())
 	}
-
-	/* prepare Step */
-	/*
+	
+	/* 
+	 *
 	 * ==== NEW IMPLEMENTATION ====
 	 * in the new implementation, coordinate conversion is done in python server-side, so just take the player's position
 	 * and send it over as-is. Similar to UpdatePredator (but reverse)
 	 * 
+	 */
 	const FVector OriginVector = OffsetOriginTransform.GetLocation();
 	const FRotator OriginRotation = OffsetOriginTransform.GetRotation().Rotator();
 	const FString InLocationString = FString::Printf(TEXT("%0.2f,%0.2f,%0.2f"), InVector.X, InVector.Y, InVector.Z);
@@ -529,35 +527,18 @@ void AExperimentClient::UpdatePreyPosition(const FVector InVector, const FRotato
 		*InOriginLocation,
 		*InOriginRotation,
 		*InOriginScale);
-		* ==== NEW IMPLEMENTATION ====
-		*/
 	
-	// UE_LOG(LogTemp, Log, TEXT("[AExperimentClient::UpdatePreyPosition] Data: %s"), *DataString)
-	// UE_LOG(LogTemp, Log, TEXT("[AExperimentClient::UpdatePreyPosition] Data: %s"), *Step.data)
-	// flip y-axis 
-	FVector InVectorFlipped = InVector;
-	InVectorFlipped.Y *= -1;
-	FVector OffsetFlipped = OffsetOriginTransform.GetLocation();
-	OffsetFlipped.Y *= -1; 
-	
-	const FVector InVectorRelative = InVectorFlipped - OffsetFlipped; // relative location
-	const FVector RotatedVector = UKismetMathLibrary::GreaterGreater_VectorRotator(InVectorRelative,OffsetOriginTransform.GetRotation().Rotator());
-	const FLocation Location = UExperimentUtils::VrToCanonical(RotatedVector, MapLength, OffsetOriginTransform.GetScale3D().X);
-	UE_LOG(LogTemp, Log, TEXT("[UpdatePreyPosition] ==== USING NEW LOCATION"))
-	// FLocation Location;
-	// Location.x = RotatedVector.X;
-	// Location.y = RotatedVector.Y;
-
+	UE_LOG(LogTemp, Log, TEXT("[AExperimentClient::UpdatePreyPosition] ==== USING NEW LOCATION ==== "))
 	FStep Step;
-	Step.agent_name = "prey";
-	Step.frame = FrameCountPrey;
-	Step.location.x    = Location.x;
-	Step.location.y    = Location.x;
-	Step.rotation    = InRotation.Yaw;
-	Step.data = "VR";
+	Step.agent_name		= "prey"; 
+	Step.frame			= FrameCountPrey; // starts at 0
+	Step.location.x		= InVector.X;
+	Step.location.y		= InVector.Y;
+	Step.rotation		= InRotation.Yaw;
+	Step.data			= "VR";
 
-	UE_LOG(LogTemp, Log, TEXT("[UpdatePreyPosition] Step: %s "), *UExperimentUtils::StepToJsonString(Step))
-	
+	const FString StepJsonString = UExperimentUtils::StepToJsonString(Step); 
+	UE_LOG(LogTemp, Log, TEXT("[AExperimentClient::UpdatePreyPosition] Sending Step: %s "),*StepJsonString)
 	if (ensure(ExperimentManager->IsValidLowLevelFast() && ExperimentManager->Stopwatch->IsValidLowLevelFast())) {
 		Step.time_stamp = ExperimentManager->Stopwatch->GetElapsedTime();
 	} else { Step.time_stamp = -1.0f; }
@@ -567,10 +548,8 @@ void AExperimentClient::UpdatePreyPosition(const FVector InVector, const FRotato
 		UE_LOG(LogTemp, Error, TEXT("[AExperimentClient::UpdatePreyPosition] Failed: Send prey step!"))
 		// todo: notifyondisconnect
 		return;
-	}	
-	UE_LOG(LogTemp, Log, TEXT("[AExperimentClient::UpdatePreyPosition] Sent frame: %i | location: %s"),
-		FrameCountPrey,
-		*InVector.ToString())
+	}
+	
 	FrameCountPrey += 1;
 }
 
