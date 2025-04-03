@@ -207,7 +207,7 @@ public:
 		Port(4791),
 		// IP(TEXT("192.168.1.5")) // (alexander's) main machine mazenet-2 WIFI
 		//IP(TEXT("192.168.1.2")) // (alexander's) main machine mazenet-2 ETH
-		IP(TEXT("192.168.1.3"))
+		IP(TEXT("192.168.1.8")) //Finn's Ethernet Machine
 		// IP(TEXT("192.168.1.3")) // alberto machine 
 		{}
 	

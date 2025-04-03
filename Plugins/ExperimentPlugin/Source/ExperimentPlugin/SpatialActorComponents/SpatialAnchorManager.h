@@ -85,9 +85,9 @@ public:
 	void Server_ToggleExperiment_Implementation();
 
 	UFUNCTION(Server, Reliable, WithValidation, BlueprintCallable)
-	void Server_AnchorCreate(const FVector InLocation);
-	bool Server_AnchorCreate_Validate(const FVector InLocation);
-	void Server_AnchorCreate_Implementation(const FVector InLocation);
+	void Server_AnchorCreate( FVector InLocation);
+	bool Server_AnchorCreate_Validate( FVector InLocation);
+	void Server_AnchorCreate_Implementation( FVector InLocation);
 
 	UFUNCTION(Server, Reliable, WithValidation, BlueprintCallable)
 	void Server_SpawnSupportAnchors(const FVector InLocation);
@@ -172,5 +172,6 @@ public:
 	TObjectPtr<AHabitat> Habitat;
 
 	int debug = 0;
+	int AnchorCount = 0;
 };
 

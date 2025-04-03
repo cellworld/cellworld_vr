@@ -251,6 +251,7 @@ bool USpatialAnchorManager::Client_AttachAnchorToActor_Validate(AActor* InActor)
 	return true;
 }
 
+//NOTE -- FINN - maybe come back to this?
 void USpatialAnchorManager::Client_AttachAnchorToActor_Implementation(AActor* InActor) {
 	UE_LOG(LogTemp, Log, TEXT("[USpatialAnchorManager::Client_AttachAnchorToActor_Implementation] Called"))
 
@@ -264,12 +265,12 @@ void USpatialAnchorManager::Client_AttachAnchorToActor_Implementation(AActor* In
 	UE_LOG(LogTemp, Log, TEXT("[USpatialAnchorManager::Server_AnchorCreateCluster_Implementation] Spawned OK!"));
 }
 
-bool USpatialAnchorManager::Server_AnchorCreate_Validate(const FVector InLocation) {
+bool USpatialAnchorManager::Server_AnchorCreate_Validate( FVector InLocation) {
 	UE_LOG(LogTemp, Log, TEXT("[USpatialAnchorManager::Server_AnchorCreate_Validate] called"))
 	return true;
 }
 
-void USpatialAnchorManager::Server_AnchorCreate_Implementation(const FVector InLocation) {
+void USpatialAnchorManager::Server_AnchorCreate_Implementation( FVector InLocation) {
 	UE_LOG(LogTemp, Log, TEXT("[USpatialAnchorManager::Server_AnchorCreate_Implementation] called"))
 	UE_LOG(LogTemp, Log,
 		TEXT("[USpatialAnchorManager::Server_AnchorCreate_Implementation] InLocation: %s"),
@@ -299,7 +300,12 @@ void USpatialAnchorManager::Server_AnchorCreate_Implementation(const FVector InL
 		const FRotator SpawnRotation = FRotator::ZeroRotator;
 		
 		// Spawn the actor
-		AActor* SpawnedAnchorModel = GetWorld()->SpawnActor<AActor>(AnchorsBPClass,  InLocation, SpawnRotation, SpawnParams);
+		FVector SpawnLocation = InLocation;	
+		if (SpawnedAnchors.Num() > 1) {
+			SpawnLocation.Z = SpawnedAnchors[0]->GetActorLocation().Z;
+			InLocation = SpawnLocation;
+		}
+		AActor* SpawnedAnchorModel = GetWorld()->SpawnActor<AActor>(AnchorsBPClass, InLocation, SpawnRotation, SpawnParams);
 		if (!SpawnedAnchorModel) {
 			UE_LOG(LogTemp, Error, TEXT("[USpatialAnchorManager::Server_AnchorCreate_Implementation] Spawn Failed!"));
 			return;
@@ -309,6 +315,7 @@ void USpatialAnchorManager::Server_AnchorCreate_Implementation(const FVector InL
 			TEXT("[USpatialAnchorManager::Server_AnchorCreate_Implementation] Spawned AnchorModel."))
 		SpawnedAnchorModel->SetReplicates(true);
 		SpawnedAnchorModel->SetActorScale3D(FVector(1.0f,1.0f,1.0f));
+
 		SpawnedAnchors.AddUnique(SpawnedAnchorModel);
 		
 		if (SpawnedAnchors.Num() == 1) {
@@ -471,6 +478,7 @@ void USpatialAnchorManager::Server_FinishSpawn_Implementation() {
 	const float NewActorScaleFactor = static_cast<float>(NewDistance) / BaseDistance;
 	UE_LOG(LogTemp, Log, TEXT("[USpatialAnchorManager::Server_FinishSpawn_Implementation] NewActorScaleFactor: %0.3f!"),
 			NewActorScaleFactor)
+
 
 	const FRotator FinalRotation = UKismetMathLibrary::FindLookAtRotation(AnchorLocationA,AnchorLocationB);
 	
