@@ -303,6 +303,8 @@ void USpatialAnchorManager::Server_AnchorCreate_Implementation( FVector InLocati
 		FVector SpawnLocation = InLocation;	
 		if (SpawnedAnchors.Num() > 1) {
 			SpawnLocation.Z = SpawnedAnchors[0]->GetActorLocation().Z;
+			UE_LOG(LogTemp, Error, TEXT("[USpatialAnchorManager::Server_AnchorCreate_Implementation] Changed Spawnlocation of second actor!"));
+
 			InLocation = SpawnLocation;
 		}
 		AActor* SpawnedAnchorModel = GetWorld()->SpawnActor<AActor>(AnchorsBPClass, InLocation, SpawnRotation, SpawnParams);
@@ -456,8 +458,9 @@ void USpatialAnchorManager::Server_FinishSpawn_Implementation() {
 	check(SpawnedAnchors.IsValidIndex(1))
 
 	const FVector AnchorLocationA = SpawnedAnchors[0]->GetActorLocation();
-	const FVector AnchorLocationB = SpawnedAnchors[1]->GetActorLocation();
-	
+	 FVector AnchorLocationB = SpawnedAnchors[1]->GetActorLocation();
+	 //Finn change -- set the location of the second anchor to have the same Z coordinate as the first anchor.
+	AnchorLocationB.Z = AnchorLocationA.Z;
 	UE_LOG(LogTemp, Log, TEXT("[USpatialAnchorManager::Server_FinishSpawn_Implementation] AnchorLocationA: %s"),
 		*AnchorLocationA.ToString())
 	UE_LOG(LogTemp, Log, TEXT("[USpatialAnchorManager::Server_FinishSpawn_Implementation] AnchorLocationB: %s"),
@@ -482,6 +485,7 @@ void USpatialAnchorManager::Server_FinishSpawn_Implementation() {
 
 	const FRotator FinalRotation = UKismetMathLibrary::FindLookAtRotation(AnchorLocationA,AnchorLocationB);
 	
+	//AnchorLocationA is the location of the door
 	FTransform SpawnTransformFinal;
 	SpawnTransformFinal.SetLocation(AnchorLocationA);
 	SpawnTransformFinal.SetScale3D(FVector(1.0f,1.0f,1.0f)*NewActorScaleFactor);

@@ -80,7 +80,9 @@ public:
 			constexpr float MapLength         = 235.185290;    // base length of habitat 
 			constexpr float HeightScaleFactor = 5;             // make occlusions a bit taller; we aren't mice
 			
-			const FVector SpawnLocationConverted = UExperimentUtils::CanonicalToVrV2(
+			// OLD IMPLEMENTATION: CONVERT IN CPP 
+			// NEW IMPL: CONVERT EVERYTHING IN PYTHON
+			/*const FVector SpawnLocationConverted = UExperimentUtils::CanonicalToVrV2(
 				AllLocations[i],
 				MapLength,
 				OriginTransform.GetScale3D().X);
@@ -89,13 +91,14 @@ public:
 			FVector RightVector   = OriginTransform.GetRotation().GetRightVector(); RightVector.Normalize();
 			
 			const FVector NewRelativeLocation = (ForwardVector * SpawnLocationConverted.X) + (-RightVector * SpawnLocationConverted.Y);
-			FVector FinalLocation = OriginTransform.GetLocation() + NewRelativeLocation;
+			FVector FinalLocation = OriginTransform.GetLocation() + NewRelativeLocation;*/
 
 			FTransform SpawnTransform;
 			FVector OcclusionScale = OriginTransform.GetScale3D()*ScaleOffset;
+			FVector LocationVecNewImplementation = FVector(AllLocations[i].x, AllLocations[i].y, OriginTransform.GetLocation().Z);
 			OcclusionScale.Z *= HeightScaleFactor;
 			SpawnTransform.SetScale3D(OcclusionScale);
-			SpawnTransform.SetLocation(FinalLocation);
+			SpawnTransform.SetLocation(LocationVecNewImplementation);
 			SpawnTransform.SetRotation(OriginTransform.GetRotation());
 			
 			AOcclusion* SpawnOcclusion = WorldRefIn->SpawnActor<AOcclusion>(
@@ -206,8 +209,8 @@ public:
 	FServerInfo() : // what is the IP of cellworld server? 
 		Port(4791),
 		// IP(TEXT("192.168.1.5")) // (alexander's) main machine mazenet-2 WIFI
-		//IP(TEXT("192.168.1.2")) // (alexander's) main machine mazenet-2 ETH
-		IP(TEXT("192.168.1.8")) //Finn's Ethernet Machine
+		IP(TEXT("192.168.1.3")) // (alexander's) main machine mazenet-2 ETH
+		//IP(TEXT("192.168.1.8")) //Finn's Ethernet Machine
 		// IP(TEXT("192.168.1.3")) // alberto machine 
 		{}
 	

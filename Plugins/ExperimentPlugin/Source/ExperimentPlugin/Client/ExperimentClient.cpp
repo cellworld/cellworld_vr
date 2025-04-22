@@ -458,26 +458,27 @@ void AExperimentClient::UpdatePredator(const FMessage& InMessage) {
 	if (PredatorBasic->IsValidLowLevelFast()) {
 		// ReSharper disable once CppUseStructuredBinding
 		const FStep StepOut = UExperimentUtils::JsonStringToStep(InMessage.body);
-		const FVector VectorConverted = UExperimentUtils::CanonicalToVrV2(StepOut.location, MapLength,
-			OffsetOriginTransform.GetScale3D().X);
+		//const FVector VectorConverted = UExperimentUtils::CanonicalToVrV2(StepOut.location, MapLength,
+		//	OffsetOriginTransform.GetScale3D().X);
+		//
+		//FVector ForwardVector = OffsetOriginTransform.GetRotation().GetForwardVector();
+		//ForwardVector.Normalize();
+		//FVector RightVector   = OffsetOriginTransform.GetRotation().GetRightVector();
+		//RightVector.Normalize();
+		//const FVector NewRelativeLocation	= (ForwardVector * VectorConverted.X) + (-RightVector * VectorConverted.Y);
+		//const FVector FinalLocation = OffsetOriginTransform.GetLocation() + NewRelativeLocation + FVector(0, 0, 10.0f * OffsetOriginTransform.GetScale3D().X);
+		//const FRotator FinalRotation = FRotator(0,OffsetOriginTransform.GetRotation().Z + StepOut.rotation,0);
+		//UE_LOG(LogTemp, Log, TEXT("[AExperimentClient::UpdatePredator] Location: %s"), *FinalLocation.ToString())
 		
-		FVector ForwardVector = OffsetOriginTransform.GetRotation().GetForwardVector();
-		ForwardVector.Normalize();
-		FVector RightVector   = OffsetOriginTransform.GetRotation().GetRightVector();
-		RightVector.Normalize();
-		const FVector NewRelativeLocation	= (ForwardVector * VectorConverted.X) + (-RightVector * VectorConverted.Y);
-		const FVector FinalLocation = OffsetOriginTransform.GetLocation() + NewRelativeLocation + FVector(0, 0, 10.0f * OffsetOriginTransform.GetScale3D().X);
-		const FRotator FinalRotation = FRotator(0,OffsetOriginTransform.GetRotation().Z + StepOut.rotation,0);
+		const FVector  FinalLocation = {StepOut.location.x, StepOut.location.y, 10.0f * OffsetOriginTransform.GetScale3D().X}; 
+		const FRotator FinalRotation = { 0.0f, StepOut.rotation, 0.0f };
 
-		UE_LOG(LogTemp, Log, TEXT("[AExperimentClient::UpdatePredator] Location: %s"), *FinalLocation.ToString())
-		
 		FTransform UpdateTransform;
 		UpdateTransform.SetScale3D(FVector(1.0f, 1.0f, 1.0f)*OffsetOriginTransform.GetScale3D().X * PredatorScaleFactor);
 		UpdateTransform.SetLocation(FinalLocation);
 		UpdateTransform.SetRotation(FinalRotation.Quaternion());
 		PredatorBasic->SetActorTransform(UpdateTransform);
 		FrameCountPredator++;
-
 	} else {
 		UE_LOG(LogTemp, Error, TEXT("[AExperimentClient::UpdatePredator] PredatorBasic NULL"));
 	}
@@ -513,6 +514,8 @@ void AExperimentClient::UpdatePreyPosition(const FVector InVector, const FRotato
 	 * and send it over as-is. Similar to UpdatePredator (but reverse)
 	 * 
 	 */
+
+	//TO DO, compute translation matrix and then apply to the InLocation/Rotation
 	const FVector OriginVector = OffsetOriginTransform.GetLocation();
 	const FRotator OriginRotation = OffsetOriginTransform.GetRotation().Rotator();
 	const FString InLocationString = FString::Printf(TEXT("%0.2f,%0.2f,%0.2f"), InVector.X, InVector.Y, InVector.Z);
@@ -520,6 +523,8 @@ void AExperimentClient::UpdatePreyPosition(const FVector InVector, const FRotato
 	const FString InOriginLocation = FString::Printf(TEXT("%0.2f,%0.2f,%0.2f"), OriginVector.X, OriginVector.Y, OriginVector.Z);
 	const FString InOriginRotation = FString::Printf(TEXT("%0.2f,%0.2f,%0.2f"), OriginRotation.Roll, OriginRotation.Pitch, OriginRotation.Yaw);
 	const FString InOriginScale    = FString::Printf(TEXT("%0.2f"), OffsetOriginTransform.GetScale3D().X);
+
+
 	// invec, inrot, originvec, originrot, originscale
 	FString DataString = FString::Printf(TEXT("%s,%s,%s,%s,%s"),
 		*InLocationString,
@@ -528,6 +533,8 @@ void AExperimentClient::UpdatePreyPosition(const FVector InVector, const FRotato
 		*InOriginRotation,
 		*InOriginScale);
 	
+
+
 	//represent 
 	UE_LOG(LogTemp, Log, TEXT("[AExperimentClient::UpdatePreyPosition] ==== USING NEW LOCATION ==== "))
 	FStep Step;

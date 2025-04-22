@@ -229,6 +229,9 @@ FLocation UExperimentUtils::VrToCanonical(const FVector VectorIn, const float Ma
 	LocationOut.y = Apothem		   != 0.0f ? HabitatOffset + (VectorIn.Y / (2*Apothem)) : 0.0f; 
 
 	/* apply offset scale to account for legacy camera system */
+	//def scale_legacy_y(y) :
+	//	return y * 0.5 * math.sqrt(3) + 0.5 - math.sqrt(3) / 4
+	// ==
 	// LocationOut.y  = LocationOut.y * HabitatOffset * UKismetMathLibrary::Sqrt(3) +
 	// 	HabitatOffset - UKismetMathLibrary::Sqrt(3)/4;	
 	return LocationOut;
