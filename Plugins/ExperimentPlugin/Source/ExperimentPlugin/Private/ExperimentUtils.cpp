@@ -219,6 +219,8 @@ FString UExperimentUtils::StepToJsonString(FStep Step) {
 }
 
 FLocation UExperimentUtils::VrToCanonical(const FVector VectorIn, const float MapLengthIn, const float WorldScaleIn) {
+
+	
 	FLocation LocationOut;
 	constexpr float HabitatOffset = 0.5;
 	/* v2 */

@@ -459,7 +459,6 @@ void USpatialAnchorManager::Server_FinishSpawn_Implementation() {
 
 	const FVector AnchorLocationA = SpawnedAnchors[0]->GetActorLocation();
 	 FVector AnchorLocationB = SpawnedAnchors[1]->GetActorLocation();
-
 	 //Finn change -- set the location of the second anchor to have the same Z coordinate as the first anchor.
 	AnchorLocationB.Z = AnchorLocationA.Z;
 	UE_LOG(LogTemp, Log, TEXT("[USpatialAnchorManager::Server_FinishSpawn_Implementation] AnchorLocationA: %s"),
@@ -535,15 +534,6 @@ void USpatialAnchorManager::Server_FinishSpawn_Implementation() {
 
 	/* finish - spawn floor for AI predator to walk on */
 	bSpawnInProgress = false;
-	
-	FVector difference = AnchorLocationB - AnchorLocationA;
-	double dx = difference.X;
-	double dy = difference.Y;
-
-	double pythoga = dx * dx + dy * dy;
-
-	FMatrix2x2 M(dx/pythoga, dy/ pythoga, -dy/ pythoga, dx/ pythoga);
-	//Create a Transform Matrix
 	
 	AGameModeBase* GameModeBase = GetWorld()->GetAuthGameMode();
 	if (AExperimentGameMode* ExperimentGameMode = Cast<AExperimentGameMode>(GameModeBase)) {
