@@ -454,13 +454,13 @@ void AExperimentClient::HandleStopEpisodeRequestTimedOut() {
 /* update predator's location using step message from tracking service */
 void AExperimentClient::UpdatePredator(const FMessage& InMessage) {
 	if (!bCanUpdatePrey) { 
-		UE_LOG(LogTemp, Log, TEXT("[AExperimentClient::UpdatePredator] bCanUpdatePrey FALSE. returning."));
+		//UE_LOG(LogTemp, Log, TEXT("[AExperimentClient::UpdatePredator] bCanUpdatePrey FALSE. returning."));
 		return; 
 	}
 
 	if (PredatorBasic->IsValidLowLevelFast()) {
 		// ReSharper disable once CppUseStructuredBinding
-		UE_LOG(LogTemp, Log, TEXT("[AExperimentClient::UpdatePredator] Input message: %s"), *InMessage.body);
+		//UE_LOG(LogTemp, Log, TEXT("[AExperimentClient::UpdatePredator] Input message: %s"), *InMessage.body);
 		//FString JsonString = InMessage.body; // Or Message->GetPayload(), depending on context
 		//TSharedPtr<FJsonObject> JsonObject;
 		//TSharedRef<TJsonReader<>> Reader = TJsonReaderFactory<>::Create(JsonString);
@@ -482,21 +482,21 @@ void AExperimentClient::UpdatePredator(const FMessage& InMessage) {
 		//	UE_LOG(LogTemp, Error, TEXT("Failed to parse JSON string."));
 		//}
 		FStep StepOut = UExperimentUtils::JsonStringToStep(InMessage.body);
-		UE_LOG(LogTemp, Log, TEXT("[AExperimentClient::UpdatePredator] Input message after JSON parse: %s"), *InMessage.body);
+		/*UE_LOG(LogTemp, Log, TEXT("[AExperimentClient::UpdatePredator] Input message after JSON parse: %s"), *InMessage.body);
 
-		UE_LOG(LogTemp, Log, TEXT("[AExperimentClient::UpdatePredator] JSON parsed: %0.2f, %0.2f"), StepOut.location.x, StepOut.location.y);
+		UE_LOG(LogTemp, Log, TEXT("[AExperimentClient::UpdatePredator] JSON parsed: %0.2f, %0.2f"), StepOut.location.x, StepOut.location.y);*/
 
 
 		
 		const FVector  FinalLocation = {StepOut.location.x, StepOut.location.y, 10.0f * OffsetOriginTransform.GetScale3D().X}; 
 		const FRotator FinalRotation = { 0.0f, StepOut.rotation, 0.0f };
-		UE_LOG(LogTemp, Log, TEXT("[AExperimentClient::UpdatePredator] final location vector: %0.2f, %0.2f"), FinalLocation.X, FinalLocation.Y);
+		//UE_LOG(LogTemp, Log, TEXT("[AExperimentClient::UpdatePredator] final location vector: %0.2f, %0.2f"), FinalLocation.X, FinalLocation.Y);
 
 		FTransform UpdateTransform;
 		UpdateTransform.SetScale3D(FVector(1.0f, 1.0f, 1.0f)*OffsetOriginTransform.GetScale3D().X * PredatorScaleFactor);
 		UpdateTransform.SetLocation(FinalLocation);
 		UpdateTransform.SetRotation(FinalRotation.Quaternion());
-		UE_LOG(LogTemp, Log, TEXT("[AExperimentClient::UpdatePredator] %s"),*FinalLocation.ToString());
+		//UE_LOG(LogTemp, Log, TEXT("[AExperimentClient::UpdatePredator] %s"),*FinalLocation.ToString());
 		PredatorBasic->SetActorTransform(UpdateTransform);
 		FrameCountPredator++;
 	} else {
