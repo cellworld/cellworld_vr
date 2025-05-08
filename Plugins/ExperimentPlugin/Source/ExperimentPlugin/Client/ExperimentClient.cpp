@@ -552,8 +552,6 @@ void AExperimentClient::UpdatePreyPosition(const FVector InVector, const FRotato
 		*InOriginLocation,
 		*InOriginRotation,
 		*InOriginScale);
-	
-
 
 	//represent 
 	UE_LOG(LogTemp, Log, TEXT("[AExperimentClient::UpdatePreyPosition] ==== USING NEW LOCATION ==== "))
@@ -563,9 +561,9 @@ void AExperimentClient::UpdatePreyPosition(const FVector InVector, const FRotato
 	Step.location.x		= InVector.X;
 	Step.location.y		= InVector.Y;
 	Step.rotation		= InRotation.Yaw;
-	Step.data			= "VR";
+	Step.data			= InRotation.ToString();;
 
-	const FString StepJsonString = UExperimentUtils::StepToJsonString(Step); 
+	const FString StepJsonString = UExperimentUtils::StepToJsonString(Step);
 	UE_LOG(LogTemp, Log, TEXT("[AExperimentClient::UpdatePreyPosition] Sending Step: %s "),*StepJsonString)
 	if (ensure(ExperimentManager->IsValidLowLevelFast() && ExperimentManager->Stopwatch->IsValidLowLevelFast())) {
 		Step.time_stamp = ExperimentManager->Stopwatch->GetElapsedTime();
