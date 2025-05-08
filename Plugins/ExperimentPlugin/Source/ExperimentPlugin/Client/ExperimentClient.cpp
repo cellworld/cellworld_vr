@@ -3,34 +3,17 @@
 #include "Engine/CoreSettings.h"
 #include "Net/UnrealNetwork.h"
 #include "ExperimentPlugin/DataManagers/ExperimentManager.h"
-#include "Sound/SoundCue.h"
 
 AExperimentClient::AExperimentClient() {
 	PrimaryActorTick.bCanEverTick = true;
 	PrimaryActorTick.bStartWithTickEnabled = true;
-
-	static ConstructorHelpers::FObjectFinder<USoundBase> OnCaptureCueLoad(
-			 TEXT("SoundCue'/Game/SoundFX/fail_sound_cue.fail_sound_cue'")
-		 );
-
-	if (OnCaptureCueLoad.Object != nullptr) {
-		OnCaptureSoundCue = OnCaptureCueLoad.Object;
-	}
-
-	// OnCaptureSoundComponent = CreateDefaultSubobject<UAudioComponent>(TEXT("OnCaptureSoundComponent"));
-	// OnCaptureSoundComponent->SetAutoActivate(false);
-	//
-	// if (OnCaptureSoundCue->IsValidLowLevelFast() && OnCaptureSoundComponent->IsValidLowLevel()) {
-	// 	OnCaptureSoundComponent->SetSound(OnCaptureSoundCue);
-	// 	OnCaptureSoundComponent->SetVolumeMultiplier(3.0f);
-	// }
+	bReplicates = true;
 }
 
 void AExperimentClient::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 	DOREPLIFETIME(AExperimentClient, PredatorBasic);
 	DOREPLIFETIME(AExperimentClient, OcclusionsStruct);
-	DOREPLIFETIME(AExperimentClient, OnCaptureSoundCue);
 }
 
 void AExperimentClient::OnExperimentFinished(const int InPlayerIndex) {
@@ -82,35 +65,6 @@ bool AExperimentClient::Server_AttachOcclusionsToArena_Validate() {
 
 void AExperimentClient::Server_AttachOcclusionsToArena_Implementation() {
 	UE_LOG(LogTemp, Log, TEXT("[AExperimentClient::Server_AttachOcclusionsToArena_Implementation]"))
-}
-
-bool AExperimentClient::Server_PlayCaptureSound_Validate() {
-	return true; 
-}
-
-void AExperimentClient::Server_PlayCaptureSound_Implementation() {
-	if (OnCaptureSoundCue->IsValidLowLevelFast() && PredatorBasic->IsValidLowLevelFast()) {
-		const FVector OnCaptureSoundLocation = PredatorBasic->GetActorLocation();
-		UE_LOG(LogTemp, Log, TEXT("[Server_PlayCaptureSound_Implementation] Playing sound at location: %s!"),
-			*OnCaptureSoundLocation.ToString())
-		Multicast_PlayCaptureSound(OnCaptureSoundLocation);
-		return;
-	}
-	UE_LOG(LogTemp, Error, TEXT("[Server_PlayCaptureSound_Implementation] Sound not valid!"))
-}
-
-bool AExperimentClient::Multicast_PlayCaptureSound_Validate(const FVector Location) {
-	UE_LOG(LogTemp, Log, TEXT("[Multicast_PlayCaptureSound_Validate]"))
-	return true;
-}
-
-void AExperimentClient::Multicast_PlayCaptureSound_Implementation(const FVector Location) {
-	if (OnCaptureSoundCue->IsValidLowLevelFast()) {
-		UE_LOG(LogTemp, Log, TEXT("[Multicast_PlayCaptureSound_Implementation] Playing sound!"))
-		UGameplayStatics::PlaySoundAtLocation(this,OnCaptureSoundCue, Location);
-		return;
-	}
-	UE_LOG(LogTemp, Error, TEXT("[Multicast_PlayCaptureSound_Implementation] Sound not valid!"))
 }
 
 //TODO - add argument to include MessageType (Log, Warning, Error, Fatal)
@@ -359,7 +313,6 @@ void AExperimentClient::HandleResetRequestResponse(const FString InResponse) {
 	UE_LOG(LogTemp, Log, TEXT("[AExperimentClient::HandleResetRequestResponse] Exiting OK"))
 	// if (this->SpawnAndPossessPredator()) { UE_LOG(LogTemp, Log, TEXT("Spawned predator: OK")); }
 	// else { UE_LOG(LogTemp, Error, TEXT("Spawned predator: FAILED")); }
-	Server_PlayCaptureSound();
 	bResetSuccessDbg = true;
 }
 
@@ -1089,9 +1042,7 @@ void AExperimentClient::HandleOnCapture(const FMessage MessageIn) {
 		PredatorBasic->OnCapture();
 	}
 	
-	/* todo: play sound! */
 	UE_LOG(LogTemp, Log, TEXT("[AExperimentClient::HandleOnCapture]"));
-	Server_PlayCaptureSound();
 }
 
 float AExperimentClient::GetTimeRemaining() const {

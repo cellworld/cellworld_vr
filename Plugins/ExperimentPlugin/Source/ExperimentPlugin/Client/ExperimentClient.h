@@ -1,5 +1,4 @@
 ﻿#pragma once
-
 #include "CoreMinimal.h"
 #include "Components/AudioComponent.h"
 #include "GameFramework/Actor.h"
@@ -11,8 +10,6 @@
 #include "AIController.h"
 #include "NavigationSystem.h"
 #include "Net/UnrealNetwork.h"
-#include "Sound/SoundCue.h"
-#include "SoundDefinitions.h"
 #include "Animation/SkeletalMeshActor.h"
 #include "ExperimentPlugin/HabitatComponents/Habitat.h"
 #include "ExperimentPlugin/DataManagers/ExperimentManager.h"
@@ -35,7 +32,6 @@ struct FOcclusions {
 public:
 
 	FOcclusions() { OcclusionAllArr = {}; }
-
 	UPROPERTY(EditAnywhere)
 		bool bAllLocationsLoaded = false; 
 	UPROPERTY(EditAnywhere)
@@ -209,9 +205,9 @@ public:
 	FServerInfo() : // what is the IP of cellworld server? 
 		Port(4791),
 		// IP(TEXT("192.168.1.5")) // (alexander's) main machine mazenet-2 WIFI
-		IP(TEXT("192.168.1.3")) // (alexander's) main machine mazenet-2 ETH
+		// IP(TEXT("192.168.1.3")) // (finn's) main machine mazenet-2 ETH
 		//IP(TEXT("192.168.1.8")) //Finn's Ethernet Machine
-		// IP(TEXT("192.168.1.3")) // alberto machine 
+		IP(TEXT("192.168.1.2")) // (alexander's) main machine mazenet-2 ETH 
 		{}
 	
 	int Port;
@@ -281,21 +277,6 @@ public:
 	void Server_AttachOcclusionsToArena();
 	bool Server_AttachOcclusionsToArena_Validate();
 	void Server_AttachOcclusionsToArena_Implementation();
-	
-	UPROPERTY()
-	TObjectPtr<UAudioComponent> OnCaptureSoundComponent; 
-	UPROPERTY(Replicated)
-	TObjectPtr<USoundBase> OnCaptureSoundCue; 
-	
-	UFUNCTION(Server, Reliable, WithValidation, BlueprintCallable)
-	void Server_PlayCaptureSound();
-	bool Server_PlayCaptureSound_Validate();
-	void Server_PlayCaptureSound_Implementation();
-	
-	UFUNCTION(NetMulticast, Reliable, WithValidation, BlueprintCallable)
-	void Multicast_PlayCaptureSound(const FVector Location);
-	bool Multicast_PlayCaptureSound_Validate(const FVector Location);
-	void Multicast_PlayCaptureSound_Implementation(const FVector Location);
 	
 	/* Requests */
 	UPROPERTY()

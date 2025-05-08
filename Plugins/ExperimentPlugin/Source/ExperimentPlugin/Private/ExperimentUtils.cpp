@@ -328,7 +328,8 @@ TArray<FLocation> UExperimentUtils::OcclusionsParseAllLocations(const FString Oc
 
 	// Deserialize the JSON string into a JSON array
 	if (!FJsonSerializer::Deserialize(Reader, JsonArray))
-	{ 
+
+		{ 
 		UE_LOG(LogTemp, Error, TEXT("[UExperimentUtils::OcclusionsParseAllLocations] Failed to parse deserialize JsonArray. Response: %s"),*OcclusionLocationsIn);
 		return LocationList;
 	}
