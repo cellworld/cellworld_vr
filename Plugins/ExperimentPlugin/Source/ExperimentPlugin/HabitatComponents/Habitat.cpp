@@ -64,8 +64,7 @@ AHabitat::AHabitat() {
 	AnchorMRMeshComponent->SetRelativeRotation(FRotator(0.0f,180.0f,0.0f));
 }
 
-void AHabitat::GetLifetimeReplicatedProps(TArray< FLifetimeProperty > & OutLifetimeProps) const
-{
+void AHabitat::GetLifetimeReplicatedProps(TArray< FLifetimeProperty > & OutLifetimeProps) const {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 	// DOREPLIFETIME(this, MeshHabitat);	
 }

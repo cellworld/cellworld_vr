@@ -7,10 +7,10 @@ AExperimentPredator::AExperimentPredator() : Super() {
 	SetActorEnableCollision(false);
 	SetReplicates(true);
 	SetNetDormancy(ENetDormancy::DORM_Never);
-	bNetLoadOnClient		 = true;
-	NetUpdateFrequency	 = 100.0f;
+	bNetLoadOnClient = true;
+	NetUpdateFrequency = 100.0f;
 	MinNetUpdateFrequency = 60.0f;
- 
+
 	PrimaryActorTick.bCanEverTick = false;
 	bReplicates = true;
 
@@ -20,18 +20,22 @@ AExperimentPredator::AExperimentPredator() : Super() {
 
 	if (!OnCaptureSoundCue) {
 		UE_LOG(LogTemp, Warning,
-			TEXT("[AExperimentPredator::AExperimentPredator] OnCaptureSoundCue Not assigned in BP. Looking for backup."));
+		       TEXT(
+			       "[AExperimentPredator::AExperimentPredator] OnCaptureSoundCue Not assigned in BP. Looking for backup."
+		       ));
 		static ConstructorHelpers::FObjectFinder<USoundBase> OnCaptureCueLoad(
-			 TEXT("SoundCue'/Game/SoundFX/fail_sound_cue.fail_sound_cue'")
-		 );
+			TEXT("SoundCue'/Game/SoundFX/fail_sound_cue.fail_sound_cue'")
+		);
 
 		if (OnCaptureCueLoad.Object != nullptr) {
 			OnCaptureSoundCue = OnCaptureCueLoad.Object;
 			UE_LOG(LogTemp, Log, TEXT("[AExperimentPredator::AExperimentPredator] OnCaptureSoundCue valid"));
-		}else{UE_LOG(LogTemp, Error, TEXT("[AExperimentPredator::AExperimentPredator] OnCaptureSoundCue Null"));}
-	} else {
+		}
+		else { UE_LOG(LogTemp, Error, TEXT("[AExperimentPredator::AExperimentPredator] OnCaptureSoundCue Null")); }
+	}
+	else {
 		UE_LOG(LogTemp, Log,
-			TEXT("[AExperimentPredator::AExperimentPredator] OnCaptureSoundCue found in BP valid."));
+		       TEXT("[AExperimentPredator::AExperimentPredator] OnCaptureSoundCue found in BP valid."));
 	}
 }
 
@@ -50,7 +54,7 @@ void AExperimentPredator::Tick(float DeltaTime) {
 
 void AExperimentPredator::OnCapture() {
 	if (!HasAuthority()) return;
-	
+
 	bIsCaptured = true;
 	OnRep_IsCaptured(); // Apply material immediately on server
 	StartRevertTimer();
@@ -65,8 +69,9 @@ void AExperimentPredator::Server_PlayCaptureSound_Implementation() {
 	UE_LOG(LogTemp, Log, TEXT("[AExperimentPredator::Server_PlayCaptureSound_Implementation]"))
 	if (OnCaptureSoundCue->IsValidLowLevelFast()) {
 		const FVector OnCaptureSoundLocation = GetActorLocation();
-		UE_LOG(LogTemp, Log, TEXT("[AExperimentPredator::Server_PlayCaptureSound_Implementation] Playing sound at location: %s!"),
-			*OnCaptureSoundLocation.ToString())
+		UE_LOG(LogTemp, Log,
+		       TEXT("[AExperimentPredator::Server_PlayCaptureSound_Implementation] Playing sound at location: %s!"),
+		       *OnCaptureSoundLocation.ToString())
 		Multicast_PlayCaptureSound(OnCaptureSoundLocation);
 		return;
 	}
@@ -97,13 +102,14 @@ void AExperimentPredator::RevertMaterial() {
 
 void AExperimentPredator::OnRep_IsCaptured() {
 	UE_LOG(LogTemp, Log, TEXT("[AExperimentPredator::OnRep_IsCaptured] bIsCaptured: %s"),
-		bIsCaptured ? TEXT("True") : TEXT("False"))
+	       bIsCaptured ? TEXT("True") : TEXT("False"))
 
 	if (bIsCaptured) {
 		ApplyCaptureMaterial();
 		Server_PlayCaptureSound();
 		// Multicast_PlayCaptureSound_Implementation(GetActorLocation());
-	} else {
+	}
+	else {
 		ApplyOriginalMaterial();
 	}
 }
@@ -139,4 +145,3 @@ void AExperimentPredator::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& 
 	DOREPLIFETIME(AExperimentPredator, bIsCaptured);
 	DOREPLIFETIME(AExperimentPredator, OnCaptureSoundCue);
 }
-

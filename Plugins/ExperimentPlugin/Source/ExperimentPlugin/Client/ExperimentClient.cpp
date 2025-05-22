@@ -32,8 +32,8 @@ void AExperimentClient::Server_SpawnOcclusions_Implementation() {
 
 void AExperimentClient::SetWorldOrigin(const FVector& InWorldOriginA, const FVector& InWorldOriginB) {
 	UE_LOG(LogTemp, Log, TEXT("[AExperimentClient::SetWorldOrigin] OriginA: %s | OriginB: %s"),
-		*InWorldOriginA.ToString(),
-		*InWorldOriginB.ToString())
+	       *InWorldOriginA.ToString(),
+	       *InWorldOriginB.ToString())
 
 	if (!TrackingClient) {
 		UE_LOG(LogTemp, Error, TEXT("[AExperimentClient::SetWorldOrigin] TrackingClient is NULL"));
@@ -46,21 +46,22 @@ void AExperimentClient::SetWorldOrigin(const FVector& InWorldOriginA, const FVec
 	}
 
 	FString OriginInfo = FString::Printf(TEXT("%0.4f,%0.4f,%0.4f,%0.4f"),
-		InWorldOriginA.X, InWorldOriginA.Y,
-		InWorldOriginB.X, InWorldOriginB.Y);
+	                                     InWorldOriginA.X, InWorldOriginA.Y,
+	                                     InWorldOriginB.X, InWorldOriginB.Y);
 
-	const FMessage MessageOrigin = UMessageClient::NewMessage("set_vr_origin",OriginInfo);
+	const FMessage MessageOrigin = UMessageClient::NewMessage("set_vr_origin", OriginInfo);
 	// Message.header = "set_vr_origin";
 	// Message.body = OriginInfo;
 	// const FMessage MessageOut = UMessageClient::NewMessage("prey_step", UExperimentUtils::StepToJsonString(Step));
 
 	if (!TrackingClient->SendMessage(MessageOrigin)) {
 		UE_LOG(LogTemp, Error, TEXT("[AExperimentClient::SetWorldOrigin] Failed to send."))
-	}else { UE_LOG(LogTemp, Error, TEXT("[AExperimentClient::SetWorldOrigin] Send origin OK!")) }
+	}
+	else { UE_LOG(LogTemp, Error, TEXT("[AExperimentClient::SetWorldOrigin] Send origin OK!")) }
 }
 
 bool AExperimentClient::Server_AttachOcclusionsToArena_Validate() {
-	return true; 
+	return true;
 }
 
 void AExperimentClient::Server_AttachOcclusionsToArena_Implementation() {
@@ -98,7 +99,7 @@ bool AExperimentClient::SpawnAndPossessPredator() {
 		UE_LOG(LogTemp, Fatal, TEXT("[AExperimentClient::SpawnAndPossessPredator] GetWorld() failed!"));
 		return false;
 	}
-	
+
 	if (PredatorBPClass == nullptr) {
 		UE_LOG(LogTemp, Fatal, TEXT("[AExperimentClient::SpawnAndPossessPredator] PredatorBPClass NULL"));
 		return false;
@@ -107,29 +108,31 @@ bool AExperimentClient::SpawnAndPossessPredator() {
 	// predator spawn information
 	FActorSpawnParameters SpawnParams;
 	SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButAlwaysSpawn;
-	
+
 	const FRotator Rotation(0.0f, 0.0f, 0.0f);
 	constexpr FLocation SpawnLocation = {0.9, 0.5};
-	const float SpawnScale = OffsetOriginTransform.GetScale3D().X * PredatorScaleFactor; 
+	const float SpawnScale = OffsetOriginTransform.GetScale3D().X * PredatorScaleFactor;
 	const FVector SpawnVector = UExperimentUtils::CanonicalToVrV2(SpawnLocation, MapLength, SpawnScale);
-	const FVector SpawnVectorAdjusted = FVector(SpawnVector.X, SpawnVector.Y, OffsetOriginTransform.GetLocation().Z + 5.0f);
+	const FVector SpawnVectorAdjusted = FVector(SpawnVector.X, SpawnVector.Y,
+	                                            OffsetOriginTransform.GetLocation().Z + 5.0f);
 
 	// actual spawning 
-	PredatorBasic = GetWorld()->SpawnActor<AExperimentPredator>(PredatorBPClass, SpawnVectorAdjusted, Rotation, SpawnParams);
+	PredatorBasic = GetWorld()->SpawnActor<AExperimentPredator>(PredatorBPClass, SpawnVectorAdjusted, Rotation,
+	                                                            SpawnParams);
 
 	check(PredatorBasic); // force a crash if not valid
 	PredatorBasic->SetActorEnableCollision(false);
 	PredatorBasic->SetReplicates(true);
 	PredatorBasic->SetReplicateMovement(true);
 	PredatorBasic->SetNetDormancy(ENetDormancy::DORM_Never);
-	PredatorBasic->bNetLoadOnClient		 = true;
-	PredatorBasic->NetUpdateFrequency	 = 100.0f;
+	PredatorBasic->bNetLoadOnClient = true;
+	PredatorBasic->NetUpdateFrequency = 100.0f;
 	PredatorBasic->MinNetUpdateFrequency = 60.0f;
 	PredatorBasic->AddToRoot();
 	SetPredatorIsVisible(true);
 	UE_LOG(LogTemp, Log, TEXT("[AExperimentClient::SpawnAndPossessPredator] SpawnVectorAdjusted: %s"),
-		*SpawnVectorAdjusted.ToString());
-	
+	       *SpawnVectorAdjusted.ToString());
+
 	UE_LOG(LogTemp, Log, TEXT("[AExperimentClient::SpawnAndPossessPredator] Returning true"));
 	return true;
 }
@@ -272,7 +275,9 @@ bool AExperimentClient::ResetTrackingAgent() {
 	UE_LOG(LogTemp, Log, TEXT("[AExperimentClient::ResetTrackingAgent] Preparing to send!"))
 
 	ResetRequest = TrackingClient->SendRequest("reset", "", 10.0f);
-	if (!ensureMsgf(ResetRequest, TEXT("[AExperimentClient::ResetTrackingAgent] ResetRequest is NULL"))) { return false; }
+	if (!ensureMsgf(ResetRequest, TEXT("[AExperimentClient::ResetTrackingAgent] ResetRequest is NULL"))) {
+		return false;
+	}
 	ResetRequest->AddToRoot();
 
 	ResetRequest->ResponseReceived.AddDynamic(this, &AExperimentClient::HandleResetRequestResponse);
@@ -309,7 +314,7 @@ void AExperimentClient::HandleResetRequestResponse(const FString InResponse) {
 		this->RequestRemoveDelegates(ResetRequest, "ResetRequest");
 		ResetRequest->RemoveFromRoot();
 	}
-	
+
 	UE_LOG(LogTemp, Log, TEXT("[AExperimentClient::HandleResetRequestResponse] Exiting OK"))
 	// if (this->SpawnAndPossessPredator()) { UE_LOG(LogTemp, Log, TEXT("Spawned predator: OK")); }
 	// else { UE_LOG(LogTemp, Error, TEXT("Spawned predator: FAILED")); }
@@ -331,7 +336,7 @@ void AExperimentClient::HandleResetRequestTimedOut() {
 		this->RequestRemoveDelegates(ResetRequest, "ResetRequest");
 		ResetRequest->RemoveFromRoot();
 	}
-	
+
 	UE_LOG(LogTemp, Error, TEXT("[HandleResetRequestTimedOut] Reset request timed out!"))
 	UE_LOG(LogTemp, Log, TEXT("[HandleResetRequestTimedOut] Broadcasting OnTimedOutDelegate"))
 	ExperimentManager->OnTimedOutDelegate.Broadcast("ResetRequest timed out!");
@@ -351,9 +356,10 @@ void AExperimentClient::SetPredatorIsVisible(const bool bNewVisibility) {
 	if (PredatorBasic->IsValidLowLevelFast()) {
 		PredatorBasic->SetActorHiddenInGame(!bNewVisibility);
 		UE_LOG(LogTemp, Log,
-			TEXT("[AExperimentClient::SetPredatorIsVisible] IsActorHiddenInGame(%i)"),
-			!bNewVisibility);
-	} else {
+		       TEXT("[AExperimentClient::SetPredatorIsVisible] IsActorHiddenInGame(%i)"),
+		       !bNewVisibility);
+	}
+	else {
 		UE_LOG(LogTemp, Error, TEXT("[AExperimentClient::SetActorHiddenInGame] PredatorBasic NULL"));
 	}
 }
@@ -406,9 +412,9 @@ void AExperimentClient::HandleStopEpisodeRequestTimedOut() {
 
 /* update predator's location using step message from tracking service */
 void AExperimentClient::UpdatePredator(const FMessage& InMessage) {
-	if (!bCanUpdatePrey) { 
+	if (!bCanUpdatePrey) {
 		//UE_LOG(LogTemp, Log, TEXT("[AExperimentClient::UpdatePredator] bCanUpdatePrey FALSE. returning."));
-		return; 
+		return;
 	}
 
 	if (PredatorBasic->IsValidLowLevelFast()) {
@@ -440,19 +446,22 @@ void AExperimentClient::UpdatePredator(const FMessage& InMessage) {
 		UE_LOG(LogTemp, Log, TEXT("[AExperimentClient::UpdatePredator] JSON parsed: %0.2f, %0.2f"), StepOut.location.x, StepOut.location.y);*/
 
 
-		
-		const FVector  FinalLocation = {StepOut.location.x, StepOut.location.y, 10.0f * OffsetOriginTransform.GetScale3D().X}; 
-		const FRotator FinalRotation = { 0.0f, StepOut.rotation, 0.0f };
+		const FVector FinalLocation = {
+			StepOut.location.x, StepOut.location.y, 10.0f * OffsetOriginTransform.GetScale3D().X
+		};
+		const FRotator FinalRotation = {0.0f, StepOut.rotation, 0.0f};
 		//UE_LOG(LogTemp, Log, TEXT("[AExperimentClient::UpdatePredator] final location vector: %0.2f, %0.2f"), FinalLocation.X, FinalLocation.Y);
 
 		FTransform UpdateTransform;
-		UpdateTransform.SetScale3D(FVector(1.0f, 1.0f, 1.0f)*OffsetOriginTransform.GetScale3D().X * PredatorScaleFactor);
+		UpdateTransform.SetScale3D(
+			FVector(1.0f, 1.0f, 1.0f) * OffsetOriginTransform.GetScale3D().X * PredatorScaleFactor);
 		UpdateTransform.SetLocation(FinalLocation);
 		UpdateTransform.SetRotation(FinalRotation.Quaternion());
 		//UE_LOG(LogTemp, Log, TEXT("[AExperimentClient::UpdatePredator] %s"),*FinalLocation.ToString());
 		PredatorBasic->SetActorTransform(UpdateTransform);
 		FrameCountPredator++;
-	} else {
+	}
+	else {
 		UE_LOG(LogTemp, Error, TEXT("[AExperimentClient::UpdatePredator] PredatorBasic NULL"));
 	}
 }
@@ -477,9 +486,9 @@ void AExperimentClient::UpdatePreyPosition(const FVector InVector, const FRotato
 	if (FrameCountPrey == 0) {
 		FirstLocationDebug = InVector;
 		UE_LOG(LogTemp, Log, TEXT("[AExperimentClient::UpdatePreyPosition] FirstLocationDebug: %s"),
-			*FirstLocationDebug.ToString())
+		       *FirstLocationDebug.ToString())
 	}
-	
+
 	/* 
 	 *
 	 * ==== NEW IMPLEMENTATION ====
@@ -492,43 +501,47 @@ void AExperimentClient::UpdatePreyPosition(const FVector InVector, const FRotato
 	const FVector OriginVector = OffsetOriginTransform.GetLocation();
 	const FRotator OriginRotation = OffsetOriginTransform.GetRotation().Rotator();
 	const FString InLocationString = FString::Printf(TEXT("%0.2f,%0.2f,%0.2f"), InVector.X, InVector.Y, InVector.Z);
-	const FString InRotationString = FString::Printf(TEXT("%0.2f,%0.2f,%0.2f"), InRotation.Roll, InRotation.Pitch, InRotation.Yaw);
-	const FString InOriginLocation = FString::Printf(TEXT("%0.2f,%0.2f,%0.2f"), OriginVector.X, OriginVector.Y, OriginVector.Z);
-	const FString InOriginRotation = FString::Printf(TEXT("%0.2f,%0.2f,%0.2f"), OriginRotation.Roll, OriginRotation.Pitch, OriginRotation.Yaw);
-	const FString InOriginScale    = FString::Printf(TEXT("%0.2f"), OffsetOriginTransform.GetScale3D().X);
+	const FString InRotationString = FString::Printf(
+		TEXT("%0.2f,%0.2f,%0.2f"), InRotation.Roll, InRotation.Pitch, InRotation.Yaw);
+	const FString InOriginLocation = FString::Printf(
+		TEXT("%0.2f,%0.2f,%0.2f"), OriginVector.X, OriginVector.Y, OriginVector.Z);
+	const FString InOriginRotation = FString::Printf(
+		TEXT("%0.2f,%0.2f,%0.2f"), OriginRotation.Roll, OriginRotation.Pitch, OriginRotation.Yaw);
+	const FString InOriginScale = FString::Printf(TEXT("%0.2f"), OffsetOriginTransform.GetScale3D().X);
 
 
 	// invec, inrot, originvec, originrot, originscale
 	FString DataString = FString::Printf(TEXT("%s,%s,%s,%s,%s"),
-		*InLocationString,
-		*InRotationString,
-		*InOriginLocation,
-		*InOriginRotation,
-		*InOriginScale);
+	                                     *InLocationString,
+	                                     *InRotationString,
+	                                     *InOriginLocation,
+	                                     *InOriginRotation,
+	                                     *InOriginScale);
 
 	//represent 
 	UE_LOG(LogTemp, Log, TEXT("[AExperimentClient::UpdatePreyPosition] ==== USING NEW LOCATION ==== "))
 	FStep Step;
-	Step.agent_name		= "prey"; 
-	Step.frame			= FrameCountPrey; // starts at 0
-	Step.location.x		= InVector.X;
-	Step.location.y		= InVector.Y;
-	Step.rotation		= InRotation.Yaw;
-	Step.data			= InRotation.ToString();;
+	Step.agent_name = "prey";
+	Step.frame = FrameCountPrey; // starts at 0
+	Step.location.x = InVector.X;
+	Step.location.y = InVector.Y;
+	Step.rotation = InRotation.Yaw;
+	Step.data = InRotation.ToString();;
 
 	const FString StepJsonString = UExperimentUtils::StepToJsonString(Step);
-	UE_LOG(LogTemp, Log, TEXT("[AExperimentClient::UpdatePreyPosition] Sending Step: %s "),*StepJsonString)
+	UE_LOG(LogTemp, Log, TEXT("[AExperimentClient::UpdatePreyPosition] Sending Step: %s "), *StepJsonString)
 	if (ensure(ExperimentManager->IsValidLowLevelFast() && ExperimentManager->Stopwatch->IsValidLowLevelFast())) {
 		Step.time_stamp = ExperimentManager->Stopwatch->GetElapsedTime();
-	} else { Step.time_stamp = -1.0f; }
-	
+	}
+	else { Step.time_stamp = -1.0f; }
+
 	const FMessage MessageOut = UMessageClient::NewMessage("prey_step", UExperimentUtils::StepToJsonString(Step));
 	if (!ensure(TrackingClient->SendMessage(MessageOut))) {
 		UE_LOG(LogTemp, Error, TEXT("[AExperimentClient::UpdatePreyPosition] Failed: Send prey step!"))
 		// todo: notifyondisconnect
 		return;
 	}
-	
+
 	FrameCountPrey += 1;
 }
 
@@ -564,11 +577,12 @@ bool AExperimentClient::SetupPlayerUpdatePosition(APawn* InPawn) {
 
 /* destroy this actor. This is primarily used as an abort */
 void AExperimentClient::SelfDestruct(const FString InErrorMessage) {
-	if (GEngine) GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Green,
-	                                              FString::Printf(
-		                                              TEXT(
-			                                              "[AExperimentClient::SelfDestruct] Tracking and Experiment ABORTED. Something happened: %s"),
-		                                              *InErrorMessage));
+	if (GEngine)
+		GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Green,
+		                                 FString::Printf(
+			                                 TEXT(
+				                                 "[AExperimentClient::SelfDestruct] Tracking and Experiment ABORTED. Something happened: %s"),
+			                                 *InErrorMessage));
 	UE_LOG(LogTemp, Error,
 	       TEXT("[AExperimentClient::SelfDestruct()] Something went wrong. Destroying. Reason: %s "),
 	       *InErrorMessage);
@@ -703,7 +717,8 @@ void AExperimentClient::HandleGetOcclusionsResponse(const FString ResponseIn) {
 	if (OcclusionsStruct.bAllLocationsLoaded) {
 		OcclusionsStruct.SetCurrentLocationsByIndex(OcclusionsStruct.OcclusionIDsIntArr);
 		OcclusionsStruct.SetVisibilityArr(OcclusionsStruct.OcclusionIDsIntArr, false, false);
-	} else {
+	}
+	else {
 		UE_LOG(LogTemp, Fatal,
 		       TEXT("[AExperimentClient::HandleGetOcclusionsResponse] Occlusions are NOT loaded!"));
 	}
@@ -714,7 +729,8 @@ void AExperimentClient::HandleGetOcclusionsResponse(const FString ResponseIn) {
 			       "[AExperimentClient::HandleGetOcclusionsResponse] RequestRemoveDelegates(GetOcclusionsRequest)"
 		       ));
 		this->RequestRemoveDelegates(GetOcclusionsRequest, "GetOcclusionsRequest");
-	} else {
+	}
+	else {
 		UE_LOG(LogTemp, Error,
 		       TEXT(
 			       "[AExperimentClient::HandleGetOcclusionsResponse] Failed to remove delegates, GetOcclusionsRequest not valid."
@@ -749,11 +765,11 @@ bool AExperimentClient::SendGetOcclusionLocationsRequest() {
 		       ));
 		return false;
 	}
-	
+
 	GetOcclusionLocationRequest = TrackingClient->SendRequest("get_cell_locations", "21_05", 10.0f);
 	if (!ensure(GetOcclusionLocationRequest)) { return false; }
 	GetOcclusionLocationRequest->AddToRoot();
-	
+
 	GetOcclusionLocationRequest->ResponseReceived.AddDynamic(
 		this, &AExperimentClient::HandleGetOcclusionLocationsResponse);
 	GetOcclusionLocationRequest->TimedOut.AddDynamic(
@@ -769,16 +785,22 @@ void AExperimentClient::HandleGetOcclusionLocationsResponse(const FString Respon
 	if (!OcclusionsStruct.bSpawnedAll) {
 		UE_LOG(LogTemp, Log, TEXT("[AExperimentClient::HandleGetOcclusionLocationsResponse] About to call SpawnAll"));
 		if (HasAuthority()) {
-			UE_LOG(LogTemp, Log, TEXT("[AExperimentClient::HandleGetOcclusionLocationsResponse] Calling spawning all from server!"));
+			UE_LOG(LogTemp, Log,
+			       TEXT("[AExperimentClient::HandleGetOcclusionLocationsResponse] Calling spawning all from server!"));
 			Server_SpawnOcclusions(); // add arguments 
 			// OcclusionsStruct.SpawnAll(GetWorld(), false, false, OffsetOriginTransform);
-		} else {
+		}
+		else {
 			UE_LOG(LogTemp, Error, TEXT("[AExperimentClient::HandleGetOcclusionLocationsResponse] NO AUTHORITY"));
 		}
-	} else { UE_LOG(LogTemp, Log,
-		TEXT("[AExperimentClient::HandleGetOcclusionLocationsResponse] All locations already spawned. Skipping spawn!" ));
 	}
-	
+	else {
+		UE_LOG(LogTemp, Log,
+		       TEXT(
+			       "[AExperimentClient::HandleGetOcclusionLocationsResponse] All locations already spawned. Skipping spawn!"
+		       ));
+	}
+
 	if (GetOcclusionLocationRequest) {
 		RequestRemoveDelegates(GetOcclusionLocationRequest, "GetOcclusionLocationRequest");
 		GetOcclusionLocationRequest->RemoveFromRoot();
@@ -787,11 +809,12 @@ void AExperimentClient::HandleGetOcclusionLocationsResponse(const FString Respon
 	if (!this->SendGetOcclusionsRequest()) {
 		UE_LOG(LogTemp, Error,
 		       TEXT("[AExperimentClient::HandleGetOcclusionLocationsResponse] Failed to SendGetOcclusionsRequest" ))
-	} else {
-		UE_LOG(LogTemp, Log,
-			TEXT("[AExperimentClient::HandleGetOcclusionLocationsResponse] Sent SendGetOcclusionsRequest OK!" ))
 	}
-	UE_LOG(LogTemp, Log,TEXT("[AExperimentClient::HandleGetOcclusionLocationsResponse] Exited OK"))
+	else {
+		UE_LOG(LogTemp, Log,
+		       TEXT("[AExperimentClient::HandleGetOcclusionLocationsResponse] Sent SendGetOcclusionsRequest OK!" ))
+	}
+	UE_LOG(LogTemp, Log, TEXT("[AExperimentClient::HandleGetOcclusionLocationsResponse] Exited OK"))
 }
 
 void AExperimentClient::HandleGetOcclusionLocationsTimedOut() {
@@ -810,14 +833,14 @@ void AExperimentClient::HandleGetOcclusionLocationsTimedOut() {
 		else {
 			UE_LOG(LogTemp, Log,
 			       TEXT(
-			       	"[AExperimentClient::HandleGetOcclusionLocationsResponse] Sent SendGetOcclusionsRequest OK!"
+				       "[AExperimentClient::HandleGetOcclusionLocationsResponse] Sent SendGetOcclusionsRequest OK!"
 			       ))
 		}
 	}
 }
 
 bool AExperimentClient::ConnectToServer(UMessageClient* ClientIn, const int MaxAttemptsIn,
-                                                const FString& IPAddressIn, const int PortIn) {
+                                        const FString& IPAddressIn, const int PortIn) {
 	UE_LOG(LogTemp, Log, TEXT("[AExperimentClient::ConnectToServer] Attempting connection: %s:%i"),
 	       *IPAddressIn, PortIn)
 
@@ -825,12 +848,12 @@ bool AExperimentClient::ConnectToServer(UMessageClient* ClientIn, const int MaxA
 		UE_LOG(LogTemp, Error, TEXT("[ConnectToServer()] Failed to validate client!"));
 		return false;
 	}
-	
+
 	uint8 AttemptCurr = 0;
 
 	while (AttemptCurr < MaxAttemptsIn) {
 		if (ClientIn->Connect(IPAddressIn, PortIn)) {
-			UE_LOG(LogTemp, Log,TEXT("[AExperimentClient::ConnectToServer()] Success (attempt #: %i/%i)"),
+			UE_LOG(LogTemp, Log, TEXT("[AExperimentClient::ConnectToServer()] Success (attempt #: %i/%i)"),
 			       AttemptCurr + 1,
 			       MaxAttemptsIn);
 			break;
@@ -875,6 +898,18 @@ bool AExperimentClient::RouteOnCapture() {
 	if (!ensure(MessageRouteOnCapture->IsValidLowLevelFast())) { return false; }
 
 	MessageRouteOnCapture->MessageReceived.AddDynamic(this, &AExperimentClient::HandleOnCapture);
+	UE_LOG(LogTemp, Error, TEXT("[AExperimentClient::RouteOnCapture] OK"));
+	return true;
+}
+
+bool AExperimentClient::RouteOnEpisodeFinished() {
+	if (!ensure(this->ValidateClient(TrackingClient))) { return false; }
+
+	MessageRouteOnEpisodeFinished = TrackingClient->AddRoute("on_episode_finished");
+	if (!ensure(MessageRouteOnCapture->IsValidLowLevelFast())) { return false; }
+
+	MessageRouteOnEpisodeFinished->MessageReceived.AddDynamic(this, &AExperimentClient::HandleOnEpisodeFinished);
+
 	UE_LOG(LogTemp, Error, TEXT("[AExperimentClient::RouteOnCapture] OK"));
 	return true;
 }
@@ -950,7 +985,8 @@ bool AExperimentClient::Test() {
 	if (!ensure(this->RoutePredatorMessages())) { return false; }
 	if (!ensure(this->RouteOnCapture())) { return false; }
 	if (!ensure(this->SubscribeToTracking())) { return false; }
-		
+	if (!ensure(this->RouteOnEpisodeFinished())) { return false; }
+
 	/* moved to SpatialAnchorManager::Server_FinishSpawn_Implementation()  */
 	/* TODO: MOVE THIS SHIT
 	 *
@@ -968,7 +1004,7 @@ bool AExperimentClient::Test() {
 
 void AExperimentClient::SetOcclusionVisibility(const bool bNewVisibility) {
 	UE_LOG(LogTemp, Log,
-		TEXT("[AExperimentClient::SetOcclusionVisibility] Called with value: %i"), bNewVisibility)
+	       TEXT("[AExperimentClient::SetOcclusionVisibility] Called with value: %i"), bNewVisibility)
 
 	if (ensure(OcclusionsStruct.bCurrentLocationsLoaded)) {
 		UE_LOG(LogTemp, Log,
@@ -984,23 +1020,24 @@ void AExperimentClient::OnEpisodeStarted() {
 
 	UE_LOG(LogTemp, Log,
 	       TEXT("[AExperimentClient::OnEpisodeStarted] Called. Episode started player index: %i"), PlayerIndex)
-	
+
 	if (OcclusionsStruct.bCurrentLocationsLoaded) {
 		UE_LOG(LogTemp, Log, TEXT("[AExperimentClient::OnEpisodeStarted] Using last loaded locations (%i)"),
-			OcclusionsStruct.OcclusionIDsIntArr.Num())
+		       OcclusionsStruct.OcclusionIDsIntArr.Num())
 		OcclusionsStruct.SetVisibilityArr(OcclusionsStruct.OcclusionIDsIntArr, false, false);
-	} else {
+	}
+	else {
 		UE_LOG(LogTemp, Error, TEXT("[AExperimentClient::OnEpisodeStarted] LOCATIONS NOT LOADED"))
 	}
-	
-	FrameCountPrey     = 0;
+
+	FrameCountPrey = 0;
 	FrameCountPredator = 0;
 	ExperimentInfo.SetStatus(EExperimentStatus::InEpisode);
 	if (!PredatorBasic->IsValidLowLevelFast()) {
 		UE_LOG(LogTemp, Log, TEXT("[AExperimentClient::OnEpisodeStarted] Predator not spawned. Calling Spawner."))
 		const bool SpawnResult = SpawnAndPossessPredator();
 		UE_LOG(LogTemp, Log, TEXT("[AExperimentClient::OnEpisodeStarted] SpawnResult: %s"),
-			SpawnResult ? TEXT("True") : TEXT("False"))
+		       SpawnResult ? TEXT("True") : TEXT("False"))
 	}
 	SetPredatorIsVisible(true);
 	bCanUpdatePrey = true;
@@ -1009,12 +1046,12 @@ void AExperimentClient::OnEpisodeStarted() {
 void AExperimentClient::ResetWorldState() {
 	UE_LOG(LogTemp, Log, TEXT("[AExperimentClient::ResetWorldState] called"))
 	bCanUpdatePrey = false;
-	if (!ensure(ExperimentManager->IsValidLowLevelFast())){ return; }
+	if (!ensure(ExperimentManager->IsValidLowLevelFast())) { return; }
 	ExperimentManager->SetInEpisode(false);
 	ExperimentInfo.SetStatus(EExperimentStatus::WaitingEpisode);
 	OcclusionsStruct.SetAllHidden();
 	// keep Predator visible to acclimate player to predator's capture radius
-	SetPredatorIsVisible(true); 
+	SetPredatorIsVisible(true);
 }
 
 void AExperimentClient::OnEpisodeFinished() {
@@ -1022,26 +1059,23 @@ void AExperimentClient::OnEpisodeFinished() {
 	UE_LOG(LogTemp, Log, TEXT("[AExperimentClient::OnEpisodeFinished] OK"));
 }
 
+void AExperimentClient::HandleOnEpisodeFinished(const FMessage MessageIn) {
+	UE_LOG(LogTemp, Log, TEXT("[AExperimentClient::HandleOnEpisodeFinished]"));
+	if (!ExperimentManager->bInEpisode) return;
+	ExperimentManager->OnEpisodeFinished();
+	UE_LOG(LogTemp, Log, TEXT("[AExperimentClient::HandleOnEpisodeFinished] Exiting"));
+}
+
 void AExperimentClient::HandleUpdatePredator(const FMessage MessageIn) {
-	 UE_LOG(LogTemp, Warning, TEXT("[HandleUpdatePredator]: %s"), *MessageIn.body);
+	UE_LOG(LogTemp, Warning, TEXT("[HandleUpdatePredator]: %s"), *MessageIn.body);
 	this->UpdatePredator(MessageIn);
 }
 
 void AExperimentClient::HandleOnCapture(const FMessage MessageIn) {
 	UE_LOG(LogTemp, Log, TEXT("[AExperimentClient::HandleOnCapture]"));
-
-	// if (!ensure(ExperimentManager->IsValidLowLevelFast())) { return; }
-	// if (!ensure(ExperimentManager->IsInEpisode())) { return; }
-
-	// ExperimentManager->OnEpisodeFinishedSuccessDelegate.Broadcast();
-	// ExperimentManager->ProcessStopEpisodeResponse();
-	if (!ExperimentManager->bInEpisode) return;
-	ExperimentManager->OnEpisodeFinished();
-
 	if (PredatorBasic->IsValidLowLevelFast()) {
 		PredatorBasic->OnCapture();
 	}
-	
 	UE_LOG(LogTemp, Log, TEXT("[AExperimentClient::HandleOnCapture]"));
 }
 
@@ -1051,35 +1085,12 @@ float AExperimentClient::GetTimeRemaining() const {
 	return GetWorld()->GetTimerManager().GetTimerRemaining(*TimerHandlePtr);
 }
 
-void TestConversions(const FLocation InputLocation) {
-	constexpr float TestScale = 1.0f;
-	
-	UE_LOG(LogTemp, Warning, TEXT("[TestConversions] STARTED"))
-	UE_LOG(LogTemp, Warning, TEXT("[TestConversions] InputLocation: (%0.2f, %0.2f)"),
-		InputLocation.x,
-		InputLocation.y)
-
-	// convert from canonical to VR coordinates 
-	const FVector Can2Vr = UExperimentUtils::CanonicalToVrV2(InputLocation, 235.185, TestScale);
-	UE_LOG(LogTemp, Warning, TEXT("[TestConversions] Can2VR: (%0.2f, %0.2f)"),
-		Can2Vr.X,
-		Can2Vr.Y)
-
-	// convert back to canonical (should be same as InputLocation)
-	const FLocation VR2Can = UExperimentUtils::VrToCanonical(Can2Vr,235.185, TestScale);
-	UE_LOG(LogTemp, Warning, TEXT("[TestConversions] VR2Can: (%0.2f, %0.2f)"),
-		   VR2Can.x,
-		   VR2Can.y)
-	
-	UE_LOG(LogTemp, Warning, TEXT("[TestConversions] DONE"))
-}
-
 /* main stuff happens here */
 void AExperimentClient::BeginPlay() {
 	Super::BeginPlay();
 
 	UE_LOG(LogTemp, Log, TEXT("[AExperimentClient::BeginPlay] Called"));
-	
+
 	ExperimentInfo.OnExperimentStatusChangedEvent.AddDynamic(this, &ThisClass::OnStatusChanged);
 
 	ExperimentManager = NewObject<UExperimentManager>(this, UExperimentManager::StaticClass());
@@ -1102,9 +1113,9 @@ void AExperimentClient::BeginPlay() {
 
 		UE_LOG(LogTemp, Log, TEXT("[AExperimentClient::Test] Bound delegates: ExperimentManager"))
 	}
+
 	Test();
 }
-
 
 /* run a (light!) command every frame */
 void AExperimentClient::Tick(float DeltaTime) {

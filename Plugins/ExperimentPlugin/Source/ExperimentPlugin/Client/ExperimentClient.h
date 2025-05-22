@@ -133,7 +133,10 @@ public:
 	}
 
 	/* set visibility and collisions given an array of occlusion index/IDs */
-	void SetVisibilityArr(const TArray<int32> IndexArray, const bool bActorHiddenInGame, const bool bEnableCollision) {
+	void SetVisibilityArr(const TArray<int32> IndexArray,
+		const bool bActorHiddenInGame,
+		const bool bEnableCollision) {
+		
 		for (int i = 0; i < IndexArray.Num(); i++) {
 			OcclusionAllArr[IndexArray[i]]->SetActorHiddenInGame(bActorHiddenInGame);
 			OcclusionAllArr[IndexArray[i]]->SetActorEnableCollision(bEnableCollision);
@@ -264,7 +267,9 @@ public:
 		TObjectPtr<UMessageRoute> MessageRouteOnCapture;
 	UPROPERTY()
 		TObjectPtr<UMessageRoute> MessageRoutePredator;
-
+	UPROPERTY()
+		TObjectPtr<UMessageRoute> MessageRouteOnEpisodeFinished;
+	
 	UFUNCTION(Server, Reliable, WithValidation, BlueprintCallable)
 	void Server_SpawnOcclusions();
 	bool Server_SpawnOcclusions_Validate();
@@ -381,6 +386,8 @@ public:
 	UFUNCTION()
 		void HandleOnCapture(const FMessage MessageIn);
 	UFUNCTION()
+		void HandleOnEpisodeFinished(const FMessage MessageIn);
+	UFUNCTION()
 		float GetTimeRemaining() const;
  
 	/* experiment service */
@@ -453,6 +460,8 @@ public:
 		bool RoutePredatorMessages();
 	UFUNCTION()
 		bool RouteOnCapture();
+	UFUNCTION()
+		bool RouteOnEpisodeFinished();
 	bool SetupConnections();
 	UFUNCTION()
 		void OnEpisodeStarted();
