@@ -16,7 +16,9 @@ public:
 	
 	UPROPERTY(EditDefaultsOnly)
 	TObjectPtr<UStaticMeshComponent> StaticMeshComponent;
-
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Materials")
+	UMaterialInterface* MaterialToApply;
+	
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;

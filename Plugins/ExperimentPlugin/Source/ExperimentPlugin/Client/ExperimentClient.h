@@ -1,20 +1,23 @@
 ﻿#pragma once
-
 #include "CoreMinimal.h"
+#include "Components/AudioComponent.h"
 #include "GameFramework/Actor.h"
 #include "UObject/ObjectPtr.h"
 #include "MessageClient.h"
 #include "ExperimentUtils.h"
 #include "DrawDebugHelpers.h"
+#include "GameFramework/Character.h"
+#include "AIController.h"
+#include "NavigationSystem.h"
 #include "Net/UnrealNetwork.h"
-
+#include "Animation/SkeletalMeshActor.h"
 #include "ExperimentPlugin/HabitatComponents/Habitat.h"
 #include "ExperimentPlugin/DataManagers/ExperimentManager.h"
 #include "ExperimentPlugin/Public/Structs.h"
-#include "ExperimentPlugin/Characters/ExperimentPredator.h"
 #include "ExperimentPlugin/Characters/ExperimentPawn.h"
+#include "ExperimentPlugin/Characters/ExperimentPredator.h"
 #include "ExperimentPlugin/Occlusions/Occlusion.h"
-
+#include "Kismet/GameplayStatics.h"
 #include "MiscUtils/Timers/Stopwatch.h"
 #include "MiscUtils/Timers/EventTimer.h"
 #include "ExperimentClient.generated.h"
@@ -29,7 +32,6 @@ struct FOcclusions {
 public:
 
 	FOcclusions() { OcclusionAllArr = {}; }
-
 	UPROPERTY(EditAnywhere)
 		bool bAllLocationsLoaded = false; 
 	UPROPERTY(EditAnywhere)
@@ -72,9 +74,11 @@ public:
 		for (int i = 0; i < AllLocations.Num(); i++) {
 			constexpr float ScaleOffset       = 0.99157164105; // give a little wiggle room between walls and occlusions
 			constexpr float MapLength         = 235.185290;    // base length of habitat 
-			constexpr float HeightScaleFactor = 8;             // make occlusions a bit taller; we aren't mice
+			constexpr float HeightScaleFactor = 5;             // make occlusions a bit taller; we aren't mice
 			
-			const FVector SpawnLocationConverted = UExperimentUtils::CanonicalToVrV2(
+			// OLD IMPLEMENTATION: CONVERT IN CPP 
+			// NEW IMPL: CONVERT EVERYTHING IN PYTHON
+			/*const FVector SpawnLocationConverted = UExperimentUtils::CanonicalToVrV2(
 				AllLocations[i],
 				MapLength,
 				OriginTransform.GetScale3D().X);
@@ -83,13 +87,14 @@ public:
 			FVector RightVector   = OriginTransform.GetRotation().GetRightVector(); RightVector.Normalize();
 			
 			const FVector NewRelativeLocation = (ForwardVector * SpawnLocationConverted.X) + (-RightVector * SpawnLocationConverted.Y);
-			FVector FinalLocation = OriginTransform.GetLocation() + NewRelativeLocation;
+			FVector FinalLocation = OriginTransform.GetLocation() + NewRelativeLocation;*/
 
 			FTransform SpawnTransform;
 			FVector OcclusionScale = OriginTransform.GetScale3D()*ScaleOffset;
+			FVector LocationVecNewImplementation = FVector(AllLocations[i].x, AllLocations[i].y, OriginTransform.GetLocation().Z);
 			OcclusionScale.Z *= HeightScaleFactor;
 			SpawnTransform.SetScale3D(OcclusionScale);
-			SpawnTransform.SetLocation(FinalLocation);
+			SpawnTransform.SetLocation(LocationVecNewImplementation);
 			SpawnTransform.SetRotation(OriginTransform.GetRotation());
 			
 			AOcclusion* SpawnOcclusion = WorldRefIn->SpawnActor<AOcclusion>(
@@ -128,7 +133,10 @@ public:
 	}
 
 	/* set visibility and collisions given an array of occlusion index/IDs */
-	void SetVisibilityArr(const TArray<int32> IndexArray, const bool bActorHiddenInGame, const bool bEnableCollision) {
+	void SetVisibilityArr(const TArray<int32> IndexArray,
+		const bool bActorHiddenInGame,
+		const bool bEnableCollision) {
+		
 		for (int i = 0; i < IndexArray.Num(); i++) {
 			OcclusionAllArr[IndexArray[i]]->SetActorHiddenInGame(bActorHiddenInGame);
 			OcclusionAllArr[IndexArray[i]]->SetActorEnableCollision(bEnableCollision);
@@ -143,12 +151,11 @@ public:
 			UE_LOG(LogTemp, Log, TEXT("[FOcclusions::SetCurrentVisibility] (%i)"), i);
 		}
 	}
-
+	
 };
 
 USTRUCT(Blueprintable)
-struct FExperimentHeaders
-{
+struct FExperimentHeaders {
 	GENERATED_BODY()
 	
 	/* headers */
@@ -163,8 +170,7 @@ struct FExperimentHeaders
 };
 
 USTRUCT(Blueprintable)
-struct FExperimentInfo
-{
+struct FExperimentInfo {
 	GENERATED_BODY()
 public:
 	
@@ -199,9 +205,12 @@ USTRUCT(Blueprintable)
 struct FServerInfo {
 	GENERATED_BODY()
 public:
-	FServerInfo() :
+	FServerInfo() : // what is the IP of cellworld server? 
 		Port(4791),
-		IP(TEXT("127.0.0.1")) // main machine 
+		// IP(TEXT("192.168.1.5")) // (alexander's) main machine mazenet-2 WIFI
+		// IP(TEXT("192.168.1.3")) // (finn's) main machine mazenet-2 ETH
+		//IP(TEXT("192.168.1.8")) //Finn's Ethernet Machine
+		IP(TEXT("192.168.1.2")) // (alexander's) main machine mazenet-2 ETH 
 		{}
 	
 	int Port;
@@ -214,14 +223,11 @@ class EXPERIMENTPLUGIN_API AExperimentClient : public AActor {
 	
 public:	
 	AExperimentClient();
-
+	
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
 	UPROPERTY(EditAnywhere, Blueprintable)
 	FServerInfo ServerInfo = FServerInfo();
-	/* ==== server stuff ==== */
-	// const FString ServerIP         = "192.168.1.199";  // static vr backpack win11 PACKAGED ONLY
-	// const int TrackingPort	           = 4791;
 	
 	/* DEBUG */
 	bool bTimerRunning = false;
@@ -261,13 +267,22 @@ public:
 		TObjectPtr<UMessageRoute> MessageRouteOnCapture;
 	UPROPERTY()
 		TObjectPtr<UMessageRoute> MessageRoutePredator;
-
-
+	UPROPERTY()
+		TObjectPtr<UMessageRoute> MessageRouteOnEpisodeFinished;
+	
 	UFUNCTION(Server, Reliable, WithValidation, BlueprintCallable)
 	void Server_SpawnOcclusions();
 	bool Server_SpawnOcclusions_Validate();
 	void Server_SpawnOcclusions_Implementation();
-
+	
+	UFUNCTION(BlueprintCallable)
+	void SetWorldOrigin(const FVector& InWorldOriginA, const FVector& InWorldOriginB);
+	
+	UFUNCTION(Server, Reliable, WithValidation, BlueprintCallable)
+	void Server_AttachOcclusionsToArena();
+	bool Server_AttachOcclusionsToArena_Validate();
+	void Server_AttachOcclusionsToArena_Implementation();
+	
 	/* Requests */
 	UPROPERTY()
 		TObjectPtr<URequest> StartExperimentRequest;
@@ -303,7 +318,7 @@ public:
 	/* ==== world stuff ==== */
 	int FrameCount        = 0; // todo: will probably delete 
 	const float MapLength = 235.185;
-	const float PredatorScaleFactor = 0.5f; 
+	const float PredatorScaleFactor = 0.15f; 
 	float WorldScale      = 15.0f;
 
 	UPROPERTY(EditAnywhere)
@@ -315,8 +330,14 @@ public:
 	/* ==== setup ==== */
 	bool SpawnAndPossessPredator();
 	UPROPERTY(Replicated)
-		TObjectPtr<AExperimentPredator> PredatorBasic = nullptr;
-		
+	TObjectPtr<AExperimentPredator> PredatorBasic = nullptr;
+
+	UPROPERTY()
+	TSubclassOf<AActor> PredatorBPClass;
+	
+	UPROPERTY(Replicated)
+	TObjectPtr<ACharacter> PredatorCharacter = nullptr;
+			
 	/* functions called by GameMode and Blueprints */
 	static UMessageClient* CreateNewClient();
 	static bool ValidateClient(UMessageClient* ClientIn);
@@ -364,6 +385,8 @@ public:
 		void HandleUpdatePredator(const FMessage MessageIn);
 	UFUNCTION()
 		void HandleOnCapture(const FMessage MessageIn);
+	UFUNCTION()
+		void HandleOnEpisodeFinished(const FMessage MessageIn);
 	UFUNCTION()
 		float GetTimeRemaining() const;
  
@@ -437,6 +460,8 @@ public:
 		bool RoutePredatorMessages();
 	UFUNCTION()
 		bool RouteOnCapture();
+	UFUNCTION()
+		bool RouteOnEpisodeFinished();
 	bool SetupConnections();
 	UFUNCTION()
 		void OnEpisodeStarted();

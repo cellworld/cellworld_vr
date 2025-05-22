@@ -209,12 +209,12 @@ void ABotEvadeGameMode::OnUpdatePreyPosition(const FVector& InLocation, const FR
 	TArray<TObjectPtr<APlayerState>> PlayerStatesArr = GameState.Get()->PlayerArray;
 	TObjectPtr<APlayerState> PlayerStateTemp = nullptr;
 	UE_LOG(LogTemp, Log, TEXT("[ABotEvadeGameMode::OnUpdatePreyPosition] Number of Players: %i"), GameState.Get()->PlayerArray.Num());
-	if (PlayerStatesArr.Num() <= 0) {
+	if (PlayerStatesArr.Num() <= 0) {FF
 		UE_LOG(LogTemp, Error,TEXT("[ABotEvadeGameMode::OnUpdatePreyPosition] PlayerStatesArr is empty!"))
 		return;
 	}
 
-	// get first player state
+	// get first player stateF
 	PlayerStateTemp = GameState.Get()->PlayerArray[0];
 	if (!PlayerStateTemp) {
 		UE_LOG(LogTemp, Error,TEXT("[ABotEvadeGameMode::OnUpdatePreyPosition] PlayerStateTemp NULL"))

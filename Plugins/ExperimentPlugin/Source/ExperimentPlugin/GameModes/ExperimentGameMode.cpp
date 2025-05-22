@@ -53,6 +53,10 @@ void AExperimentGameMode::SpawnExperimentServiceMonitor() {
 		ExperimentClient = GetWorld()->SpawnActorDeferred<AExperimentClient>(
 			AExperimentClient::StaticClass(), SpawnTransformExperimentClient, this, nullptr, CollisionHandlingMethod);
 		ExperimentClient->WorldScale = this->WorldScale;
+		if (ExperimentClient->IsValidLowLevel() && PredatorBPClass != nullptr) {
+			ExperimentClient->PredatorBPClass = PredatorBPClass;
+			UE_LOG(LogTemp, Log, TEXT("[AExperimentGameMode::SpawnExperimentServiceMonitor] PredatorBPClass valid"))
+		} else { UE_LOG(LogTemp, Error, TEXT("[AExperimentGameMode::SpawnExperimentServiceMonitor] PredatorBPClass NULL")) }
 		ExperimentClient->FinishSpawning(SpawnTransformExperimentClient);
 		ExperimentClient->AddToRoot();
 	}
@@ -60,7 +64,7 @@ void AExperimentGameMode::SpawnExperimentServiceMonitor() {
 
 void AExperimentGameMode::StartPlay() {
 	Super::StartPlay();
-	UE_LOG(LogTemp, Log, TEXT("StartPlay()"))
+	UE_LOG(LogTemp, Log, TEXT("[AExperimentGameMode::StartPlay] "))
 	if (GetNetMode() == NM_DedicatedServer) {
 		UE_LOG(LogTemp, Log, TEXT("[AExperimentGameMode::StartPlay] Running on a dedicated server."))
 	}

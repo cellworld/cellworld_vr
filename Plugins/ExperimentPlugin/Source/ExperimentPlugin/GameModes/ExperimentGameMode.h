@@ -1,5 +1,6 @@
 ﻿#pragma once
 #include "CoreMinimal.h"
+#include "Animation/SkeletalMeshActor.h"
 #include "Engine/Engine.h"
 #include "ExperimentPlugin/Characters/ExperimentCharacter.h"
 #include "GameFramework/GameMode.h"
@@ -38,8 +39,11 @@ public:
 	
 	/* == helpers == */
 	
-	UPROPERTY(EditDefaultsOnly,Category="Habitat Spawning")
+	UPROPERTY(EditDefaultsOnly,Category="Spawning|Habitat")
 	TSubclassOf<AHabitat> HabitatBPClass;
+
+	UPROPERTY(EditDefaultsOnly, Category="Spawning|Predator")
+	TSubclassOf<AActor> PredatorBPClass;
 	
 	TObjectPtr<AHabitat> FindHabitatInLevel() const;
 
@@ -51,6 +55,7 @@ public:
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
 	TObjectPtr<AExperimentClient> ExperimentClient = nullptr; 
+
 	
 	UFUNCTION()
 	virtual void SpawnExperimentServiceMonitor();
@@ -75,11 +80,6 @@ public:
 
 	UFUNCTION(BlueprintCallable)
 	void SpawnHabitat(const FVector& InLocation, const int& InScale);
-	
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Spawning")
-    UClass* MyActorClass;
-	// UPROPERTY(EditAnywhere)
-	// TObjectPtr<AExperimentClient> ExperimentClient = nullptr;
 
 	UPROPERTY(EditAnywhere)
 	int WorldScale = 5.0f;

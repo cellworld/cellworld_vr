@@ -11,6 +11,7 @@ Setup/HP_client_keys.csv
 # data
 Data/*
 Plugins/Developer/
+packages/**
 # Compiled Object files
 *.slo
 *.lo

@@ -12,7 +12,8 @@ AHabitat::AHabitat() {
 
 	// todo: remove BP stuff and assign values to cpp generated components
 	// todo: create "DefaultSceneRoot" and obv make root component
-
+	UStaticMeshComponent* LowerEdge = Cast<UStaticMeshComponent>(GetDefaultSubobjectByName(TEXT("BottomEdge")));
+	UStaticMeshComponent* TopEdge = Cast<UStaticMeshComponent>(GetDefaultSubobjectByName(TEXT("TopEdge")));
 	DefaultSceneRoot = CreateDefaultSubobject<USceneComponent>(TEXT("DefaultSceneRoot"));
 	// DefaultSceneRoot->SetRelativeLocation(FVector(-3.0f,-115.0f,0.0f));
 	RootComponent = DefaultSceneRoot;
@@ -63,8 +64,7 @@ AHabitat::AHabitat() {
 	AnchorMRMeshComponent->SetRelativeRotation(FRotator(0.0f,180.0f,0.0f));
 }
 
-void AHabitat::GetLifetimeReplicatedProps(TArray< FLifetimeProperty > & OutLifetimeProps) const
-{
+void AHabitat::GetLifetimeReplicatedProps(TArray< FLifetimeProperty > & OutLifetimeProps) const {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 	// DOREPLIFETIME(this, MeshHabitat);	
 }

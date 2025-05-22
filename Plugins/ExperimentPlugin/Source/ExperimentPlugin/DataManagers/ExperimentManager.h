@@ -32,7 +32,7 @@ DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FNotifyOnEpisodeFinished, bool, bEpi
 UCLASS(Blueprintable)
 class EXPERIMENTPLUGIN_API UExperimentManager : public UObject {
 	GENERATED_BODY()
-	UExperimentManager(): MaxEpisodeTotalTime(1800.0f) {
+	UExperimentManager(): MaxEpisodeTotalTime(3600.0f) {
 		OnEpisodeFinishedSuccessDelegate.AddDynamic(this, &ThisClass::OnEpisodeFinished);
 		OnEpisodeStartedSuccessDelegate.AddDynamic(this , &ThisClass::OnEpisodeStarted);
 		OnSubscribeStatusChangedDelegate.AddDynamic(this, &ThisClass::OnSubscribeStatusChanged);
@@ -184,7 +184,6 @@ public:
 	void OnCapture() {
 		UE_LOG(LogTemp, Log, TEXT("[UExperimentManager::OnCapture] Called"))
 
-		
 		// if done:
 		if (!IsInEpisode()) {
 			UE_LOG(LogTemp, Error,TEXT("[UExperimentManager::OnCapture] Failed. not in episode"))

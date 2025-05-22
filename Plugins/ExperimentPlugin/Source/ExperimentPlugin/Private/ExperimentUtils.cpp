@@ -219,29 +219,43 @@ FString UExperimentUtils::StepToJsonString(FStep Step) {
 }
 
 FLocation UExperimentUtils::VrToCanonical(const FVector VectorIn, const float MapLengthIn, const float WorldScaleIn) {
-	FLocation LocationOut;
-	// LocationOut.x = ((VectorIn.X) / (MapLengthIn * WorldScaleIn));
-	// LocationOut.y = VectorIn.Y / (-MapLengthIn * WorldScaleIn);
 
+	
+	FLocation LocationOut;
+	constexpr float HabitatOffset = 0.5;
 	/* v2 */
 	const float ScaledDiameter = MapLengthIn * WorldScaleIn;
-	const float Apothem        = 0.5 * UKismetMathLibrary::Sqrt(3) * ScaledDiameter / 2; 
+	const float Apothem        = HabitatOffset * UKismetMathLibrary::Sqrt(3) * (ScaledDiameter / 2); 
 	
-	LocationOut.x = ScaledDiameter != 0.0f ? (VectorIn.X / ScaledDiameter)    : 0.0f; // Cx = Vx / ds
-	LocationOut.y = Apothem		   != 0.0f ? 0.5 + (VectorIn.Y / (2*Apothem)) : 0.0f; // Cy = 0.5 + Vy/2a
-	
+	LocationOut.x = ScaledDiameter != 0.0f ? (VectorIn.X / ScaledDiameter)    : 0.0f; 
+	LocationOut.y = Apothem		   != 0.0f ? HabitatOffset + (VectorIn.Y / (2*Apothem)) : 0.0f; 
+
+	/* apply offset scale to account for legacy camera system */
+	//def scale_legacy_y(y) :
+	//	return y * 0.5 * math.sqrt(3) + 0.5 - math.sqrt(3) / 4
+	// ==
+	// LocationOut.y  = LocationOut.y * HabitatOffset * UKismetMathLibrary::Sqrt(3) +
+	// 	HabitatOffset - UKismetMathLibrary::Sqrt(3)/4;	
+	return LocationOut;
+}
+
+FLocation UExperimentUtils::VRtoCanonicalMinimal(const FLocation LocationIn, const float MapLengthIn, const float WorldScaleIn) {
+	FLocation LocationOut = FLocation();
+	constexpr float HabitatOffset = 0.5;
 	return LocationOut;
 }
 
 FVector UExperimentUtils::CanonicalToVrV2(const FLocation LocationIn, const float MapLengthIn, const float WorldScaleIn) {
 
-	const float ScaledDiameter = MapLengthIn * WorldScaleIn; // ds
-	const float Apothem        = 0.5 * UKismetMathLibrary::Sqrt(3) * ScaledDiameter / 2; // a
+	const float ScaledDiameter    = MapLengthIn * WorldScaleIn; 
+	constexpr float HabitatOffset = 0.5;
+	const float Apothem           = HabitatOffset * UKismetMathLibrary::Sqrt(3) * (ScaledDiameter / 2); // a
 	
 	FVector VectorOut;
 	VectorOut.X = ScaledDiameter != 0.0f ? (LocationIn.x * ScaledDiameter)    : 0.0f; // Vx = Cx * ds 
-	VectorOut.Y = Apothem        != 0.0f ? (LocationIn.y - 0.5) * 2 * Apothem : 0.0f; // Vy = (Cy-0.5)*2a
-	VectorOut.Z = 0; // will need to be changed 
+	VectorOut.Y = Apothem        != 0.0f ? (LocationIn.y - HabitatOffset) * 2 * Apothem : 0.0f; // Vy = (Cy-0.5)*2a
+	VectorOut.Z = 0; // will need to be changed
+	
 	return VectorOut;
 }
 
@@ -249,7 +263,14 @@ FVector UExperimentUtils::CanonicalToVr(const FLocation LocationIn, const float 
 	FVector VectorOut;
 	VectorOut.X = (LocationIn.x * MapLengthIn * WorldScaleIn);
 	VectorOut.Y = (LocationIn.y * MapLengthIn * WorldScaleIn * 2);
-	VectorOut.Z = 0; // will need to be changed 
+	VectorOut.Z = 0; // will need to be changed
+	
+	constexpr float HabitatOffset = 0.5;
+
+	/* apply offset scale to account for legacy camera system */
+	VectorOut.Y = VectorOut.Y * (1/HabitatOffset * UKismetMathLibrary::Sqrt(3)) -
+		HabitatOffset + UKismetMathLibrary::Sqrt(3) / 4;
+
 	return VectorOut;
 }
 
@@ -307,7 +328,8 @@ TArray<FLocation> UExperimentUtils::OcclusionsParseAllLocations(const FString Oc
 
 	// Deserialize the JSON string into a JSON array
 	if (!FJsonSerializer::Deserialize(Reader, JsonArray))
-	{ 
+
+		{ 
 		UE_LOG(LogTemp, Error, TEXT("[UExperimentUtils::OcclusionsParseAllLocations] Failed to parse deserialize JsonArray. Response: %s"),*OcclusionLocationsIn);
 		return LocationList;
 	}

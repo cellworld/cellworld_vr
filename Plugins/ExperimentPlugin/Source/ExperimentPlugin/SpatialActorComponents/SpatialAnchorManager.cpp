@@ -27,13 +27,17 @@ void USpatialAnchorManager::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>
 void USpatialAnchorManager::TickComponent(float DeltaTime, ELevelTick TickType,
 	FActorComponentTickFunction* ThisTickFunction) {
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
-	// UE_LOG(LogTemp, Warning, TEXT("[USpatialAnchorManager::TickComponent] Habitat is valid: %s"),
-	// 				(Habitat->IsValidLowLevelFast() ? TEXT("true") : TEXT("false")));
-	//
-	// UE_LOG(LogTemp, Warning, TEXT("[USpatialAnchorManager::TickComponent] bSpawnInProgress: %s"),
-	// 			(bSpawnInProgress ? TEXT("true") : TEXT("false")));
-	// modelspawnpositioner on server does not change
-	// changed on client
+	if (SpawnedAnchors.Num() == 2) {
+		
+		check(SpawnedAnchors.IsValidIndex(0))
+		check(SpawnedAnchors.IsValidIndex(1))
+
+		UE_LOG(LogTemp, Warning, TEXT("[USpatialAnchorManager::TickComponent] EntryAnchor: %s"),
+			SpawnedAnchors[0]->IsValidLowLevelFast() ? *SpawnedAnchors[0]->GetActorLocation().ToString() : TEXT("NULL"));
+
+		UE_LOG(LogTemp, Warning, TEXT("[USpatialAnchorManager::TickComponent] ExitAnchor: %s"),
+			SpawnedAnchors[1]->IsValidLowLevelFast() ? *SpawnedAnchors[1]->GetActorLocation().ToString() : TEXT("NULL"));
+	}
 }
 
 void USpatialAnchorManager::CreateOculusAnchorCallback(EOculusXRAnchorResult::Type ResultCB, UOculusXRAnchorComponent* Anchor) {
@@ -247,6 +251,7 @@ bool USpatialAnchorManager::Client_AttachAnchorToActor_Validate(AActor* InActor)
 	return true;
 }
 
+//NOTE -- FINN - maybe come back to this?
 void USpatialAnchorManager::Client_AttachAnchorToActor_Implementation(AActor* InActor) {
 	UE_LOG(LogTemp, Log, TEXT("[USpatialAnchorManager::Client_AttachAnchorToActor_Implementation] Called"))
 
@@ -260,12 +265,12 @@ void USpatialAnchorManager::Client_AttachAnchorToActor_Implementation(AActor* In
 	UE_LOG(LogTemp, Log, TEXT("[USpatialAnchorManager::Server_AnchorCreateCluster_Implementation] Spawned OK!"));
 }
 
-bool USpatialAnchorManager::Server_AnchorCreate_Validate(const FVector InLocation) {
+bool USpatialAnchorManager::Server_AnchorCreate_Validate( FVector InLocation) {
 	UE_LOG(LogTemp, Log, TEXT("[USpatialAnchorManager::Server_AnchorCreate_Validate] called"))
 	return true;
 }
 
-void USpatialAnchorManager::Server_AnchorCreate_Implementation(const FVector InLocation) {
+void USpatialAnchorManager::Server_AnchorCreate_Implementation( FVector InLocation) {
 	UE_LOG(LogTemp, Log, TEXT("[USpatialAnchorManager::Server_AnchorCreate_Implementation] called"))
 	UE_LOG(LogTemp, Log,
 		TEXT("[USpatialAnchorManager::Server_AnchorCreate_Implementation] InLocation: %s"),
@@ -295,7 +300,14 @@ void USpatialAnchorManager::Server_AnchorCreate_Implementation(const FVector InL
 		const FRotator SpawnRotation = FRotator::ZeroRotator;
 		
 		// Spawn the actor
-		AActor* SpawnedAnchorModel = GetWorld()->SpawnActor<AActor>(AnchorsBPClass,  InLocation, SpawnRotation, SpawnParams);
+		FVector SpawnLocation = InLocation;	
+		if (SpawnedAnchors.Num() > 1) {
+			SpawnLocation.Z = SpawnedAnchors[0]->GetActorLocation().Z;
+			UE_LOG(LogTemp, Error, TEXT("[USpatialAnchorManager::Server_AnchorCreate_Implementation] Changed Spawnlocation of second actor!"));
+
+			InLocation = SpawnLocation;
+		}
+		AActor* SpawnedAnchorModel = GetWorld()->SpawnActor<AActor>(AnchorsBPClass, InLocation, SpawnRotation, SpawnParams);
 		if (!SpawnedAnchorModel) {
 			UE_LOG(LogTemp, Error, TEXT("[USpatialAnchorManager::Server_AnchorCreate_Implementation] Spawn Failed!"));
 			return;
@@ -305,6 +317,7 @@ void USpatialAnchorManager::Server_AnchorCreate_Implementation(const FVector InL
 			TEXT("[USpatialAnchorManager::Server_AnchorCreate_Implementation] Spawned AnchorModel."))
 		SpawnedAnchorModel->SetReplicates(true);
 		SpawnedAnchorModel->SetActorScale3D(FVector(1.0f,1.0f,1.0f));
+
 		SpawnedAnchors.AddUnique(SpawnedAnchorModel);
 		
 		if (SpawnedAnchors.Num() == 1) {
@@ -445,27 +458,20 @@ void USpatialAnchorManager::Server_FinishSpawn_Implementation() {
 	check(SpawnedAnchors.IsValidIndex(1))
 
 	const FVector AnchorLocationA = SpawnedAnchors[0]->GetActorLocation();
-	const FVector AnchorLocationB = SpawnedAnchors[1]->GetActorLocation();
+	 FVector AnchorLocationB = SpawnedAnchors[1]->GetActorLocation();
 
-	UE_LOG(LogTemp, Log, TEXT("[USpatialAnchorManager::Server_FinishSpawn_Implementation] AnchorLocationA: %s!"),
+	 //Finn change -- set the location of the second anchor to have the same Z coordinate as the first anchor.
+	AnchorLocationB.Z = AnchorLocationA.Z;
+	UE_LOG(LogTemp, Log, TEXT("[USpatialAnchorManager::Server_FinishSpawn_Implementation] AnchorLocationA: %s"),
 		*AnchorLocationA.ToString())
-	UE_LOG(LogTemp, Log, TEXT("[USpatialAnchorManager::Server_FinishSpawn_Implementation] AnchorLocationB: %s!"),
+	UE_LOG(LogTemp, Log, TEXT("[USpatialAnchorManager::Server_FinishSpawn_Implementation] AnchorLocationB: %s"),
 		*AnchorLocationB.ToString())
-	
 	check(Habitat)
 	if (!ensure(Habitat)) { return; }
-	//  actor's entry and exit door locations (todo: rename once it works)
-	const FVector ActorLocationA    = Habitat->MRMesh_Anchor_Entry->GetComponentLocation();
-	const FVector ActorLocationB    = Habitat->MRMesh_Anchor_Exit->GetComponentLocation();
-	
-	UE_LOG(LogTemp, Log, TEXT("[USpatialAnchorManager::Server_FinishSpawn_Implementation] ActorLocationA: %s!"),
-		*ActorLocationA.ToString())
-	UE_LOG(LogTemp, Log, TEXT("[USpatialAnchorManager::Server_FinishSpawn_Implementation] ActorLocationB: %s!"),
-		*ActorLocationB.ToString())
-	
-	// hab length = door entry - door exit (should be ~236) 
-	const float BaseDistance = UKismetMathLibrary::Vector_Distance(ActorLocationB, ActorLocationA);
-	UE_LOG(LogTemp, Log, TEXT("[USpatialAnchorManager::Server_FinishSpawn_Implementation] BaseDistance: %0.3f!"),BaseDistance)
+
+	// hab length = door entry - door exit (should be ~235) 
+	const float BaseDistance = 235.185;
+	UE_LOG(LogTemp, Log, TEXT("[USpatialAnchorManager::Server_FinishSpawn_Implementation] BaseDistance: %0.3f!"), BaseDistance)
 	
 	// target distance we want to achieve by getting distance between the two anchors (user-defined)
 	const double NewDistance = UKismetMathLibrary::Vector_Distance(AnchorLocationA, AnchorLocationB);
@@ -477,54 +483,85 @@ void USpatialAnchorManager::Server_FinishSpawn_Implementation() {
 	UE_LOG(LogTemp, Log, TEXT("[USpatialAnchorManager::Server_FinishSpawn_Implementation] NewActorScaleFactor: %0.3f!"),
 			NewActorScaleFactor)
 
+
 	const FRotator FinalRotation = UKismetMathLibrary::FindLookAtRotation(AnchorLocationA,AnchorLocationB);
 	
+	//AnchorLocationA is the location of the door
 	FTransform SpawnTransformFinal;
 	SpawnTransformFinal.SetLocation(AnchorLocationA);
 	SpawnTransformFinal.SetScale3D(FVector(1.0f,1.0f,1.0f)*NewActorScaleFactor);
 	SpawnTransformFinal.SetRotation(FinalRotation.Quaternion());
-	
-	UE_LOG(LogTemp, Log, TEXT("[USpatialAnchorManager::Server_FinishSpawn_Implementation] Calling Habitat->FinishSpawning()!"))
 
-	UE_LOG(LogTemp, Log, TEXT("[USpatialAnchorManager::Server_FinishSpawn_Implementation] FinalLocation: %s"),
-		*SpawnTransformFinal.GetLocation().ToString())
-
-	UE_LOG(LogTemp, Log, TEXT("[USpatialAnchorManager::Server_FinishSpawn_Implementation] FinalRotation: %s"),
-		*SpawnTransformFinal.GetRotation().ToString())
-
-	UE_LOG(LogTemp, Log, TEXT("[USpatialAnchorManager::Server_FinishSpawn_Implementation] FinalScale: %s"),
+	UE_LOG(LogTemp, Log,
+		TEXT("[USpatialAnchorManager::Server_FinishSpawn_Implementation] FinalLocation: %s | FinalRotation: %s | FinalScale: %s"),
+		*SpawnTransformFinal.GetLocation().ToString(),
+		*SpawnTransformFinal.GetRotation().ToString(),
 		*SpawnTransformFinal.GetScale3D().ToString())
 	
 	Habitat->FinishSpawning(SpawnTransformFinal);
-	Habitat->SetActorEnableCollision(true);
-	// if (!ensure(Habitat->DoorEntry)) return; 
-	// if (!ensure(Habitat->DoorExit)) return;
+	Habitat->SetActorEnableCollision(false);
 	
-	bSpawnInProgress = false;
+	/* ==== start - spawn floor for AI predator to walk on ==== */
+	// Floor dimensions and offset
+	const FVector ArenaLocation = SpawnTransformFinal.GetLocation();
+	const float ArenaZ = ArenaLocation.Z; // apply small offset
+	
+	// small -z offset so predator lands on it
+	const FVector FloorLocation(ArenaLocation.X, ArenaLocation.Y, ArenaZ - 5.f);
+	
+	// Spawn params
+	FActorSpawnParameters SpawnParams;
+	SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+	
+	// Create transform for the floor
+	FTransform FloorTransform;
+	FloorTransform.SetLocation(FloorLocation);
+	FloorTransform.SetRotation(FQuat::Identity);
+	FloorTransform.SetScale3D(FVector(1000.0f, 1000.0f, 0.1f));
+	
+	// spawn floor (todo: make invisible after confirming it works) 
+	UStaticMesh* FloorMesh = LoadObject<UStaticMesh>(nullptr, TEXT("StaticMesh'/Engine/BasicShapes/Cube.Cube'"));
+	AStaticMeshActor* Floor = GetWorld()->SpawnActor<AStaticMeshActor>(AStaticMeshActor::StaticClass(), FloorTransform, SpawnParams);
+	if (Floor) {
+		UStaticMeshComponent* MeshComp = Floor->GetStaticMeshComponent();
+		MeshComp->SetStaticMesh(FloorMesh);
+		MeshComp->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
+		MeshComp->SetCollisionProfileName("BlockAll");
+		MeshComp->SetVisibility(true); // Optional
+		Floor->SetActorEnableCollision(true);
+		Floor->SetMobility(EComponentMobility::Static);
+		Floor->SetReplicates(true); // If in multiplayer
+	}
 
-	// todo: tell gamemode or experiment service to update world origin to Habitats's entry door location
+	/* finish - spawn floor for AI predator to walk on */
+	bSpawnInProgress = false;
+	
+	FVector difference = AnchorLocationB - AnchorLocationA;
+	double dx = difference.X;
+	double dy = difference.Y;
+
+	double pythoga = dx * dx + dy * dy;
+
+	FMatrix2x2 M(dx/pythoga, dy/ pythoga, -dy/ pythoga, dx/ pythoga);
+	//Create a Transform Matrix
+	
 	AGameModeBase* GameModeBase = GetWorld()->GetAuthGameMode();
 	if (AExperimentGameMode* ExperimentGameMode = Cast<AExperimentGameMode>(GameModeBase)) {
-		UE_LOG(LogTemp, Log, TEXT("[USpatialAnchorManager::Server_FinishSpawn_Implementation] ExperimentGameMode found"))
-
 		if (ExperimentGameMode->ExperimentClient) {
 			UE_LOG(LogTemp, Log, TEXT("[USpatialAnchorManager::Server_FinishSpawn_Implementation] ExperimentGameMode found"))
 			ExperimentGameMode->ExperimentClient->OffsetOriginTransform = SpawnTransformFinal;
+			ExperimentGameMode->ExperimentClient->SetWorldOrigin(AnchorLocationA, AnchorLocationB);
 			ExperimentGameMode->ExperimentClient->WorldScale		    = NewActorScaleFactor;
 			ExperimentGameMode->ExperimentClient->Habitat			    = Habitat;
-			// if (ensure(GetOwner())) {
-			// 	UE_LOG(LogTemp, Log, TEXT("[USpatialAnchorManager::Server_FinishSpawn_Implementation] APPLYING TRANSFORM "))
-			// 	GetOwner()->SetActorTransform(SpawnTransformFinal);
-			// }
-			// ExperimentGameMode->ExperimentStartEpisode(); // debug | todo: delete 
 			if (!ExperimentGameMode->ExperimentClient->SendGetOcclusionLocationsRequest()) {
 				UE_LOG(LogTemp, Error, TEXT("[[USpatialAnchorManager::Server_FinishSpawn_Implementation]] Failed to SendGetOcclusionLocationsRequest"))
 			}else {
 				UE_LOG(LogTemp, Log, TEXT("[[USpatialAnchorManager::Server_FinishSpawn_Implementation]] Sent SendGetOcclusionLocationsRequest OK"))
 			}
 		}
+	} else {
+		UE_LOG(LogTemp, Log, TEXT("[USpatialAnchorManager::Server_FinishSpawn_Implementation] Failed to get GameMode"))	
 	}
-	
 }
 
 bool USpatialAnchorManager::Server_HandleSpawnHabitat_Validate(USceneComponent* InModelSpawnPositioner) { return true; }
@@ -562,6 +599,7 @@ void USpatialAnchorManager::Server_HandleSpawnHabitat_Implementation(USceneCompo
 			UE_LOG(LogTemp, Warning, TEXT("[USpatialAnchorManager::Server_HandleSpawnHabitat_Implementation] Spawned Habitat"));
 			Habitat->RegisterAllComponents();
 			Habitat->SetActorEnableCollision(ECollisionEnabled::NoCollision);
+			// Habitat->MeshHabitat->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 			bSpawnInProgress = true;
 			UE_LOG(LogTemp, Warning, TEXT("[USpatialAnchorManager::Server_HandleSpawnHabitat_Implementation] bSpawnInProgress: %s"),
 				bSpawnInProgress ? TEXT("true") : TEXT("false"));
@@ -571,6 +609,22 @@ void USpatialAnchorManager::Server_HandleSpawnHabitat_Implementation(USceneCompo
 		return;
 	}
 	UE_LOG(LogTemp, Log, TEXT("[USpatialAnchorManager::Server_HandleSpawnHabitat_Implementation] Exiting OK"))
+}
+
+bool USpatialAnchorManager::Server_HabitatAddDeltaZ_Validate(const float InDeltaZ) {
+	return true;
+}
+
+void USpatialAnchorManager::Server_HabitatAddDeltaZ_Implementation(const float InDeltaZ) {
+	UE_LOG(LogTemp, Log, TEXT("[USpatialAnchorManager::Server_HabitatAddDeltaZ_Implementation]"))
+	if (!Habitat->IsValidLowLevelFast()) {
+		UE_LOG(LogTemp, Log, TEXT("[USpatialAnchorManager::Server_HabitatAddDeltaZ_Implementation] Habitat not valid!"))
+		return; 
+	}
+
+	Habitat->AddActorWorldOffset(FVector(0.0f,0.0f,InDeltaZ));
+	UE_LOG(LogTemp, Log, TEXT("[USpatialAnchorManager::Server_HabitatAddDeltaZ_Implementation] Added deltaZ: %0.2f!"),
+		InDeltaZ)
 }
 
 bool USpatialAnchorManager::Server_AttachHabitatToAnchor_Validate() {

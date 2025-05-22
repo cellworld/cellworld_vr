@@ -1,6 +1,6 @@
 {
 	"FileVersion": 3,
-	"EngineAssociation": "{C0F785C1-41B9-FFDB-1B7D-2092F04720F9}",
+	"EngineAssociation": "{2BB24C8E-422B-5E90-B6E9-E8818C36ADC4}",
 	"Category": "",
 	"Description": "",
 	"Modules": [
@@ -80,18 +80,6 @@
 			"Enabled": false
 		},
 		{
-			"Name": "ControlRig",
-			"Enabled": false
-		},
-		{
-			"Name": "ControlRigSpline",
-			"Enabled": false
-		},
-		{
-			"Name": "SequencerAnimTools",
-			"Enabled": false
-		},
-		{
 			"Name": "GeometryCache",
 			"Enabled": false
 		},
@@ -126,6 +114,18 @@
 				"IOS",
 				"TVOS"
 			]
+		},
+		{
+			"Name": "ModelingToolsEditorMode",
+			"Enabled": true
+		},
+		{
+			"Name": "ControlRigSpline",
+			"Enabled": false
+		},
+		{
+			"Name": "FullBodyIK",
+			"Enabled": true
 		}
 	]
 }
