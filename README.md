@@ -74,5 +74,9 @@ git lfs ls-files
 ---
 
 ## Other (Temporary)
+### Changing IP
+1. ExperimentClient.h under FServerInfo(), specify "IP(TEXT("---insert--IP---"))"
+2. In the UE editor, in the level blueprint "L_Game"
+3. Python server pass the flag `--ip<<insert_IP>>`
 
 _This section can be used to include temporary notes, future plans, or development todos._

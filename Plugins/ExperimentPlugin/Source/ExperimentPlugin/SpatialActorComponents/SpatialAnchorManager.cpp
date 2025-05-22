@@ -251,6 +251,7 @@ bool USpatialAnchorManager::Client_AttachAnchorToActor_Validate(AActor* InActor)
 	return true;
 }
 
+//NOTE -- FINN - maybe come back to this?
 void USpatialAnchorManager::Client_AttachAnchorToActor_Implementation(AActor* InActor) {
 	UE_LOG(LogTemp, Log, TEXT("[USpatialAnchorManager::Client_AttachAnchorToActor_Implementation] Called"))
 
@@ -264,12 +265,12 @@ void USpatialAnchorManager::Client_AttachAnchorToActor_Implementation(AActor* In
 	UE_LOG(LogTemp, Log, TEXT("[USpatialAnchorManager::Server_AnchorCreateCluster_Implementation] Spawned OK!"));
 }
 
-bool USpatialAnchorManager::Server_AnchorCreate_Validate(const FVector InLocation) {
+bool USpatialAnchorManager::Server_AnchorCreate_Validate( FVector InLocation) {
 	UE_LOG(LogTemp, Log, TEXT("[USpatialAnchorManager::Server_AnchorCreate_Validate] called"))
 	return true;
 }
 
-void USpatialAnchorManager::Server_AnchorCreate_Implementation(const FVector InLocation) {
+void USpatialAnchorManager::Server_AnchorCreate_Implementation( FVector InLocation) {
 	UE_LOG(LogTemp, Log, TEXT("[USpatialAnchorManager::Server_AnchorCreate_Implementation] called"))
 	UE_LOG(LogTemp, Log,
 		TEXT("[USpatialAnchorManager::Server_AnchorCreate_Implementation] InLocation: %s"),
@@ -299,7 +300,14 @@ void USpatialAnchorManager::Server_AnchorCreate_Implementation(const FVector InL
 		const FRotator SpawnRotation = FRotator::ZeroRotator;
 		
 		// Spawn the actor
-		AActor* SpawnedAnchorModel = GetWorld()->SpawnActor<AActor>(AnchorsBPClass,  InLocation, SpawnRotation, SpawnParams);
+		FVector SpawnLocation = InLocation;	
+		if (SpawnedAnchors.Num() > 1) {
+			SpawnLocation.Z = SpawnedAnchors[0]->GetActorLocation().Z;
+			UE_LOG(LogTemp, Error, TEXT("[USpatialAnchorManager::Server_AnchorCreate_Implementation] Changed Spawnlocation of second actor!"));
+
+			InLocation = SpawnLocation;
+		}
+		AActor* SpawnedAnchorModel = GetWorld()->SpawnActor<AActor>(AnchorsBPClass, InLocation, SpawnRotation, SpawnParams);
 		if (!SpawnedAnchorModel) {
 			UE_LOG(LogTemp, Error, TEXT("[USpatialAnchorManager::Server_AnchorCreate_Implementation] Spawn Failed!"));
 			return;
@@ -309,6 +317,7 @@ void USpatialAnchorManager::Server_AnchorCreate_Implementation(const FVector InL
 			TEXT("[USpatialAnchorManager::Server_AnchorCreate_Implementation] Spawned AnchorModel."))
 		SpawnedAnchorModel->SetReplicates(true);
 		SpawnedAnchorModel->SetActorScale3D(FVector(1.0f,1.0f,1.0f));
+
 		SpawnedAnchors.AddUnique(SpawnedAnchorModel);
 		
 		if (SpawnedAnchors.Num() == 1) {
@@ -449,8 +458,10 @@ void USpatialAnchorManager::Server_FinishSpawn_Implementation() {
 	check(SpawnedAnchors.IsValidIndex(1))
 
 	const FVector AnchorLocationA = SpawnedAnchors[0]->GetActorLocation();
-	const FVector AnchorLocationB = SpawnedAnchors[1]->GetActorLocation();
-	
+	 FVector AnchorLocationB = SpawnedAnchors[1]->GetActorLocation();
+
+	 //Finn change -- set the location of the second anchor to have the same Z coordinate as the first anchor.
+	AnchorLocationB.Z = AnchorLocationA.Z;
 	UE_LOG(LogTemp, Log, TEXT("[USpatialAnchorManager::Server_FinishSpawn_Implementation] AnchorLocationA: %s"),
 		*AnchorLocationA.ToString())
 	UE_LOG(LogTemp, Log, TEXT("[USpatialAnchorManager::Server_FinishSpawn_Implementation] AnchorLocationB: %s"),
@@ -472,8 +483,10 @@ void USpatialAnchorManager::Server_FinishSpawn_Implementation() {
 	UE_LOG(LogTemp, Log, TEXT("[USpatialAnchorManager::Server_FinishSpawn_Implementation] NewActorScaleFactor: %0.3f!"),
 			NewActorScaleFactor)
 
+
 	const FRotator FinalRotation = UKismetMathLibrary::FindLookAtRotation(AnchorLocationA,AnchorLocationB);
 	
+	//AnchorLocationA is the location of the door
 	FTransform SpawnTransformFinal;
 	SpawnTransformFinal.SetLocation(AnchorLocationA);
 	SpawnTransformFinal.SetScale3D(FVector(1.0f,1.0f,1.0f)*NewActorScaleFactor);
@@ -522,6 +535,15 @@ void USpatialAnchorManager::Server_FinishSpawn_Implementation() {
 
 	/* finish - spawn floor for AI predator to walk on */
 	bSpawnInProgress = false;
+	
+	FVector difference = AnchorLocationB - AnchorLocationA;
+	double dx = difference.X;
+	double dy = difference.Y;
+
+	double pythoga = dx * dx + dy * dy;
+
+	FMatrix2x2 M(dx/pythoga, dy/ pythoga, -dy/ pythoga, dx/ pythoga);
+	//Create a Transform Matrix
 	
 	AGameModeBase* GameModeBase = GetWorld()->GetAuthGameMode();
 	if (AExperimentGameMode* ExperimentGameMode = Cast<AExperimentGameMode>(GameModeBase)) {
